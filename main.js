@@ -4,6 +4,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 
 const renderer = new THREE.WebGLRenderer();
@@ -36,6 +37,8 @@ function fromPolar(distance, azimuth, clino) {
 const degreesToRads = deg => (deg * Math.PI) / 180.0;
 
 const orbit = new THREE.Vector3(0, 0, 0);
+
+scene.add( new THREE.GridHelper( 100, 10, 0x888888, 0x444444 ) );
 
 scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([orbit, new THREE.Vector3(20, 0, 0)]), red));  // x axis
 scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([orbit, new THREE.Vector3(0, 20, 0)]), blue)); // y axis
@@ -105,7 +108,6 @@ document.getElementById('fileInput').addEventListener('change', function (event)
                         );
                     } else {
                         stationsPoints.push(stationFrom.x, stationFrom.y, stationFrom.z, stationTo.x, stationTo.y, stationTo.z);
-
                     }
                 }
 
