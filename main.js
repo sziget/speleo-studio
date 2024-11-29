@@ -9,14 +9,26 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 
 import * as I from "./import.js";
 import * as L from "./listeners.js";
+import { addGui } from "./gui.js"
 
 let cameraPersp, cameraOrtho, currentCamera;
-let scene, renderer, control, orbit;
+let scene, renderer, control, orbit, gizmo;
+let gui, matLine;
+let lineSegmentsSplays;
 
 init();
 render();
 
 function init() {
+
+    matLine = new LineMaterial({
+        color: 0xffffff,
+        linewidth: 1, // in world units with size attenuation, pixels otherwise
+        worldUnits: false,
+        vertexColors: false,
+        alphaToCoverage: false,
+    });
+
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -53,18 +65,12 @@ function init() {
     scene = new THREE.Scene();
     scene.add(new THREE.GridHelper(100, 10, 0x888888, 0x444444));
     
-    const gizmo = control.getHelper();
+    gizmo = control.getHelper();
     scene.add(gizmo);
+
 
 }
 
-const matLine = new LineMaterial({
-    color: 0xffffff,
-    linewidth: 1, // in world units with size attenuation, pixels otherwise
-    worldUnits: false,
-    vertexColors: false,
-    alphaToCoverage: false,
-});
 
 function render() {
     renderer.render(scene, currentCamera);
@@ -92,15 +98,17 @@ function addToScene(stationsPoints, splays) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(stationsPoints);
     const polygonSegments = new LineSegments2(geometryStations, matLine);
-    scene.add(polygonSegments);
-    control.attach( polygonSegments );
 
-    // const splaysGeometry = new LineSegmentsGeometry();
-    // splaysGeometry.setPositions(splays);
-    // const segmentsSplays = new LineSegments2( splaysGeometry, matLine );
-    // scene.add( segmentsSplays );
-    // control.attach( segmentsSplays );
+    const splaysGeometry = new LineSegmentsGeometry();
+    splaysGeometry.setPositions(splays);
+    lineSegmentsSplays = new LineSegments2( splaysGeometry, matLine );
+    const group = new THREE.Group();
 
+    group.add( polygonSegments );
+    group.add( lineSegmentsSplays );
+    scene.add( group );
+    control.attach(group);
+    gui = addGui(lineSegmentsSplays, gizmo, matLine, render);
     render();
 }
 
