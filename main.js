@@ -8,6 +8,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 
 import * as I from "./import.js";
+import * as L from "./listeners.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit;
@@ -43,13 +44,17 @@ function init() {
 
     });
 
+    const listener = new L.EventListener(control, orbit, currentCamera, cameraPersp, cameraOrtho, onWindowResize);
+
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('keydown', function ( event ) { listener.keyDownListener(event); });
+    window.addEventListener('keyup', function ( event ) { listener.keyUpListener(event); });
 
     scene = new THREE.Scene();
     scene.add(new THREE.GridHelper(100, 10, 0x888888, 0x444444));
-
-    // scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([C.orbitPoint, new THREE.Vector3(20, 0, 0)]), red));  // x axis
-    // scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([C.orbitPoint, new THREE.Vector3(0, 20, 0)]), blue)); // y axis
-    // scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([C.orbitPoint, new THREE.Vector3(0, 0, 20)]), green)); // z axis
+    
+    const gizmo = control.getHelper();
+    scene.add(gizmo);
 
 }
 
@@ -65,16 +70,36 @@ function render() {
     renderer.render(scene, currentCamera);
 }
 
+function onWindowResize() {
+
+    const aspect = window.innerWidth / window.innerHeight;
+
+    cameraPersp.aspect = aspect;
+    cameraPersp.updateProjectionMatrix();
+
+    cameraOrtho.left = cameraOrtho.bottom * aspect;
+    cameraOrtho.right = cameraOrtho.top * aspect;
+    cameraOrtho.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    render();
+
+}
+
+
 function addToScene(stationsPoints, splays) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(stationsPoints);
     const polygonSegments = new LineSegments2(geometryStations, matLine);
     scene.add(polygonSegments);
+    control.attach( polygonSegments );
 
     // const splaysGeometry = new LineSegmentsGeometry();
     // splaysGeometry.setPositions(splays);
     // const segmentsSplays = new LineSegments2( splaysGeometry, matLine );
     // scene.add( segmentsSplays );
+    // control.attach( segmentsSplays );
 
     render();
 }
