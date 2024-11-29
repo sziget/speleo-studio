@@ -13,16 +13,24 @@ import { addGui } from "./gui.js"
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo;
-let gui, matLine;
-let lineSegmentsSplays;
+let gui, polygonLineMaterial, splayLineMaterial ;
+let polygonSegments, lineSegmentsSplays;
 
 init();
 render();
 
 function init() {
 
-    matLine = new LineMaterial({
-        color: 0xffffff,
+    polygonLineMaterial = new LineMaterial({
+        color: 0xff0000,
+        linewidth: 1, // in world units with size attenuation, pixels otherwise
+        worldUnits: false,
+        vertexColors: false,
+        alphaToCoverage: false,
+    });
+
+    splayLineMaterial = new LineMaterial({
+        color: 0x00ffff,
         linewidth: 1, // in world units with size attenuation, pixels otherwise
         worldUnits: false,
         vertexColors: false,
@@ -97,18 +105,18 @@ function onWindowResize() {
 function addToScene(stationsPoints, splays) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(stationsPoints);
-    const polygonSegments = new LineSegments2(geometryStations, matLine);
+    polygonSegments = new LineSegments2(geometryStations, polygonLineMaterial);
 
     const splaysGeometry = new LineSegmentsGeometry();
     splaysGeometry.setPositions(splays);
-    lineSegmentsSplays = new LineSegments2( splaysGeometry, matLine );
+    lineSegmentsSplays = new LineSegments2( splaysGeometry, splayLineMaterial );
     const group = new THREE.Group();
 
     group.add( polygonSegments );
     group.add( lineSegmentsSplays );
     scene.add( group );
     control.attach(group);
-    gui = addGui(lineSegmentsSplays, gizmo, matLine, render);
+    gui = addGui(polygonSegments, lineSegmentsSplays, gizmo, polygonLineMaterial, splayLineMaterial, render);
     render();
 }
 

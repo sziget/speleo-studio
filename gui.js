@@ -1,45 +1,100 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import * as THREE from 'three';
 
-export function addGui(lineSegmentsSplays, gizmo, matLine, renderFn) {
+export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMatLine, splayMatLine, renderFn) {
     const gui = new GUI();
-
+    
     const param = {
-        'show gizmo': true,
+        'show gizmo': true
+    };
+
+    const polygonParam = {
+        
+        'show polygon': true,
+        'line color': polygonMatLine.color.getHex(),
+        'world units': false,
+        'width': 20,
+        'alphaToCoverage': true
+    };
+
+    const splayParam = {
+        
         'show splays': true,
+        'line color': splayMatLine.color.getHex(),
         'world units': false,
         'width': 10,
         'alphaToCoverage': true
     };
 
+    gui.add(param, 'show gizmo').onChange(function (val) {
+        gizmo.visible = val;
+        renderFn();
+    });
 
-    gui.add(param, 'show splays').onChange(function (val) {
+    const polygonFolder = gui.addFolder( 'Polygon' );
+
+    polygonFolder.add(polygonParam, 'show polygon').onChange(function (val) {
+        lineSegmentsPolygon.visible = val;
+        renderFn();
+    });
+
+    polygonFolder.addColor(polygonParam, 'line color').onChange(function (val) {
+        polygonMatLine.color = new THREE.Color(val);
+        renderFn();
+    });
+
+    polygonFolder.add(polygonParam, 'world units').onChange(function (val) {
+
+        polygonMatLine.worldUnits = val;
+        polygonMatLine.needsUpdate = true;
+        renderFn();
+
+    });
+
+    polygonFolder.add(polygonParam, 'width', 1, 50).onChange(function (val) {
+
+        polygonMatLine.linewidth = val / 10;
+        renderFn();
+
+    });
+
+    polygonFolder.add(polygonParam, 'alphaToCoverage').onChange(function (val) {
+
+        polygonMatLine.alphaToCoverage = val;
+        renderFn();
+
+    });
+
+    const splaysFolder = gui.addFolder( 'Splays' );
+
+    splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
         lineSegmentsSplays.visible = val;
         renderFn();
     });
 
-    gui.add(param, 'show gizmo').onChange(function (val) {
-        gizmo.visible = val;
+    splaysFolder.addColor(splayParam, 'line color').onChange(function (val) {
+        splayMatLine.color = new THREE.Color(val);
         renderFn();
-    });    
+    });
 
-    gui.add(param, 'world units').onChange(function (val) {
+    splaysFolder.add(splayParam, 'world units').onChange(function (val) {
 
-        matLine.worldUnits = val;
-        matLine.needsUpdate = true;
+        splayMatLine.worldUnits = val;
+        splayMatLine.needsUpdate = true;
         renderFn();
 
     });
 
-    gui.add(param, 'width', 1, 30).onChange(function (val) {
+    splaysFolder.add(splayParam, 'width', 1, 30).onChange(function (val) {
 
-        matLine.linewidth = val / 10;
+        splayMatLine.linewidth = val / 10;
         renderFn();
 
     });
 
-    gui.add(param, 'alphaToCoverage').onChange(function (val) {
+    splaysFolder.add(splayParam, 'alphaToCoverage').onChange(function (val) {
 
-        matLine.alphaToCoverage = val;
+        splayMatLine.alphaToCoverage = val;
         renderFn();
 
     });
