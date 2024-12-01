@@ -6,6 +6,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 import * as I from "./import.js";
 import * as L from "./listeners.js";
@@ -13,8 +15,9 @@ import { addGui } from "./gui.js"
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo;
-let gui, polygonLineMaterial, splayLineMaterial ;
+let gui, polygonLineMaterial, splayLineMaterial, textMaterial;
 let polygonSegments, lineSegmentsSplays;
+let stationFont, fontGroup;
 
 init();
 render();
@@ -35,6 +38,13 @@ function init() {
         worldUnits: false,
         vertexColors: false,
         alphaToCoverage: false,
+    });
+
+    textMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: false,
+        //opacity: 0.9,
+        side: THREE.DoubleSide
     });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -67,20 +77,26 @@ function init() {
     const listener = new L.EventListener(control, orbit, currentCamera, cameraPersp, cameraOrtho, onWindowResize);
 
     window.addEventListener('resize', onWindowResize);
-    window.addEventListener('keydown', function ( event ) { listener.keyDownListener(event); });
-    window.addEventListener('keyup', function ( event ) { listener.keyUpListener(event); });
+    window.addEventListener('keydown', function (event) { listener.keyDownListener(event); });
+    window.addEventListener('keyup', function (event) { listener.keyUpListener(event); });
 
     scene = new THREE.Scene();
     scene.add(new THREE.GridHelper(100, 10, 0x888888, 0x444444));
-    
+
     gizmo = control.getHelper();
     scene.add(gizmo);
 
-
+    const loader = new FontLoader();
+    loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
+        stationFont = font;
+    });
 }
 
 
 function render() {
+    if (fontGroup !== undefined) {
+        fontGroup.children.forEach(font => font.lookAt(currentCamera.position));
+    }
     renderer.render(scene, currentCamera);
 }
 
@@ -95,28 +111,52 @@ function onWindowResize() {
     cameraOrtho.right = cameraOrtho.top * aspect;
     cameraOrtho.updateProjectionMatrix();
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
     render();
 
 }
 
+function addStationName(stationName, position, fontGroup) {
+    const shortName = stationName.split("@")[0]
+    const textShape = stationFont.generateShapes(shortName, 0.7);
+    const textGeometry = new THREE.ShapeGeometry(textShape);
+    textGeometry.computeBoundingBox();
 
-function addToScene(stationsPoints, splays) {
+    const xMid = - 0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
+    textGeometry.translate(xMid, 0, 0);
+
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    textMesh.lookAt(currentCamera.position)
+    textMesh.position.x = position.x;
+    textMesh.position.y = position.y;
+    textMesh.position.z = position.z;
+    fontGroup.add(textMesh);
+}
+
+function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
-    geometryStations.setPositions(stationsPoints);
+    geometryStations.setPositions(polygonSegments);
     polygonSegments = new LineSegments2(geometryStations, polygonLineMaterial);
 
     const splaysGeometry = new LineSegmentsGeometry();
-    splaysGeometry.setPositions(splays);
-    lineSegmentsSplays = new LineSegments2( splaysGeometry, splayLineMaterial );
+    splaysGeometry.setPositions(splaySegments);
+    lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMaterial);
     const group = new THREE.Group();
 
-    group.add( polygonSegments );
-    group.add( lineSegmentsSplays );
-    scene.add( group );
+    group.add(polygonSegments);
+    group.add(lineSegmentsSplays);
+
+    fontGroup = new THREE.Group();
+    for (const [stationName, stationPosition] of stations) {
+        addStationName(stationName, stationPosition, fontGroup);
+    }
+    fontGroup.visible = false;
+    group.add(fontGroup);
+
+    scene.add(group);
     control.attach(group);
-    gui = addGui(polygonSegments, lineSegmentsSplays, gizmo, polygonLineMaterial, splayLineMaterial, render);
+    gui = addGui(polygonSegments, lineSegmentsSplays, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, fontGroup, render);
     render();
 }
 
@@ -127,7 +167,7 @@ function importCsvFile(file) {
         dynamicTyping: true,
         complete: function (results) {
             const [stations, stationsPoints, splays] = I.getStationsAndSplays(results.data);
-            addToScene(stationsPoints, splays);
+            addToScene(stations, stationsPoints, splays);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);

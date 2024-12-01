@@ -1,7 +1,7 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMatLine, splayMatLine, renderFn) {
+export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMatLine, splayMatLine, textMatLine, fontGroup, renderFn) {
     const gui = new GUI();
     
     const param = {
@@ -25,6 +25,12 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
         'width': 10,
         'alphaToCoverage': true
     };
+
+    const stationNamesParam = {
+        'show station names': false,
+        'font color': textMatLine.color.getHex(),
+
+    }
 
     gui.add(param, 'show gizmo').onChange(function (val) {
         gizmo.visible = val;
@@ -98,6 +104,19 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
         renderFn();
 
     });
+
+    const stationNamesFolder = gui.addFolder( 'Splays' );
+
+    stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
+        fontGroup.visible = val;
+        renderFn();
+    });
+
+    stationNamesFolder.addColor(stationNamesParam, 'font color').onChange(function (val) {
+        textMatLine.color = new THREE.Color(val);
+        renderFn();
+    });
+
 
     return gui;
 
