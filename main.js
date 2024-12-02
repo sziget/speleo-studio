@@ -6,7 +6,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
-import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 import * as I from "./import.js";
@@ -15,12 +14,13 @@ import * as M from "./model.js";
 import { addGui } from "./gui.js"
 
 let cameraPersp, cameraOrtho, currentCamera;
-let scene, renderer, control, orbit, gizmo;
-let gui, polygonLineMaterial, splayLineMaterial, textMaterial;
-let polygonSegments, lineSegmentsSplays;
-let stationFont, fontGroup;
-let caves = [];
+let scene, renderer, control, orbit, gizmo, gui;
+let polygonLineMaterial, splayLineMaterial, textMaterial;
 
+let stationFont;
+let caves = [];
+let cavesObjectGroup = new THREE.Group();
+let cavesStationsGroup;
 
 init();
 render();
@@ -93,24 +93,32 @@ function init() {
     loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
         stationFont = font;
     });
+    cavesStationsGroup = [];
+    gui = addGui(caves, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, render);
+
 }
 
 
 function render() {
-    if (fontGroup !== undefined) {
-        fontGroup.children.forEach(font => font.lookAt(currentCamera.position));
+    if (cavesStationsGroup !== undefined) {
+        cavesStationsGroup.forEach(
+            group => group.children.forEach(fontMesh =>
+                fontMesh.lookAt(currentCamera.position)
+            )
+        );
     }
     renderer.render(scene, currentCamera);
 }
 
-function renderSurveyPanel(cave) {
+function renderSurveyPanel(caves) {
     const mapSurveys = (survey) => { return { id: survey.name, name: survey.name, loadOnDemand: true }; }
     const mapCave = (cave) => { return { id: cave.name, name: cave.name, children: cave.surveys.map(mapSurveys), loadOnDemand: true }; }
-    const tree = new InfiniteTree({
+    document.querySelector('#tree-panel').innerHTML = '';
+    caves.forEach((cave) => new InfiniteTree({
         el: document.querySelector('#tree-panel'),
         data: mapCave(cave),
         autoOpen: false
-    });
+    }));
 }
 
 function onWindowResize() {
@@ -150,27 +158,110 @@ function addStationName(stationName, position, fontGroup) {
 function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
-    polygonSegments = new LineSegments2(geometryStations, polygonLineMaterial);
+    const lineSegmentsPolygon = new LineSegments2(geometryStations, polygonLineMaterial);
 
     const splaysGeometry = new LineSegmentsGeometry();
     splaysGeometry.setPositions(splaySegments);
-    lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMaterial);
+    const lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMaterial);
     const group = new THREE.Group();
 
-    group.add(polygonSegments);
+    group.add(lineSegmentsPolygon);
     group.add(lineSegmentsSplays);
 
-    fontGroup = new THREE.Group();
+    const stationNamesGroup = new THREE.Group();
     for (const [stationName, stationPosition] of stations) {
-        addStationName(stationName, stationPosition, fontGroup);
+        addStationName(stationName, stationPosition, stationNamesGroup);
     }
-    fontGroup.visible = false;
-    group.add(fontGroup);
+    cavesStationsGroup.push(stationNamesGroup);
+    const fontsVisible = gui.folders[2].controllers.find((c) => c.property === 'show station names').getValue();
 
-    scene.add(group);
-    control.attach(group);
-    gui = addGui(polygonSegments, lineSegmentsSplays, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, fontGroup, render);
+    stationNamesGroup.visible = fontsVisible;
+    
+    group.add(stationNamesGroup);
+    //scene.add(group); maybe needs to remove
+    cavesObjectGroup.add(group);
+    scene.add(cavesObjectGroup);
+    control.attach(cavesObjectGroup);
     render();
+    return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup];
+}
+
+function importPolygonFile(file) {
+    const reader = new FileReader();
+    const iterateUntil = function (iterator, condition) {
+        var it;
+        do {
+            it = iterator.next();
+        } while (!it.done && condition(it.value[1]));
+
+        if (it.done) {
+            return undefined;
+        } else {
+            return it.value[1];
+        }
+    };
+
+    const parseSurveyData = function (iterator) {
+        var it;
+        const parseMyFloat = (str) => parseFloat(str.replace(',', '.'));
+        const surveyData = []
+        do {
+            it = iterator.next();
+            const parts = it.value[1].split(/\t|\s/);
+            if (parts.length > 10) {
+                surveyData.push([parts[0], parts[1], parseMyFloat(parts[2]), parseMyFloat(parts[3]), parseMyFloat(parts[4])]);
+            }
+        } while (!it.done && it.value[1] != '');
+
+        return surveyData;
+    };
+
+    reader.onload = (event) => {
+        const wholeFileInText = event.target.result;
+
+        if (wholeFileInText.startsWith("POLYGON Cave Surveying Software")) {
+            const lines = wholeFileInText.split(/\r\n|\n/);
+            const lineIterator = lines.entries();
+            iterateUntil(lineIterator, (v) => v !== "*** Project ***");
+            const caveNameResult = lineIterator.next();
+
+            if (!caveNameResult.value[1].startsWith("Project name:")) {
+                showError(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
+                return;
+            }
+
+            const projectName = caveNameResult.value[1].substring(13);
+            const surveys = []
+            const stationsGlobal = new Map();
+            var surveyName;
+            do {
+                surveyName = iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
+                if (surveyName !== undefined) {
+                    surveyName = surveyName.substring(9);
+                    iterateUntil(lineIterator, (v) => v !== "Survey data");
+                    lineIterator.next(); //From To ...
+                    const surveyData = parseSurveyData(lineIterator);
+                    const [stations, polygonSegments] = I.getStationsAndSplaysPolygon(surveyData, stationsGlobal);
+                    for (const [stationName, stationPosition] of stations) {
+                        stationsGlobal.set(stationName, stationPosition);
+                    }
+                    const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, []);
+                    surveys.push(new M.Survey(surveyName, true, stations, lineSegmentsPolygon, [], stationNamesGroup));
+                }
+
+            } while (surveyName !== undefined)
+
+            const cave = new M.Cave(projectName, surveys, true);
+            caves.push(cave);
+            renderSurveyPanel(caves);
+        }
+
+    };
+    reader.readAsText(file, "iso_8859-2");
+}
+
+function showError(message) {
+    alert(message);
 }
 
 function importCsvFile(file) {
@@ -181,11 +272,10 @@ function importCsvFile(file) {
         complete: function (results) {
             const [stations, polygonSegments, splaySegments] = I.getStationsAndSplays(results.data);
 
-            addToScene(stations, polygonSegments, splaySegments);
-            const cave = new M.Cave(file.name, [new M.Survey('Polygon', stations, polygonSegments, splaySegments)]);
+            const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, splaySegments);
+            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup)], true);
             caves.push(cave);
-            console.log(cave);
-            renderSurveyPanel(cave);
+            renderSurveyPanel(caves);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);
@@ -193,9 +283,16 @@ function importCsvFile(file) {
     });
 }
 
-document.getElementById('fileInput').addEventListener('change', function (event) {
+document.getElementById('topodroidInput').addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (file) {
         importCsvFile(file);
+    }
+});
+
+document.getElementById('polygonInput').addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (file) {
+        importPolygonFile(file);
     }
 });

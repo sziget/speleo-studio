@@ -12,18 +12,21 @@ export class Vector {
 }
 
 export class Survey {
-    constructor(name, stations, polygonSegments, splaySegments) {
+    constructor(name, visible, stations, polygonSegments, splaySegments, stationNames) {
         this.name = name;
+        this.visible = visible;
         this.stations = stations;
         this.polygonSegments = polygonSegments;
         this.splaySegments = splaySegments;
+        this.stationNames = stationNames;
     }
 }
 
 export class Cave {
-    constructor(name, surveys) {
+    constructor(name, surveys, visible) {
         this.name = name;
         this.surveys = surveys;
+        this.visible = visible;
     }
 }
 

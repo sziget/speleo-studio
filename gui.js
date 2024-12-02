@@ -1,7 +1,7 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMatLine, splayMatLine, textMatLine, fontGroup, renderFn) {
+export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, renderFn) {
     const gui = new GUI();
     
     const param = {
@@ -40,7 +40,15 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
     const polygonFolder = gui.addFolder( 'Polygon' );
 
     polygonFolder.add(polygonParam, 'show polygon').onChange(function (val) {
-        lineSegmentsPolygon.visible = val;
+        caves.forEach(cave => {
+            if (cave.visible) {
+                cave.surveys.forEach(survey => {
+                    if (survey.visible) {
+                        survey.polygonSegments.visible = val;
+                    }
+                })
+            }
+        });
         renderFn();
     });
 
@@ -50,7 +58,6 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
     });
 
     polygonFolder.add(polygonParam, 'world units').onChange(function (val) {
-
         polygonMatLine.worldUnits = val;
         polygonMatLine.needsUpdate = true;
         renderFn();
@@ -65,7 +72,6 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
     });
 
     polygonFolder.add(polygonParam, 'alphaToCoverage').onChange(function (val) {
-
         polygonMatLine.alphaToCoverage = val;
         renderFn();
 
@@ -74,7 +80,15 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
     const splaysFolder = gui.addFolder( 'Splays' );
 
     splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
-        lineSegmentsSplays.visible = val;
+        caves.forEach(cave => {
+            if (cave.visible) {
+                cave.surveys.forEach(survey => {
+                    if (survey.visible) {
+                        survey.splaySegments.visible = val;
+                    }
+                })
+            }
+        });
         renderFn();
     });
 
@@ -108,7 +122,15 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
     const stationNamesFolder = gui.addFolder( 'Station names' );
 
     stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
-        fontGroup.visible = val;
+        caves.forEach(cave => {
+            if (cave.visible) {
+                cave.surveys.forEach(survey => {
+                    if (survey.visible) {
+                        survey.stationNames.visible = val;
+                    }
+                })
+            }
+        });
         renderFn();
     });
 
