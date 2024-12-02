@@ -10,3 +10,4 @@ export function fromPolar(distance, azimuth, clino) {
 
 export function degreesToRads(deg) { return deg * Math.PI / 180.0; }
 
+export function randomAlphaNumbericString(maxLength) { return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, maxLength); }

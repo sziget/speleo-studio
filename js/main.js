@@ -18,6 +18,11 @@ import { addGui } from "./gui.js";
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo, gui;
 let polygonLineMaterial, splayLineMaterial, textMaterial;
+let show = {
+    stationNames: false, 
+    polygon: true,
+    splays: true
+}; 
 
 let stationFont;
 let caves = [];
@@ -96,7 +101,7 @@ function init() {
         stationFont = font;
     });
     cavesStationsGroup = [];
-    gui = addGui(caves, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, render);
+    gui = addGui(caves, show, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, render);
 
 }
 
@@ -164,9 +169,8 @@ function addToScene(stations, polygonSegments, splaySegments) {
         addStationName(stationName, stationPosition, stationNamesGroup);
     }
     cavesStationsGroup.push(stationNamesGroup);
-    const fontsVisible = gui.folders[2].controllers.find((c) => c.property === 'show station names').getValue();
 
-    stationNamesGroup.visible = fontsVisible;
+    stationNamesGroup.visible = show.stationNames;
 
     group.add(stationNamesGroup);
     //scene.add(group); maybe needs to remove
@@ -183,7 +187,7 @@ function importPolygonFile(file) {
         const wholeFileInText = event.target.result;
         const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
         caves.push(cave);
-        P.renderSurveyPanel(caves);
+        P.renderSurveyPanel(caves, show, render);
     };
     reader.readAsText(file, "iso_8859-2");
 }
@@ -202,7 +206,7 @@ function importCsvFile(file) {
             const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, splaySegments);
             const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup)], true);
             caves.push(cave);
-            P.renderSurveyPanel(caves);
+            P.renderSurveyPanel(caves, show, render);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);

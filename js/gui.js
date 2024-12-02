@@ -1,7 +1,7 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, renderFn) {
+export function addGui(caves, show, gizmo, polygonMatLine, splayMatLine, textMatLine, renderFn) {
     const gui = new GUI();
     
     const param = {
@@ -10,7 +10,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
 
     const polygonParam = {
         
-        'show polygon': true,
+        'show polygon': show.polygon,
         'line color': polygonMatLine.color.getHex(),
         'world units': false,
         'width': 20,
@@ -19,7 +19,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
 
     const splayParam = {
         
-        'show splays': true,
+        'show splays': show.splays,
         'line color': splayMatLine.color.getHex(),
         'world units': false,
         'width': 10,
@@ -27,7 +27,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
     };
 
     const stationNamesParam = {
-        'show station names': false,
+        'show station names': show.stationNames,
         'font color': textMatLine.color.getHex(),
 
     }
@@ -40,6 +40,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
     const polygonFolder = gui.addFolder( 'Polygon' );
 
     polygonFolder.add(polygonParam, 'show polygon').onChange(function (val) {
+        show.polygon = val;
         caves.forEach(cave => {
             if (cave.visible) {
                 cave.surveys.forEach(survey => {
@@ -80,6 +81,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
     const splaysFolder = gui.addFolder( 'Splays' );
 
     splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
+        show.splays = val;
         caves.forEach(cave => {
             if (cave.visible) {
                 cave.surveys.forEach(survey => {
@@ -122,6 +124,7 @@ export function addGui(caves, gizmo, polygonMatLine, splayMatLine, textMatLine, 
     const stationNamesFolder = gui.addFolder( 'Station names' );
 
     stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
+        show.stationNames = val;
         caves.forEach(cave => {
             if (cave.visible) {
                 cave.surveys.forEach(survey => {

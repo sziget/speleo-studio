@@ -1,12 +1,13 @@
 import { classNames } from './external/classnames.js';
 import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
+import * as U from "./utils.js";
 
-export function renderSurveyPanel(caves) {
-    const mapSurvey = (survey) => { return { id: survey.name, name: survey.name, loadOnDemand: true, state: {checked: true } }; }
-    const mapCave = (cave) => { return { id: cave.name, name: cave.name, children: cave.surveys.map(mapSurvey), loadOnDemand: true, state: {checked: true }}; }
+export function renderSurveyPanel(caves, show, renderFn) {
+    const mapSurvey = (survey) => { return { id: U.randomAlphaNumbericString(8), name: survey.name, loadOnDemand: true, state: {checked: true, survey: survey } }; }
+    const mapCave = (cave) => { return { id: U.randomAlphaNumbericString(8), name: cave.name, children: cave.surveys.map(mapSurvey), loadOnDemand: true, state: {checked: true }}; }
     document.querySelector('#tree-panel').innerHTML = '';
-    const d = caves.map(mapCave);
+
     caves.forEach((cave) => {
         const tree = new InfiniteTree({
             el: document.querySelector('#tree-panel'),
@@ -23,6 +24,17 @@ export function renderSurveyPanel(caves) {
         
             if (event.target.className === 'checkbox') {
                 event.stopPropagation();
+                if (currentNode.state.survey !== undefined) {
+                    const value = ! currentNode.state.checked;
+                    const survey = currentNode.state.survey;
+                    survey.visible = value;
+                    survey.polygonSegments.visible = value && show.polygon;
+                    survey.splaySegments.visible = value && show.splays;
+                    survey.stationNames.visible = value && show.stationNames;
+                    
+                    renderFn();
+                }
+                
                 tree.checkNode(currentNode);
                 return;
             }
