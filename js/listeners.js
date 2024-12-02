@@ -54,7 +54,6 @@ export class EventListener {
 
                 this.currentCamera = this.currentCamera.isPerspectiveCamera ? this.cameraOrtho : this.cameraPersp;
                 this.currentCamera.position.copy(position);
-
                 this.orbit.object = this.currentCamera;
                 this.control.camera = this.currentCamera;
 
@@ -78,11 +77,13 @@ export class EventListener {
             case '+':
             case '=':
                 this.control.setSize(this.control.size + 0.1);
+                this.resizeFn();
                 break;
 
             case '-':
             case '_':
                 this.control.setSize(Math.max(this.control.size - 0.1, 0.1));
+                this.resizeFn();
                 break;
 
             case 'x':

@@ -11,7 +11,9 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as I from "./import.js";
 import * as L from "./listeners.js";
 import * as M from "./model.js";
-import { addGui } from "./gui.js"
+import * as P from "./panel.js";
+import * as U from "./utils.js";
+import { addGui } from "./gui.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo, gui;
@@ -58,9 +60,9 @@ function init() {
     const aspect = window.innerWidth / window.innerHeight;
     const frustumSize = 5;
 
-    cameraPersp = new THREE.PerspectiveCamera(50, aspect, 1, 500);
-    cameraOrtho = new THREE.OrthographicCamera(- frustumSize * aspect, frustumSize * aspect, frustumSize, - frustumSize, 0.1, 100);
-    currentCamera = cameraPersp;
+    cameraPersp = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
+    cameraOrtho = new THREE.OrthographicCamera(- frustumSize * aspect, frustumSize * aspect, frustumSize, - frustumSize, 0.1, 2000);
+    currentCamera = cameraOrtho;
 
     currentCamera.position.set(0, 0, -100);
     currentCamera.lookAt(0, 0, 0);
@@ -72,9 +74,7 @@ function init() {
     control = new TransformControls(currentCamera, renderer.domElement);
     control.addEventListener('change', render);
     control.addEventListener('dragging-changed', function (event) {
-
         orbit.enabled = !event.value;
-
     });
 
     const listener = new L.EventListener(control, orbit, currentCamera, cameraPersp, cameraOrtho, onWindowResize);
@@ -84,7 +84,9 @@ function init() {
     window.addEventListener('keyup', function (event) { listener.keyUpListener(event); });
 
     scene = new THREE.Scene();
-    scene.add(new THREE.GridHelper(100, 10, 0x888888, 0x444444));
+    const grid = new THREE.GridHelper(100, 10, 0x888888, 0x444444).rotateX(U.degreesToRads(90));
+    scene.add(grid);
+
 
     gizmo = control.getHelper();
     scene.add(gizmo);
@@ -108,17 +110,6 @@ function render() {
         );
     }
     renderer.render(scene, currentCamera);
-}
-
-function renderSurveyPanel(caves) {
-    const mapSurveys = (survey) => { return { id: survey.name, name: survey.name, loadOnDemand: true }; }
-    const mapCave = (cave) => { return { id: cave.name, name: cave.name, children: cave.surveys.map(mapSurveys), loadOnDemand: true }; }
-    document.querySelector('#tree-panel').innerHTML = '';
-    caves.forEach((cave) => new InfiniteTree({
-        el: document.querySelector('#tree-panel'),
-        data: mapCave(cave),
-        autoOpen: false
-    }));
 }
 
 function onWindowResize() {
@@ -176,7 +167,7 @@ function addToScene(stations, polygonSegments, splaySegments) {
     const fontsVisible = gui.folders[2].controllers.find((c) => c.property === 'show station names').getValue();
 
     stationNamesGroup.visible = fontsVisible;
-    
+
     group.add(stationNamesGroup);
     //scene.add(group); maybe needs to remove
     cavesObjectGroup.add(group);
@@ -192,7 +183,7 @@ function importPolygonFile(file) {
         const wholeFileInText = event.target.result;
         const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
         caves.push(cave);
-        renderSurveyPanel(caves);
+        P.renderSurveyPanel(caves);
     };
     reader.readAsText(file, "iso_8859-2");
 }
@@ -211,7 +202,7 @@ function importCsvFile(file) {
             const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, splaySegments);
             const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup)], true);
             caves.push(cave);
-            renderSurveyPanel(caves);
+            P.renderSurveyPanel(caves);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);

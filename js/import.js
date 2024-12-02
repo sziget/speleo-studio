@@ -49,7 +49,7 @@ export function getCaveFromPolygonFile(wholeFileInText, addToSceneFn) {
         do {
             surveyName = iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
             if (surveyName !== undefined) {
-                surveyName = surveyName.substring(9);
+                const surveyNameStr = surveyName.substring(13);
                 iterateUntil(lineIterator, (v) => v !== "Survey data");
                 lineIterator.next(); //From To ...
                 const surveyData = parseSurveyData(lineIterator);
@@ -58,7 +58,7 @@ export function getCaveFromPolygonFile(wholeFileInText, addToSceneFn) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
                 const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToSceneFn(stations, polygonSegments, []);
-                surveys.push(new M.Survey(surveyName, true, stations, lineSegmentsPolygon, [], stationNamesGroup));
+                surveys.push(new M.Survey(surveyNameStr, true, stations, lineSegmentsPolygon, [], stationNamesGroup));
             }
 
         } while (surveyName !== undefined)
