@@ -188,74 +188,11 @@ function addToScene(stations, polygonSegments, splaySegments) {
 
 function importPolygonFile(file) {
     const reader = new FileReader();
-    const iterateUntil = function (iterator, condition) {
-        var it;
-        do {
-            it = iterator.next();
-        } while (!it.done && condition(it.value[1]));
-
-        if (it.done) {
-            return undefined;
-        } else {
-            return it.value[1];
-        }
-    };
-
-    const parseSurveyData = function (iterator) {
-        var it;
-        const parseMyFloat = (str) => parseFloat(str.replace(',', '.'));
-        const surveyData = []
-        do {
-            it = iterator.next();
-            const parts = it.value[1].split(/\t|\s/);
-            if (parts.length > 10) {
-                surveyData.push([parts[0], parts[1], parseMyFloat(parts[2]), parseMyFloat(parts[3]), parseMyFloat(parts[4])]);
-            }
-        } while (!it.done && it.value[1] != '');
-
-        return surveyData;
-    };
-
     reader.onload = (event) => {
         const wholeFileInText = event.target.result;
-
-        if (wholeFileInText.startsWith("POLYGON Cave Surveying Software")) {
-            const lines = wholeFileInText.split(/\r\n|\n/);
-            const lineIterator = lines.entries();
-            iterateUntil(lineIterator, (v) => v !== "*** Project ***");
-            const caveNameResult = lineIterator.next();
-
-            if (!caveNameResult.value[1].startsWith("Project name:")) {
-                showError(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
-                return;
-            }
-
-            const projectName = caveNameResult.value[1].substring(13);
-            const surveys = []
-            const stationsGlobal = new Map();
-            var surveyName;
-            do {
-                surveyName = iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
-                if (surveyName !== undefined) {
-                    surveyName = surveyName.substring(9);
-                    iterateUntil(lineIterator, (v) => v !== "Survey data");
-                    lineIterator.next(); //From To ...
-                    const surveyData = parseSurveyData(lineIterator);
-                    const [stations, polygonSegments] = I.getStationsAndSplaysPolygon(surveyData, stationsGlobal);
-                    for (const [stationName, stationPosition] of stations) {
-                        stationsGlobal.set(stationName, stationPosition);
-                    }
-                    const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, []);
-                    surveys.push(new M.Survey(surveyName, true, stations, lineSegmentsPolygon, [], stationNamesGroup));
-                }
-
-            } while (surveyName !== undefined)
-
-            const cave = new M.Cave(projectName, surveys, true);
-            caves.push(cave);
-            renderSurveyPanel(caves);
-        }
-
+        const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
+        caves.push(cave);
+        renderSurveyPanel(caves);
     };
     reader.readAsText(file, "iso_8859-2");
 }
@@ -271,7 +208,6 @@ function importCsvFile(file) {
         dynamicTyping: true,
         complete: function (results) {
             const [stations, polygonSegments, splaySegments] = I.getStationsAndSplays(results.data);
-
             const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, splaySegments);
             const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup)], true);
             caves.push(cave);
