@@ -11,3 +11,19 @@ export class Vector {
     }
 }
 
+export class Survey {
+    constructor(name, stations, polygonSegments, splaySegments) {
+        this.name = name;
+        this.stations = stations;
+        this.polygonSegments = polygonSegments;
+        this.splaySegments = splaySegments;
+    }
+}
+
+export class Cave {
+    constructor(name, surveys) {
+        this.name = name;
+        this.surveys = surveys;
+    }
+}
+

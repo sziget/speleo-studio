@@ -1,14 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title>My first three.js app</title>
-		<style>
-			body { margin: 0; }
-			#info { position: absolute; top: 40px; text-align: center; z-index: 100; display:block; color: azure; background-color: black;background: black; }
-		</style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-        <script type="importmap">
+
+<head>
+	<meta charset="utf-8">
+	<title>Cave visualization</title>
+	<link rel="stylesheet" href="css/tree.css">
+	<style>
+		body {
+			margin: 0;
+		}
+
+		#info {
+			position: absolute;
+			
+			bottom: 100px;
+			text-align: center;
+			z-index: 100;
+			display: block;
+			color: azure;
+			background-color: black;
+			background: black;
+		}
+
+		#tree-panel {
+			width: 200px;
+			position: absolute;
+			top: 40px;
+			left: 30px;
+			text-align: left;
+			z-index: 100;
+			display: block;
+			color: azure;
+			background-color: black;
+			background: black;
+		}
+	</style>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+	<script src="js/tree.js"></script>
+	<script type="importmap">
             {
             "imports": {
                 "three": "https://cdn.jsdelivr.net/npm/three@v0.170.0/build/three.module.js",
@@ -16,17 +45,19 @@
             }
             }
         </script>
-	</head>
-	<body>
-        <div id="info">
-			"W" translate | "E" rotate | "R" scale | "+/-" adjust size<br />
-			"Q" toggle world/local space |  "Shift" snap to grid<br />
-			"X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled<br />
-			"Esc" reset current transform<br />
-			"C" toggle camera | "V" random zoom
-		</div>
-		<script type="module" src="main.js"></script>
-        <input type="file" id="fileInput" accept=".csv" />
-        <pre id="output"></pre>
-	</body>
+</head>
+
+<body>
+	<div id="tree-panel"></div>
+	<div id="info">
+		"W" translate | "E" rotate | "R" scale | "+/-" adjust size<br />
+		"Q" toggle world/local space | "Shift" snap to grid<br />
+		"X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled<br />
+		"Esc" reset current transform<br />
+		"C" toggle camera | "V" random zoom
+	</div>
+	<script type="module" src="main.js"></script>
+	<input type="file" id="fileInput" accept=".csv" />
+</body>
+
 </html>

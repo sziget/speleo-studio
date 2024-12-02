@@ -11,6 +11,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 import * as I from "./import.js";
 import * as L from "./listeners.js";
+import * as M from "./model.js";
 import { addGui } from "./gui.js"
 
 let cameraPersp, cameraOrtho, currentCamera;
@@ -18,6 +19,8 @@ let scene, renderer, control, orbit, gizmo;
 let gui, polygonLineMaterial, splayLineMaterial, textMaterial;
 let polygonSegments, lineSegmentsSplays;
 let stationFont, fontGroup;
+let caves = [];
+
 
 init();
 render();
@@ -100,6 +103,16 @@ function render() {
     renderer.render(scene, currentCamera);
 }
 
+function renderSurveyPanel(cave) {
+    const mapSurveys = (survey) => { return { id: survey.name, name: survey.name, loadOnDemand: true }; }
+    const mapCave = (cave) => { return { id: cave.name, name: cave.name, children: cave.surveys.map(mapSurveys), loadOnDemand: true }; }
+    const tree = new InfiniteTree({
+        el: document.querySelector('#tree-panel'),
+        data: mapCave(cave),
+        autoOpen: false
+    });
+}
+
 function onWindowResize() {
 
     const aspect = window.innerWidth / window.innerHeight;
@@ -166,8 +179,13 @@ function importCsvFile(file) {
         comments: "#",
         dynamicTyping: true,
         complete: function (results) {
-            const [stations, stationsPoints, splays] = I.getStationsAndSplays(results.data);
-            addToScene(stations, stationsPoints, splays);
+            const [stations, polygonSegments, splaySegments] = I.getStationsAndSplays(results.data);
+
+            addToScene(stations, polygonSegments, splaySegments);
+            const cave = new M.Cave(file.name, [new M.Survey('Polygon', stations, polygonSegments, splaySegments)]);
+            caves.push(cave);
+            console.log(cave);
+            renderSurveyPanel(cave);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);

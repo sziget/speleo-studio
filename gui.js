@@ -105,7 +105,7 @@ export function addGui(lineSegmentsPolygon, lineSegmentsSplays, gizmo, polygonMa
 
     });
 
-    const stationNamesFolder = gui.addFolder( 'Splays' );
+    const stationNamesFolder = gui.addFolder( 'Station names' );
 
     stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
         fontGroup.visible = val;
