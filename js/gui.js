@@ -1,29 +1,30 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(caves, show, gizmo, polygonMatLine, splayMatLine, textMatLine, renderFn) {
+export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayMatLine, textMatLine, sphereMaterial, renderFn) {
     const gui = new GUI();
-    
+
     const param = {
         'show gizmo': true
     };
 
     const polygonParam = {
-        
-        'show polygon': show.polygon,
+
+        'show polygon lines': show.polygon,
         'line color': polygonMatLine.color.getHex(),
         'world units': false,
         'width': 20,
-        'alphaToCoverage': true
+        'show station': show.spheres,
+        'station color': sphereMaterial.color.getHex(),
+        'station size': configuration.stationSphereRadius
     };
 
     const splayParam = {
-        
+
         'show splays': show.splays,
         'line color': splayMatLine.color.getHex(),
         'world units': false,
         'width': 10,
-        'alphaToCoverage': true
     };
 
     const stationNamesParam = {
@@ -37,9 +38,9 @@ export function addGui(caves, show, gizmo, polygonMatLine, splayMatLine, textMat
         renderFn();
     });
 
-    const polygonFolder = gui.addFolder( 'Polygon' );
+    const polygonFolder = gui.addFolder('Polygon');
 
-    polygonFolder.add(polygonParam, 'show polygon').onChange(function (val) {
+    polygonFolder.add(polygonParam, 'show polygon lines').onChange(function (val) {
         show.polygon = val;
         caves.forEach(cave => {
             if (cave.visible) {
@@ -66,19 +67,45 @@ export function addGui(caves, show, gizmo, polygonMatLine, splayMatLine, textMat
     });
 
     polygonFolder.add(polygonParam, 'width', 1, 50).onChange(function (val) {
-
         polygonMatLine.linewidth = val / 10;
         renderFn();
-
     });
 
-    polygonFolder.add(polygonParam, 'alphaToCoverage').onChange(function (val) {
-        polygonMatLine.alphaToCoverage = val;
+    polygonFolder.add(polygonParam, 'show station').onChange(function (val) {
+        show.polygon = val;
+        caves.forEach(cave => {
+            if (cave.visible) {
+                cave.surveys.forEach(survey => {
+                    if (survey.visible) {
+                        survey.stationSpheres.visible = val;
+                    }
+                })
+            }
+        });
         renderFn();
-
     });
 
-    const splaysFolder = gui.addFolder( 'Splays' );
+    polygonFolder.addColor(polygonParam, 'station color').onChange(function (val) {
+        sphereMaterial.color = new THREE.Color(val);
+        renderFn();
+    });
+
+    polygonFolder.add(polygonParam, 'station size', 1, 50).step(1).onChange(function (val) {
+        configuration.stationSphereRadius = val;
+        caves.forEach(cave => {
+            if (cave.visible) {
+                cave.surveys.forEach(survey => {
+                    survey.stationSpheres.children.forEach((sphereMesh) => {
+                        sphereMesh.geometry.dispose(); 
+                        sphereMesh.geometry = new THREE.SphereGeometry( configuration.stationSphereRadius / 10.0 , 5, 5 );
+                    });
+                });
+            }
+        });
+        renderFn();
+    });
+
+    const splaysFolder = gui.addFolder('Splays');
 
     splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
         show.splays = val;
@@ -114,14 +141,7 @@ export function addGui(caves, show, gizmo, polygonMatLine, splayMatLine, textMat
 
     });
 
-    splaysFolder.add(splayParam, 'alphaToCoverage').onChange(function (val) {
-
-        splayMatLine.alphaToCoverage = val;
-        renderFn();
-
-    });
-
-    const stationNamesFolder = gui.addFolder( 'Station names' );
+    const stationNamesFolder = gui.addFolder('Station names');
 
     stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
         show.stationNames = val;

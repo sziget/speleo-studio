@@ -57,8 +57,8 @@ export function getCaveFromPolygonFile(wholeFileInText, addToSceneFn) {
                 for (const [stationName, stationPosition] of stations) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
-                const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToSceneFn(stations, polygonSegments, []);
-                surveys.push(new M.Survey(surveyNameStr, true, stations, lineSegmentsPolygon, [], stationNamesGroup));
+                const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup] = addToSceneFn(stations, polygonSegments, []);
+                surveys.push(new M.Survey(surveyNameStr, true, stations, lineSegmentsPolygon, [], stationNamesGroup, stationSpheresGroup));
             }
 
         } while (surveyName !== undefined)

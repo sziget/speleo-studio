@@ -12,13 +12,14 @@ export class Vector {
 }
 
 export class Survey {
-    constructor(name, visible, stations, polygonSegments, splaySegments, stationNames) {
+    constructor(name, visible, stations, polygonSegments, splaySegments, stationNames, stationSpheres) {
         this.name = name;
         this.visible = visible;
         this.stations = stations;
         this.polygonSegments = polygonSegments;
         this.splaySegments = splaySegments;
         this.stationNames = stationNames;
+        this.stationSpheres = stationSpheres;
     }
 }
 

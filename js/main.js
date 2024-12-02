@@ -17,17 +17,22 @@ import { addGui } from "./gui.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo, gui;
-let polygonLineMaterial, splayLineMaterial, textMaterial;
+let polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial;
 let show = {
     stationNames: false, 
     polygon: true,
-    splays: true
-}; 
+    splays: true,
+    spheres: true
+};
+
+let configuration = {
+    stationSphereRadius: 1
+};
 
 let stationFont;
 let caves = [];
 let cavesObjectGroup = new THREE.Group();
-let cavesStationsGroup;
+let cavesStationNamesGroup;
 
 init();
 render();
@@ -56,6 +61,8 @@ function init() {
         //opacity: 0.9,
         side: THREE.DoubleSide
     });
+
+    sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -100,15 +107,15 @@ function init() {
     loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
         stationFont = font;
     });
-    cavesStationsGroup = [];
-    gui = addGui(caves, show, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, render);
+    cavesStationNamesGroup = [];
+    gui = addGui(caves, show, configuration, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial, render);
 
 }
 
 
 function render() {
-    if (cavesStationsGroup !== undefined) {
-        cavesStationsGroup.forEach(
+    if (cavesStationNamesGroup !== undefined) {
+        cavesStationNamesGroup.forEach(
             group => group.children.forEach(fontMesh =>
                 fontMesh.lookAt(currentCamera.position)
             )
@@ -151,6 +158,15 @@ function addStationName(stationName, position, fontGroup) {
     fontGroup.add(textMesh);
 }
 
+function addStationSpheres(position, sphereGroup) {
+    const geometry = new THREE.SphereGeometry( configuration.stationSphereRadius / 10.0 , 5, 5 );
+    const sphere = new THREE.Mesh( geometry, sphereMaterial); 
+    sphere.position.x = position.x;
+    sphere.position.y = position.y;
+    sphere.position.z = position.z;
+    sphereGroup.add( sphere );
+}
+
 function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
@@ -165,20 +181,25 @@ function addToScene(stations, polygonSegments, splaySegments) {
     group.add(lineSegmentsSplays);
 
     const stationNamesGroup = new THREE.Group();
+    const stationSpheresGroup = new THREE.Group();
     for (const [stationName, stationPosition] of stations) {
         addStationName(stationName, stationPosition, stationNamesGroup);
+        addStationSpheres(stationPosition, stationSpheresGroup);
     }
-    cavesStationsGroup.push(stationNamesGroup);
+    
+    cavesStationNamesGroup.push(stationNamesGroup);
 
     stationNamesGroup.visible = show.stationNames;
+    stationSpheresGroup.visible = show.spheres;
 
     group.add(stationNamesGroup);
+    group.add(stationSpheresGroup);
     //scene.add(group); maybe needs to remove
     cavesObjectGroup.add(group);
     scene.add(cavesObjectGroup);
     control.attach(cavesObjectGroup);
     render();
-    return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup];
+    return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup];
 }
 
 function importPolygonFile(file) {
@@ -203,8 +224,8 @@ function importCsvFile(file) {
         dynamicTyping: true,
         complete: function (results) {
             const [stations, polygonSegments, splaySegments] = I.getStationsAndSplays(results.data);
-            const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup] = addToScene(stations, polygonSegments, splaySegments);
-            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup)], true);
+            const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup] = addToScene(stations, polygonSegments, splaySegments);
+            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup)], true);
             caves.push(cave);
             P.renderSurveyPanel(caves, show, render);
         },

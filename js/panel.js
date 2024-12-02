@@ -4,8 +4,8 @@ import { escapeHtml } from "./external/escape-html.js";
 import * as U from "./utils.js";
 
 export function renderSurveyPanel(caves, show, renderFn) {
-    const mapSurvey = (survey) => { return { id: U.randomAlphaNumbericString(8), name: survey.name, loadOnDemand: true, state: {checked: true, survey: survey } }; }
-    const mapCave = (cave) => { return { id: U.randomAlphaNumbericString(8), name: cave.name, children: cave.surveys.map(mapSurvey), loadOnDemand: true, state: {checked: true }}; }
+    const mapSurvey = (survey) => { return { id: U.randomAlphaNumbericString(8), name: survey.name, loadOnDemand: true, state: {checked: survey.visible, survey: survey } }; }
+    const mapCave = (cave) => { return { id: U.randomAlphaNumbericString(8), name: cave.name, children: cave.surveys.map(mapSurvey), loadOnDemand: true, state: {checked: cave.visible, cave: cave }}; }
     document.querySelector('#tree-panel').innerHTML = '';
 
     caves.forEach((cave) => {
@@ -24,14 +24,28 @@ export function renderSurveyPanel(caves, show, renderFn) {
         
             if (event.target.className === 'checkbox') {
                 event.stopPropagation();
+                const value = ! currentNode.state.checked;
+
                 if (currentNode.state.survey !== undefined) {
-                    const value = ! currentNode.state.checked;
                     const survey = currentNode.state.survey;
                     survey.visible = value;
                     survey.polygonSegments.visible = value && show.polygon;
                     survey.splaySegments.visible = value && show.splays;
                     survey.stationNames.visible = value && show.stationNames;
-                    
+                    survey.stationSpheres.visible = value && show.spheres;
+                    renderFn();
+                }
+
+                if (currentNode.state.cave !== undefined) {
+                    const cave = currentNode.state.cave;
+                    cave.visible = value;
+                    cave.surveys.forEach((survey) => {
+                        survey.visible = value;
+                        survey.polygonSegments.visible = value && show.polygon;
+                        survey.splaySegments.visible = value && show.splays;
+                        survey.stationNames.visible = value && show.stationNames;
+                        survey.stationSpheres.visible = value && show.spheres;
+                    });
                     renderFn();
                 }
                 
