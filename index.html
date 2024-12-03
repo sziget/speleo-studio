@@ -6,6 +6,7 @@
 	<title>Cave visualization</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/tree.css">
+	<link rel="stylesheet" href="css/navbar.css">
 	<style>
 		body {
 			margin: 0;
@@ -13,8 +14,7 @@
 
 		#help {
 			position: absolute;
-
-			bottom: 10px;
+			bottom: 100px;
 			text-align: center;
 			z-index: 100;
 			display: block;
@@ -56,7 +56,7 @@
 			border-style: solid;
 			border-color: white;
 			border-width: 3px;
-			border-radius:20px;
+			border-radius: 20px;
 			background-color: #f44336;
 			font-size: 16px;
 			text-align: center;
@@ -64,7 +64,7 @@
 
 		.file-upload {
 			position: absolute;
-			top: 10px;
+			bottom: 10px;
 			text-align: center;
 			z-index: 100;
 			display: block;
@@ -83,6 +83,7 @@
 			background-color: black;
 			background: black;
 		}
+
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 	<script src="js/external/tree.js"></script>
@@ -110,7 +111,7 @@
 		<input type="file" id="topodroidInput" accept=".csv" />
 		<input type="file" id="polygonInput" accept=".cave" />
 	</div>
-	<div id="menu" style="position:absolute;display:none;background-color:red">
+	<div id="contextmenu" style="position:absolute;display:none;background-color:red">
 		<span color="red">menu</span>
 		<br>
 		<button id="getdistance">
@@ -125,6 +126,9 @@
 		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
 		<p id="errorpanelcontent"></p>
 	</div>
+	<div id="navbarcontainer" , class="topnavbar"></div>
+
+
 </body>
 
 </html>

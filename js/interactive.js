@@ -111,13 +111,13 @@ export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, mate
 }
 
 function showContextMenu(left, top) {
-    menu.style.left = left + "px";
-    menu.style.top = top + "px";
-    menu.style.display = "";
+    contextmenu.style.left = left + "px";
+    contextmenu.style.top = top + "px";
+    contextmenu.style.display = "";
 }
 
 function hideContextMenu() {
-    menu.style.display = "none";
+    contextmenu.style.display = "none";
 }
 
 function showDistancePanel(fromName, toName, diffVector, left, top, lineRemoveFn) {

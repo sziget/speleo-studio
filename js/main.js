@@ -14,7 +14,7 @@ import * as P from "./panel.js";
 import * as U from "./utils.js";
 import * as A from "./interactive.js";
 import * as MAT from "./materials.js";
-
+import { buildNavbar, addNavbarClickListener } from "./navbar.js";
 
 import { addGui } from "./gui.js";
 
@@ -42,7 +42,6 @@ init();
 render();
 
 function init() {
-
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -132,18 +131,39 @@ function init() {
 
     gui = addGui(caves, show, configuration, gizmo, MAT.materials, render);
 
+    buildNavbar(document.getElementById("navbarcontainer"), [
+        {
+            "name": "File", elements: [
+                { "name": "Open TopoDroid file", "click": function () { topodroidInput.click(); } },
+                { "name": "Open Polygon file", "click": function () { polygonInput.click(); } }
+            ]
+        },
+        {
+            "name": "View", elements: [
+                { "name": "Plan", "click": function () { 
+                    currentCamera.position.set(0, 0, 100);
+                    currentCamera.lookAt(0, 0, 0);
+                    render(); } },
+                { "name": "Profile", "click": function () { 
+                    currentCamera.position.set(0, -100, 0); 
+                    currentCamera.lookAt(0, 0, 0);
+                    render(); } }
+            ]
+        }
+    ]);
+    addNavbarClickListener();
+
 }
 
 
 function render() {
-    if (cavesStationNamesGroup !== undefined) {
+    if (cavesStationNamesGroup !== undefined && show.stationNames) {
         cavesStationNamesGroup.forEach(
             group => group.children.forEach(fontMesh =>
                 fontMesh.lookAt(currentCamera.position)
             )
         );
     }
-
     renderer.render(scene, currentCamera);
 }
 
