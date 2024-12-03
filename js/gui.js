@@ -97,7 +97,7 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
                 cave.surveys.forEach(survey => {
                     survey.stationSpheres.children.forEach((sphereMesh) => {
                         sphereMesh.geometry.dispose(); 
-                        sphereMesh.geometry = new THREE.SphereGeometry( configuration.stationSphereRadius / 10.0 , 100, 100 );
+                        sphereMesh.geometry = new THREE.SphereGeometry( configuration.stationSphereRadius / 10.0 , 5, 5 );
                     });
                 });
             }

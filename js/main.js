@@ -209,7 +209,7 @@ function addStationName(stationName, position, fontGroup) {
 }
 
 function addStationSpheres(stationName, position, sphereGroup) {
-    const geometry = new THREE.SphereGeometry(configuration.stationSphereRadius / 10.0, 100, 100);
+    const geometry = new THREE.SphereGeometry(configuration.stationSphereRadius / 10.0, 5, 5);
     const sphere = new THREE.Mesh(geometry, sphereMaterial);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
