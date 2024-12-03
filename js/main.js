@@ -43,8 +43,6 @@ render();
 
 function init() {
 
-
-
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -57,7 +55,7 @@ function init() {
     cameraOrtho = new THREE.OrthographicCamera(- frustumSize * aspect, frustumSize * aspect, frustumSize, - frustumSize, 0.1, 2000);
     currentCamera = cameraOrtho;
 
-    currentCamera.position.set(0, 0, -100);
+    currentCamera.position.set(0, 0, 100);
     currentCamera.lookAt(0, 0, 0);
 
     orbit = new OrbitControls(currentCamera, renderer.domElement);

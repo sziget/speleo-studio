@@ -23,7 +23,7 @@ export function calcualteDistanceListener(event, rect, materials, scene, renderF
         line.computeLineDistances();
         scene.add(line);
 
-        showDistancePanel(diff, left, top, function() { scene.remove(line); renderFn(); });
+        showDistancePanel(selectedStation.name, selectedStationForContext.name, diff, left, top, function() { scene.remove(line); renderFn(); });
 
         selectedStationForContext.material = materials.sphere;
         selectedStationForContext = undefined;
@@ -120,7 +120,7 @@ function hideContextMenu() {
     menu.style.display = "none";
 }
 
-function showDistancePanel(diffVector, left, top, lineRemoveFn) {
+function showDistancePanel(fromName, toName, diffVector, left, top, lineRemoveFn) {
     infopanel.children.namedItem("close").onclick = function() {
         lineRemoveFn();
         infopanel.style.display='none';
@@ -130,6 +130,8 @@ function showDistancePanel(diffVector, left, top, lineRemoveFn) {
     infopanel.style.top = top + "px";
     infopanel.style.display = "block";
     infopanelcontent.innerHTML = `
+    From: ${fromName}<br>
+    To: ${toName}<br>
     X distance: ${diffVector.x}<br>
     Y distance: ${diffVector.y}<br>
     Z distance: ${diffVector.z}<br>

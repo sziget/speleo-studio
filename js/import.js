@@ -84,7 +84,7 @@ function getStationsAndSplaysPolygon(surveyData, stationsFromPreviousSurveys) {
         const distance = row[2];
         const azimuth = row[3];
         const clino = row[4];
-        const polarVector = U.fromPolar(distance, U.degreesToRads(90 + azimuth), U.degreesToRads(clino));
+        const polarVector = U.fromPolar(distance, U.degreesToRads(azimuth), U.degreesToRads(clino));
         const stationFrom = stations.has(from) ? stations.get(from) : stationsFromPreviousSurveys.get(from);
         const stationTo = new M.Vector(stationFrom.x, stationFrom.y, stationFrom.z).add(polarVector);
 
@@ -117,7 +117,7 @@ export function getStationsAndSplays(csvData) {
         const distance = row[2];
         const azimuth = row[3];
         const clino = row[4];
-        const polarVector = U.fromPolar(distance, U.degreesToRads(90 + azimuth), U.degreesToRads(clino));
+        const polarVector = U.fromPolar(distance, U.degreesToRads(azimuth), U.degreesToRads(clino));
         const stationFrom = stations.get(from);
         const stationTo = new M.Vector(stationFrom.x, stationFrom.y, stationFrom.z).add(polarVector);
 
