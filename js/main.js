@@ -103,6 +103,7 @@ function init() {
                 event,
                 renderer.domElement.getBoundingClientRect(),
                 MAT.materials,
+                scene,
                 render
             );
         }, false);

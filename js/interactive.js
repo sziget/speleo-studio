@@ -6,7 +6,7 @@ let pointer = new THREE.Vector2();
 let selectedStation, selectedStationForContext;
 let raycaster = new THREE.Raycaster();
 
-export function calcualteDistanceListener(event, rect, materials, renderFn) {
+export function calcualteDistanceListener(event, rect, materials, scene, renderFn) {
     const left = event.clientX - rect.left;
     const top = event.clientY - rect.top;
 
@@ -15,9 +15,15 @@ export function calcualteDistanceListener(event, rect, materials, renderFn) {
     } else {
         const from = selectedStation.position.clone();
         const to = selectedStationForContext.position.clone();
-        const diff = to.sub(from);
+        const diff = to.clone().sub(from);
         hideContextMenu();
-        showDistancePanel(diff, left, top);
+
+        const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
+        const line = new THREE.Line(geometry, materials.distanceLine);
+        line.computeLineDistances();
+        scene.add(line);
+
+        showDistancePanel(diff, left, top, function() { scene.remove(line); renderFn(); });
 
         selectedStationForContext.material = materials.sphere;
         selectedStationForContext = undefined;
@@ -114,7 +120,12 @@ function hideContextMenu() {
     menu.style.display = "none";
 }
 
-function showDistancePanel(diffVector, left, top) {
+function showDistancePanel(diffVector, left, top, lineRemoveFn) {
+    infopanel.children.namedItem("close").onclick = function() {
+        lineRemoveFn();
+        infopanel.style.display='none';
+        return false;
+    }
     infopanel.style.left = left + "px";
     infopanel.style.top = top + "px";
     infopanel.style.display = "block";
