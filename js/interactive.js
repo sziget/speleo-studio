@@ -1,23 +1,30 @@
 import * as THREE from 'three';
 
+import * as PANELS from "./panels.js";
+
 let pointer = new THREE.Vector2();
 let selectedStation, selectedStationForContext;
 let raycaster = new THREE.Raycaster();
 
 export function calcualteDistanceListener(event, rect, sphereMaterial, renderFn) {
-    const from = selectedStation.position.clone();
-    const to = selectedStationForContext.position.clone();
-    const diff = to.sub(from);
-    hideContextMenu();
     const left = event.clientX - rect.left;
     const top = event.clientY - rect.top;
-    showDistancePanel(diff, left, top);
-    
-    selectedStationForContext.material = sphereMaterial;
-    selectedStationForContext = undefined;
-    selectedStation.material = sphereMaterial;
-    selectedStation = undefined;
-    renderFn();
+
+    if (selectedStation === undefined) {
+        PANELS.showErrorPanel("You should select the starting point for distance measurement", left, top);
+    } else {
+        const from = selectedStation.position.clone();
+        const to = selectedStationForContext.position.clone();
+        const diff = to.sub(from);
+        hideContextMenu();
+        showDistancePanel(diff, left, top);
+
+        selectedStationForContext.material = sphereMaterial;
+        selectedStationForContext = undefined;
+        selectedStation.material = sphereMaterial;
+        selectedStation = undefined;
+        renderFn();
+    }
 }
 
 export function onPointerMove(event) {

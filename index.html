@@ -25,6 +25,7 @@
 			float: right;
 			display: inline-block;
 			padding: 2px 5px;
+			transition: 0.3s;
 		}
 
 		#close:hover {
@@ -36,6 +37,7 @@
 		}
 
 		#infopanel {
+			padding: 10px;
 			position: absolute;
 			display: none;
 			color: azure;
@@ -44,6 +46,20 @@
 			border-color: coral;
 			border-width: 1px;
 			background-color: rgb(63, 53, 53);
+		}
+
+		#errorpanel {
+			position: absolute;
+			display: none;
+			color: wite;
+			padding: 10px;
+			border-style: solid;
+			border-color: white;
+			border-width: 3px;
+			border-radius:20px;
+			background-color: #f44336;
+			font-size: 16px;
+			text-align: center;
 		}
 
 		.file-upload {
@@ -104,6 +120,10 @@
 	<div id="infopanel">
 		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
 		<p id="infopanelcontent"></p>
+	</div>
+	<div id="errorpanel">
+		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
+		<p id="errorpanelcontent"></p>
 	</div>
 </body>
 
