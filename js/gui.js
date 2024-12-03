@@ -1,7 +1,7 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayMatLine, textMatLine, sphereMaterial, renderFn) {
+export function addGui(caves, show, configuration, gizmo, materials, renderFn) {
     const gui = new GUI();
 
     const param = {
@@ -11,25 +11,25 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
     const polygonParam = {
 
         'show polygon lines': show.polygon,
-        'line color': polygonMatLine.color.getHex(),
+        'line color': materials.polygon.color.getHex(),
         'world units': false,
         'width': 20,
         'show station': show.spheres,
-        'station color': sphereMaterial.color.getHex(),
+        'station color': materials.sphere.color.getHex(),
         'station size': configuration.stationSphereRadius
     };
 
     const splayParam = {
 
         'show splays': show.splays,
-        'line color': splayMatLine.color.getHex(),
+        'line color': materials.splay.color.getHex(),
         'world units': false,
         'width': 10,
     };
 
     const stationNamesParam = {
         'show station names': show.stationNames,
-        'font color': textMatLine.color.getHex(),
+        'font color': materials.text.color.getHex(),
 
     }
 
@@ -55,19 +55,19 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
     });
 
     polygonFolder.addColor(polygonParam, 'line color').onChange(function (val) {
-        polygonMatLine.color = new THREE.Color(val);
+        materials.polygon.color = new THREE.Color(val);
         renderFn();
     });
 
     polygonFolder.add(polygonParam, 'world units').onChange(function (val) {
-        polygonMatLine.worldUnits = val;
-        polygonMatLine.needsUpdate = true;
+        materials.polygon.worldUnits = val;
+        materials.polygon.needsUpdate = true;
         renderFn();
 
     });
 
     polygonFolder.add(polygonParam, 'width', 1, 50).onChange(function (val) {
-        polygonMatLine.linewidth = val / 10;
+        materials.polygon.linewidth = val / 10;
         renderFn();
     });
 
@@ -86,7 +86,7 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
     });
 
     polygonFolder.addColor(polygonParam, 'station color').onChange(function (val) {
-        sphereMaterial.color = new THREE.Color(val);
+        materials.sphere.color = new THREE.Color(val);
         renderFn();
     });
 
@@ -122,21 +122,21 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
     });
 
     splaysFolder.addColor(splayParam, 'line color').onChange(function (val) {
-        splayMatLine.color = new THREE.Color(val);
+        materials.splay.color = new THREE.Color(val);
         renderFn();
     });
 
     splaysFolder.add(splayParam, 'world units').onChange(function (val) {
 
-        splayMatLine.worldUnits = val;
-        splayMatLine.needsUpdate = true;
+        materials.splay.worldUnits = val;
+        materials.splay.needsUpdate = true;
         renderFn();
 
     });
 
     splaysFolder.add(splayParam, 'width', 1, 30).onChange(function (val) {
 
-        splayMatLine.linewidth = val / 10;
+        materials.splay.linewidth = val / 10;
         renderFn();
 
     });
@@ -158,7 +158,7 @@ export function addGui(caves, show, configuration, gizmo, polygonMatLine, splayM
     });
 
     stationNamesFolder.addColor(stationNamesParam, 'font color').onChange(function (val) {
-        textMatLine.color = new THREE.Color(val);
+        materials.text.color = new THREE.Color(val);
         renderFn();
     });
 

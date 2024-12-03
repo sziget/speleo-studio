@@ -6,7 +6,7 @@ let pointer = new THREE.Vector2();
 let selectedStation, selectedStationForContext;
 let raycaster = new THREE.Raycaster();
 
-export function calcualteDistanceListener(event, rect, sphereMaterial, renderFn) {
+export function calcualteDistanceListener(event, rect, materials, renderFn) {
     const left = event.clientX - rect.left;
     const top = event.clientY - rect.top;
 
@@ -19,9 +19,9 @@ export function calcualteDistanceListener(event, rect, sphereMaterial, renderFn)
         hideContextMenu();
         showDistancePanel(diff, left, top);
 
-        selectedStationForContext.material = sphereMaterial;
+        selectedStationForContext.material = materials.sphere;
         selectedStationForContext = undefined;
-        selectedStation.material = sphereMaterial;
+        selectedStation.material = materials.sphere;
         selectedStation = undefined;
         renderFn();
     }
@@ -31,32 +31,33 @@ export function onPointerMove(event) {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
-export function onClick(event, cavesStationSpheresGroup, currentCamera, sphereMaterial, selectedSphereMaterial, renderFn) {
+
+export function onClick(event, cavesStationSpheresGroup, currentCamera, materials, renderFn) {
     if (cavesStationSpheresGroup !== undefined) {
         raycaster.setFromCamera(pointer, currentCamera);
         const intersects = raycaster.intersectObjects(cavesStationSpheresGroup);
 
         if (intersects.length) {
-            const intersectedObject = intersects[0].object;
+            const intersectedObject = intersects[0].object; // first intersected object
 
             if (intersectedObject === selectedStation) {
-                intersectedObject.material = sphereMaterial;
+                intersectedObject.material = materials.sphere;
                 selectedStation = undefined;
             } else {
                 if (selectedStation !== undefined) {
-                    selectedStation.material = sphereMaterial;
+                    selectedStation.material = materials.sphere;
                 }
 
                 if (selectedStationForContext === intersectedObject) {
                     hideContextMenu();
                 }
-                intersectedObject.material = selectedSphereMaterial;
+                intersectedObject.material = materials.selectedSphere;
                 selectedStation = intersectedObject;
             }
 
 
         } else if (selectedStation !== undefined) {
-            selectedStation.material = sphereMaterial;
+            selectedStation.material = materials.sphere;
             selectedStation = undefined;
         }
 
@@ -65,7 +66,7 @@ export function onClick(event, cavesStationSpheresGroup, currentCamera, sphereMa
     }
 }
 
-export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, sphereMaterial, selectedSphereMaterial, rect, renderFn) {
+export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, materials, rect, renderFn) {
     event.preventDefault();
     var rightclick;
     if (!event) var event = window.event;
@@ -82,17 +83,18 @@ export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, sphe
             const intersectedObject = intersects[0].object;
             if (intersectedObject === selectedStation) {
                 if (selectedStationForContext !== undefined) {
-                    selectedStationForContext.material = sphereMaterial;
+                    selectedStationForContext.material = materials.sphere;
                     showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
                 }
                 selectedStationForContext = intersectedObject;
+                selectedStationForContext.material = materials.selectedContextSphere;
                 selectedStation = undefined;
             } else {
                 if (selectedStationForContext !== undefined) {
-                    selectedStationForContext.material = sphereMaterial;
+                    selectedStationForContext.material = materials.sphere;
                 }
                 selectedStationForContext = intersectedObject;
-                intersectedObject.material = selectedSphereMaterial;
+                intersectedObject.material = materials.selectedContextSphere;
                 showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
             }
 

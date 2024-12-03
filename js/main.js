@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';
 
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
@@ -14,12 +13,14 @@ import * as M from "./model.js";
 import * as P from "./panel.js";
 import * as U from "./utils.js";
 import * as A from "./interactive.js";
+import * as MAT from "./materials.js";
+
 
 import { addGui } from "./gui.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo, gui;
-let polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial, selectedSphereMaterial;
+
 let show = {
     stationNames: false,
     polygon: true,
@@ -42,31 +43,7 @@ render();
 
 function init() {
 
-    polygonLineMaterial = new LineMaterial({
-        color: 0xff0000,
-        linewidth: 1, // in world units with size attenuation, pixels otherwise
-        worldUnits: false,
-        vertexColors: false,
-        alphaToCoverage: false,
-    });
 
-    splayLineMaterial = new LineMaterial({
-        color: 0x00ffff,
-        linewidth: 1, // in world units with size attenuation, pixels otherwise
-        worldUnits: false,
-        vertexColors: false,
-        alphaToCoverage: false,
-    });
-
-    textMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: false,
-        //opacity: 0.9,
-        side: THREE.DoubleSide
-    });
-
-    sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    selectedSphereMaterial = new THREE.MeshBasicMaterial({ color: 0xF00FFF });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -105,8 +82,7 @@ function init() {
                 event,
                 cavesStationSpheresGroup,
                 currentCamera,
-                sphereMaterial,
-                selectedSphereMaterial,
+                MAT.materials,
                 render
             );
         }, false);
@@ -116,8 +92,7 @@ function init() {
                 event,
                 cavesStationSpheresGroup,
                 currentCamera,
-                sphereMaterial,
-                selectedSphereMaterial,
+                MAT.materials,
                 renderer.domElement.getBoundingClientRect(),
                 render
             );
@@ -127,7 +102,7 @@ function init() {
             A.calcualteDistanceListener(
                 event,
                 renderer.domElement.getBoundingClientRect(),
-                sphereMaterial,
+                MAT.materials,
                 render
             );
         }, false);
@@ -156,7 +131,7 @@ function init() {
 
     cavesStationNamesGroup = [];
 
-    gui = addGui(caves, show, configuration, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial, render);
+    gui = addGui(caves, show, configuration, gizmo, MAT.materials, render);
 
 }
 
@@ -200,7 +175,7 @@ function addStationName(stationName, position, fontGroup) {
     const xMid = - 0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
     textGeometry.translate(xMid, 0, 0);
 
-    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    const textMesh = new THREE.Mesh(textGeometry, MAT.materials.text);
     textMesh.lookAt(currentCamera.position)
     textMesh.position.x = position.x;
     textMesh.position.y = position.y;
@@ -210,7 +185,7 @@ function addStationName(stationName, position, fontGroup) {
 
 function addStationSpheres(stationName, position, sphereGroup) {
     const geometry = new THREE.SphereGeometry(configuration.stationSphereRadius / 10.0, 5, 5);
-    const sphere = new THREE.Mesh(geometry, sphereMaterial);
+    const sphere = new THREE.Mesh(geometry, MAT.materials.sphere);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
     sphere.position.z = position.z;
@@ -222,12 +197,12 @@ function addStationSpheres(stationName, position, sphereGroup) {
 function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
-    const lineSegmentsPolygon = new LineSegments2(geometryStations, polygonLineMaterial);
+    const lineSegmentsPolygon = new LineSegments2(geometryStations, MAT.materials.polygon);
     lineSegmentsPolygon.visible = show.polygon;
 
     const splaysGeometry = new LineSegmentsGeometry();
     splaysGeometry.setPositions(splaySegments);
-    const lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMaterial);
+    const lineSegmentsSplays = new LineSegments2(splaysGeometry, MAT.materials.splay);
     lineSegmentsSplays.visible = show.splays;
     const group = new THREE.Group();
 
