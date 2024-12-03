@@ -11,10 +11,44 @@
 			margin: 0;
 		}
 
-		#info {
+		#help {
 			position: absolute;
-			
+
 			bottom: 10px;
+			text-align: center;
+			z-index: 100;
+			display: block;
+			color: azure;
+		}
+
+		#close {
+			float: right;
+			display: inline-block;
+			padding: 2px 5px;
+		}
+
+		#close:hover {
+			float: right;
+			display: inline-block;
+			padding: 2px 5px;
+			background: #ccc;
+			color: black;
+		}
+
+		#infopanel {
+			position: absolute;
+			display: none;
+			color: azure;
+			width: 300px;
+			border-style: solid;
+			border-color: coral;
+			border-width: 1px;
+			background-color: rgb(63, 53, 53);
+		}
+
+		.file-upload {
+			position: absolute;
+			top: 10px;
 			text-align: center;
 			z-index: 100;
 			display: block;
@@ -24,7 +58,7 @@
 		#tree-panel {
 			width: 250px;
 			position: absolute;
-			top: 40px;
+			top: 80px;
 			left: 0px;
 			text-align: left;
 			z-index: 100;
@@ -48,7 +82,7 @@
 
 <body>
 	<div id="tree-panel"></div>
-	<div id="info">
+	<div id="help">
 		"W" translate | "E" rotate | "R" scale | "+/-" adjust size<br />
 		"Q" toggle world/local space | "Shift" snap to grid<br />
 		"X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled<br />
@@ -56,8 +90,21 @@
 		"C" toggle camera | "V" random zoom
 	</div>
 	<script type="module" src="js/main.js"></script>
-	<input type="file" id="topodroidInput" accept=".csv" />
-	<input type="file" id="polygonInput" accept=".cave" />
+	<div class="file-upload">
+		<input type="file" id="topodroidInput" accept=".csv" />
+		<input type="file" id="polygonInput" accept=".cave" />
+	</div>
+	<div id="menu" style="position:absolute;display:none;background-color:red">
+		<span color="red">menu</span>
+		<br>
+		<button id="getdistance">
+			get distance to here
+		</button>
+	</div>
+	<div id="infopanel">
+		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
+		<p id="infopanelcontent"></p>
+	</div>
 </body>
 
 </html>

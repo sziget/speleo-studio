@@ -13,15 +13,17 @@ import * as L from "./listeners.js";
 import * as M from "./model.js";
 import * as P from "./panel.js";
 import * as U from "./utils.js";
+import * as A from "./interactive.js";
+
 import { addGui } from "./gui.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, control, orbit, gizmo, gui;
-let polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial;
+let polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial, selectedSphereMaterial;
 let show = {
-    stationNames: false, 
+    stationNames: false,
     polygon: true,
-    splays: true,
+    splays: false,
     spheres: true
 };
 
@@ -31,6 +33,7 @@ let configuration = {
 
 let stationFont;
 let caves = [];
+let cavesStationSpheresGroup = [];
 let cavesObjectGroup = new THREE.Group();
 let cavesStationNamesGroup;
 
@@ -62,7 +65,8 @@ function init() {
         side: THREE.DoubleSide
     });
 
-    sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+    sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    selectedSphereMaterial = new THREE.MeshBasicMaterial({ color: 0xF00FFF });
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -94,11 +98,53 @@ function init() {
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('keydown', function (event) { listener.keyDownListener(event); });
     window.addEventListener('keyup', function (event) { listener.keyUpListener(event); });
+    document.addEventListener('pointermove', A.onPointerMove);
+    renderer.domElement.addEventListener('click',
+        function (event) {
+            A.onClick(
+                event,
+                cavesStationSpheresGroup,
+                currentCamera,
+                sphereMaterial,
+                selectedSphereMaterial,
+                render
+            );
+        }, false);
+    renderer.domElement.addEventListener('mousedown',
+        function (event) {
+            A.onMouseDown(
+                event,
+                cavesStationSpheresGroup,
+                currentCamera,
+                sphereMaterial,
+                selectedSphereMaterial,
+                renderer.domElement.getBoundingClientRect(),
+                render
+            );
+        }, false);
+    getdistance.addEventListener("click",
+        function (event) {
+            A.calcualteDistanceListener(
+                event,
+                renderer.domElement.getBoundingClientRect(),
+                sphereMaterial,
+                render
+            );
+        }, false);
+
+    if (document.addEventListener) {
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        }, false);
+    } else {
+        document.attachEvent('oncontextmenu', function () {
+            window.event.returnValue = false;
+        });
+    }
 
     scene = new THREE.Scene();
     const grid = new THREE.GridHelper(100, 10, 0x888888, 0x444444).rotateX(U.degreesToRads(90));
     scene.add(grid);
-
 
     gizmo = control.getHelper();
     scene.add(gizmo);
@@ -107,7 +153,9 @@ function init() {
     loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
         stationFont = font;
     });
+
     cavesStationNamesGroup = [];
+
     gui = addGui(caves, show, configuration, gizmo, polygonLineMaterial, splayLineMaterial, textMaterial, sphereMaterial, render);
 
 }
@@ -121,6 +169,7 @@ function render() {
             )
         );
     }
+
     renderer.render(scene, currentCamera);
 }
 
@@ -136,10 +185,11 @@ function onWindowResize() {
     cameraOrtho.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
-
     render();
 
 }
+
+
 
 function addStationName(stationName, position, fontGroup) {
     const shortName = stationName.split("@")[0]
@@ -158,23 +208,27 @@ function addStationName(stationName, position, fontGroup) {
     fontGroup.add(textMesh);
 }
 
-function addStationSpheres(position, sphereGroup) {
-    const geometry = new THREE.SphereGeometry( configuration.stationSphereRadius / 10.0 , 5, 5 );
-    const sphere = new THREE.Mesh( geometry, sphereMaterial); 
+function addStationSpheres(stationName, position, sphereGroup) {
+    const geometry = new THREE.SphereGeometry(configuration.stationSphereRadius / 10.0, 100, 100);
+    const sphere = new THREE.Mesh(geometry, sphereMaterial);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
     sphere.position.z = position.z;
-    sphereGroup.add( sphere );
+    sphere.name = stationName;
+    sphereGroup.add(sphere);
+    cavesStationSpheresGroup.push(sphere); // global assignment
 }
 
 function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
     const lineSegmentsPolygon = new LineSegments2(geometryStations, polygonLineMaterial);
+    lineSegmentsPolygon.visible = show.polygon;
 
     const splaysGeometry = new LineSegmentsGeometry();
     splaysGeometry.setPositions(splaySegments);
     const lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMaterial);
+    lineSegmentsSplays.visible = show.splays;
     const group = new THREE.Group();
 
     group.add(lineSegmentsPolygon);
@@ -184,9 +238,9 @@ function addToScene(stations, polygonSegments, splaySegments) {
     const stationSpheresGroup = new THREE.Group();
     for (const [stationName, stationPosition] of stations) {
         addStationName(stationName, stationPosition, stationNamesGroup);
-        addStationSpheres(stationPosition, stationSpheresGroup);
+        addStationSpheres(stationName, stationPosition, stationSpheresGroup);
     }
-    
+
     cavesStationNamesGroup.push(stationNamesGroup);
 
     stationNamesGroup.visible = show.stationNames;

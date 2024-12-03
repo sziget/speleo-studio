@@ -62,7 +62,7 @@ export function getCaveFromPolygonFile(wholeFileInText, addToSceneFn) {
             }
 
         } while (surveyName !== undefined)
-
+        
         const cave = new M.Cave(projectName, surveys, true);
         return cave;
     }
@@ -138,7 +138,6 @@ export function getStationsAndSplays(csvData) {
             stationsPoints.push(stationFrom.x, stationFrom.y, stationFrom.z, stationTo.x, stationTo.y, stationTo.z);
         }
     }
-
     return [stations, stationsPoints, splays]
 }
 
