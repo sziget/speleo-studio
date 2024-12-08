@@ -1,3 +1,5 @@
+import { IcosahedronGeometry } from "three";
+
 export function addNavbarClickListener() {
     //Close the dropdown if the user clicks outside of it
     window.onclick = function (e) {
@@ -10,7 +12,7 @@ export function addNavbarClickListener() {
         }
     }
 }
-export function buildNavbar(navbarHtmlElement, menus) {
+export function buildNavbar(navbarHtmlElement, menus, icons) {
     const createMenu = (name, elements) => {
         const c = document.createElement('div');
         c.setAttribute("class", "mydropdown-content");
@@ -42,6 +44,21 @@ export function buildNavbar(navbarHtmlElement, menus) {
         return d;
     };
 
+    const createIcon = (tooltip, glyphName, click) => {
+        const a = document.createElement('a');
+        a.onclick = click;
+        const i = document.createElement('i');
+        i.setAttribute("class", `glyphicon glyphicon-${glyphName}`);
+        const t = document.createElement('span');
+        t.setAttribute("class", "mytooltiptext")
+        t.appendChild(document.createTextNode(tooltip));
+        a.appendChild(i);
+        a.appendChild(t);
+        a.setAttribute("class", "mytooltip");
+        return a;
+    };
+
     navbarHtmlElement.innerHTML = '';
     menus.forEach((m) => navbarHtmlElement.appendChild(createMenu(m.name, m.elements)));
+    icons.forEach((i) => {navbarHtmlElement.appendChild(createIcon(i.tooltip, i.glyphName, i.click))});
 };

@@ -7,6 +7,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
+import * as C from "./constants.js";
 import * as I from "./import.js";
 import * as L from "./listeners.js";
 import * as M from "./model.js";
@@ -29,7 +30,8 @@ let show = {
 };
 
 let configuration = {
-    stationSphereRadius: 1
+    stationSphereRadius: 1,
+    zoomStep: 0.1
 };
 
 let stationFont;
@@ -48,16 +50,16 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 5;
 
     cameraPersp = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
-    cameraOrtho = new THREE.OrthographicCamera(- frustumSize * aspect, frustumSize * aspect, frustumSize, - frustumSize, 0.1, 2000);
+    cameraOrtho = new THREE.OrthographicCamera(- C.FRUSTRUM * aspect, C.FRUSTRUM * aspect, C.FRUSTRUM, - C.FRUSTRUM, -1000, 3000);
     currentCamera = cameraOrtho;
 
     currentCamera.position.set(0, 0, 100);
-    currentCamera.lookAt(0, 0, 0);
+    currentCamera.lookAt(C.ORBIT_TARGET);
 
     orbit = new OrbitControls(currentCamera, renderer.domElement);
+    //orbit.enableZoom = true;
     orbit.update();
     orbit.addEventListener('change', render);
 
@@ -140,21 +142,100 @@ function init() {
         },
         {
             "name": "View", elements: [
-                { "name": "Plan", "click": function () { 
-                    currentCamera.position.set(0, 0, 100);
-                    currentCamera.lookAt(0, 0, 0);
-                    render(); } },
-                { "name": "Profile", "click": function () { 
-                    currentCamera.position.set(0, -100, 0); 
-                    currentCamera.lookAt(0, 0, 0);
-                    render(); } }
+                {
+                    "name": "Plan", "click": function () {
+                        currentCamera.position.set(0, 0, 100);
+                        currentCamera.lookAt(0, 0, 0);
+                        render();
+                    }
+                },
+                {
+                    "name": "Profile", "click": function () {
+                        currentCamera.position.set(0, -100, 0);
+                        currentCamera.lookAt(0, 0, 0);
+                        render();
+                    }
+                }
             ]
+        }
+    ], [
+        {
+            "tooltip": "Zoom to fit", "glyphName": "fullscreen", "click": function () {
+                fitObjectsToCamera(cavesObjectGroup);
+
+            }
+        },
+        {
+            "tooltip": "Zoom in", "glyphName": "zoom-in", "click": function () {
+                zoom(configuration.zoomStep);
+            }
+        },
+        {
+            "tooltip": "Zoom out", "glyphName": "zoom-out", "click": function () {
+                zoom(-1 * configuration.zoomStep);
+            }
+        },
+        {
+            "tooltip": "Plan", "glyphName": "arrow-down", "click": function () {
+                currentCamera.position.copy(new THREE.Vector3(C.ORBIT_TARGET.x, C.ORBIT_TARGET.y, C.ORBIT_TARGET.z + 100));
+                currentCamera.lookAt(C.ORBIT_TARGET);
+                currentCamera.updateMatrix();
+
+                fitObjectsToCamera(cavesObjectGroup);
+            }
+        },
+        {
+            "tooltip": "Profile", "glyphName": "arrow-right", "click": function () {
+                currentCamera.position.copy(new THREE.Vector3(C.ORBIT_TARGET.x, C.ORBIT_TARGET.y - 100, C.ORBIT_TARGET.z));
+                currentCamera.lookAt(C.ORBIT_TARGET);
+                currentCamera.updateMatrix();
+                fitObjectsToCamera(cavesObjectGroup);
+            }
         }
     ]);
     addNavbarClickListener();
 
 }
 
+function zoom(step) {
+    const zoomValue = currentCamera.zoom + step;
+    if (zoomValue > 0.1) {
+        currentCamera.zoom = zoomValue;
+        currentCamera.updateProjectionMatrix();
+        render();
+    }
+}
+
+function fitObjectsToCamera(objectGroup) {
+    const boundingBox = new THREE.Box3().setFromObject(objectGroup);
+    
+    const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
+    const aspect = window.innerWidth / window.innerHeight;
+    const rotation = new THREE.Matrix4().extractRotation(currentCamera.matrix);
+    boundingBox.applyMatrix4(rotation);
+    const width = boundingBox.max.x - boundingBox.min.x;
+    const height = boundingBox.max.y - boundingBox.min.y
+    const maxSize = Math.max(width, height);
+
+    configuration.zoomStep = C.FRUSTRUM / maxSize;
+    const zoomLevel = Math.min(
+        (2 * C.FRUSTRUM * aspect) / width,
+        (2 * C.FRUSTRUM) / height,
+    );
+    currentCamera.zoom = zoomLevel;
+
+    const moveCameraBy = boundingBoxCenter.clone().sub(C.ORBIT_TARGET);
+    const oldPosition = currentCamera.position.clone();
+    const newCameraPosition = oldPosition.add(moveCameraBy);
+
+    C.ORBIT_TARGET.copy(boundingBoxCenter)
+    currentCamera.position.copy(newCameraPosition);
+    currentCamera.lookAt(C.ORBIT_TARGET);
+    currentCamera.updateProjectionMatrix();
+    orbit.target = C.ORBIT_TARGET;
+    orbit.update();
+    render();
+}
 
 function render() {
     if (cavesStationNamesGroup !== undefined && show.stationNames) {
@@ -257,6 +338,7 @@ function importPolygonFile(file) {
         const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
         caves.push(cave);
         P.renderSurveyPanel(caves, show, render);
+        fitObjectsToCamera(cavesObjectGroup);
     };
     reader.readAsText(file, "iso_8859-2");
 }
@@ -276,6 +358,7 @@ function importCsvFile(file) {
             const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup)], true);
             caves.push(cave);
             P.renderSurveyPanel(caves, show, render);
+            fitObjectsToCamera(cavesObjectGroup);
         },
         error: function (error) {
             console.error('Error parsing CSV:', error);
