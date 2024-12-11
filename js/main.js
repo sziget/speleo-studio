@@ -214,8 +214,6 @@ function init() {
     myscene = new MyScene(OPTIONS, scene, render);
     explorer = new ProjectExplorer(OPTIONS, db, myscene, cavesModified);
     gui = addGui(OPTIONS, myscene, MAT.materials);
-
-
 }
 
 function zoom(step) {

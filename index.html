@@ -13,15 +13,6 @@
 			margin: 0;
 		}
 
-		#help {
-			position: absolute;
-			bottom: 100px;
-			text-align: center;
-			z-index: 100;
-			display: block;
-			color: azure;
-		}
-
 		#close {
 			float: right;
 			display: inline-block;
@@ -113,13 +104,6 @@
 
 <body>
 	<div id="tree-panel"></div>
-	<div id="help">
-		"W" translate | "E" rotate | "R" scale | "+/-" adjust size<br />
-		"Q" toggle world/local space | "Shift" snap to grid<br />
-		"X" toggle X | "Y" toggle Y | "Z" toggle Z | "Spacebar" toggle enabled<br />
-		"Esc" reset current transform<br />
-		"C" toggle camera | "V" random zoom
-	</div>
 	<script type="module" src="js/main.js"></script>
 	<div class="file-upload">
 		<input type="file" id="topodroidInput" accept=".csv" />
