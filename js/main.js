@@ -39,6 +39,8 @@ let stationFont;
 let caves = [];
 let cavesStationSpheresGroup = [];
 let cavesObjectGroup = new THREE.Group();
+let cavesObjects = [];
+
 let cavesStationNamesGroup;
 
 init();
@@ -341,7 +343,12 @@ function importPolygonFile(file) {
         const wholeFileInText = event.target.result;
         const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
         caves.push(cave);
-        P.renderSurveyPanel(caves, show, render);
+        cave.surveys.forEach(s => {
+            const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
+            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup] = addToScene(s.stations, centerLineSegments, splaySegments);
+            cavesObjects.push({ 'cave': cave.name, 'survey': s.name, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup })
+        });
+        P.renderSurveyPanel(caves, cavesObjects, show, render);
         fitObjectsToCamera(cavesObjectGroup);
     };
     reader.readAsText(file, "iso_8859-2");
@@ -357,11 +364,14 @@ function importCsvFile(file) {
         comments: "#",
         dynamicTyping: true,
         complete: function (results) {
-            const [stations, shots, polygonSegments, splaySegments] = I.getStationsAndSplays('Plm0@Plöm_plöm', new M.Vector(0, 0, 0), results.data);
-            const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup] = addToScene(stations, polygonSegments, splaySegments);
-            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, shots, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup)], true);
+            const [stations, shots, centerLineSegments, splaySegments] = I.importCsvFile(results.data);
+            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup] = addToScene(stations, centerLineSegments, splaySegments);
+            const caveName = file.name;
+            const surveyName = 'polygon';
+            const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
+            cavesObjects.push({ 'cave': caveName, 'survey': surveyName, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup });
             caves.push(cave);
-            P.renderSurveyPanel(caves, show, render);
+            P.renderSurveyPanel(caves, cavesObjects, show, render);
             fitObjectsToCamera(cavesObjectGroup);
         },
         error: function (error) {

@@ -9,6 +9,10 @@ export class Vector {
     add(v) {
         return new Vector(this.x + v.x, this.y + v.y, this.z + v.z);
     }
+
+    sub(v) {
+        return new Vector(this.x - v.x, this.y - v.y, this.z - v.z);
+    }
 }
 export class Shot {
     constructor(id, type, from, to, length, azimuth, clino) {
@@ -19,6 +23,7 @@ export class Shot {
         this.length = length;
         this.azimuth = azimuth;
         this.clino = clino;
+        this.processed = false;
     }
 }
 export class Survey {
@@ -27,10 +32,6 @@ export class Survey {
         this.visible = visible;
         this.stations = stations;
         this.shots = shots;
-        this.polygonSegments = polygonSegments;
-        this.splaySegments = splaySegments;
-        this.stationNames = stationNames;
-        this.stationSpheres = stationSpheres;
     }
 }
 
@@ -41,4 +42,10 @@ export class Cave {
         this.visible = visible;
     }
 }
+
+// this.polygonSegments = polygonSegments;
+// this.splaySegments = splaySegments;
+// this.stationNames = stationNames;
+// this.stationSpheres = stationSpheres;
+
 

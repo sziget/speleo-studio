@@ -4,20 +4,28 @@ import { escapeHtml } from "./external/escape-html.js";
 import * as U from "./utils.js";
 import * as D from "./datapanel.js";
 
-export function renderSurveyPanel(caves, show, renderFn) {
-    const mapSurvey = (survey) => {
+function setObjectsVisibility(cave, survey, cavesObjects, value, show) {
+    const entry = cavesObjects.find(o => o.cave === cave.name && o.survey === survey.name);
+    entry.centerLines.visible = value && show.polygon;
+    entry.splays.visible = value && show.splays;
+    entry.stationNames.visible = value && show.stationNames;
+    entry.stationSpheres.visible = value && show.spheres;
+}
+
+export function renderSurveyPanel(caves, cavesObjects, show, renderFn) {
+    const mapSurvey = (cave, survey) => {
         return {
             id: U.randomAlphaNumbericString(8),
             name: survey.name,
             loadOnDemand: true,
-            state: { checked: survey.visible, survey: survey }
+            state: { checked: survey.visible, cave: cave, survey: survey }
         };
     }
     const mapCave = (cave) => {
         return {
             id: U.randomAlphaNumbericString(8),
             name: cave.name, 
-            children: cave.surveys.map(mapSurvey), 
+            children: cave.surveys.map(s => mapSurvey(cave, s)), 
             loadOnDemand: true, 
             state: { checked: cave.visible, cave: cave }
         };
@@ -33,35 +41,29 @@ export function renderSurveyPanel(caves, show, renderFn) {
         });
 
         tree.on('click', function (event) {
-            console.log(event.target);
             const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
             if (!currentNode) {
                 return;
             }
-
+            const state = currentNode.state;
             if (event.target.className === 'checkbox') {
                 event.stopPropagation();
-                const value = !currentNode.state.checked;
+                const value = !state.checked;
 
-                if (currentNode.state.survey !== undefined) {
-                    const survey = currentNode.state.survey;
-                    survey.visible = value;
-                    survey.polygonSegments.visible = value && show.polygon;
-                    survey.splaySegments.visible = value && show.splays;
-                    survey.stationNames.visible = value && show.stationNames;
-                    survey.stationSpheres.visible = value && show.spheres;
+
+                if (state.survey !== undefined) {
+
+                    state.survey.visible = value;
+                    setObjectsVisibility(state.cave, state.survey, cavesObjects, value, show);
                     renderFn();
                 }
 
-                if (currentNode.state.cave !== undefined) {
-                    const cave = currentNode.state.cave;
+                if (state.cave !== undefined && state.survey === undefined) {
+                    const cave = state.cave;
                     cave.visible = value;
                     cave.surveys.forEach((survey) => {
                         survey.visible = value;
-                        survey.polygonSegments.visible = value && show.polygon;
-                        survey.splaySegments.visible = value && show.splays;
-                        survey.stationNames.visible = value && show.stationNames;
-                        survey.stationSpheres.visible = value && show.spheres;
+                        setObjectsVisibility(cave, survey, cavesObjects, value, show);
                     });
                     renderFn();
                 }
@@ -70,9 +72,7 @@ export function renderSurveyPanel(caves, show, renderFn) {
                 return;
             } else if (event.target.id === "edit") {
                 datapanel.style.display = "block";
-                console.log(' state ', currentNode.state);
-                console.log(' survey ', currentNode.state.survey);
-                D.setupTable(currentNode.state.survey.shots);
+                D.setupTable(state.survey.shots);
 
             }
         });
