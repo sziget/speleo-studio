@@ -53,7 +53,7 @@ export function getCaveFromPolygonFile(wholeFileInText, addToSceneFn) {
                 iterateUntil(lineIterator, (v) => v !== "Survey data");
                 lineIterator.next(); //From To ...
                 const surveyData = parseSurveyData(lineIterator);
-                const [stations, polygonSegments] = getStationsAndSplaysPolygon(surveyData, stationsGlobal);
+                const [stations, shots, polygonSegments] = getStationsAndSplaysPolygon(surveyData, stationsGlobal);
                 for (const [stationName, stationPosition] of stations) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
@@ -72,6 +72,7 @@ function getStationsAndSplaysPolygon(surveyData, stationsFromPreviousSurveys) {
     const stationsSegments = [];
     const start = new M.Vector(0, 0, 0);
     const stations = new Map();
+    const shots = [];
     stations.set('0', start);
     
     for (let i = 0; i < surveyData.length; i++) {
@@ -84,6 +85,7 @@ function getStationsAndSplaysPolygon(surveyData, stationsFromPreviousSurveys) {
         const distance = row[2];
         const azimuth = row[3];
         const clino = row[4];
+        shots.push(new M.Shot(i, from, to, distance, azimuth, clino));
         const polarVector = U.fromPolar(distance, U.degreesToRads(azimuth), U.degreesToRads(clino));
         const stationFrom = stations.has(from) ? stations.get(from) : stationsFromPreviousSurveys.get(from);
         const stationTo = new M.Vector(stationFrom.x, stationFrom.y, stationFrom.z).add(polarVector);
@@ -96,16 +98,17 @@ function getStationsAndSplaysPolygon(surveyData, stationsFromPreviousSurveys) {
 
     }
 
-    return [stations, stationsSegments]
+    return [stations, shots, stationsSegments]
 }
 
-export function getStationsAndSplays(csvData) {
-    const stationsPoints = [];
-    const splays = []
-    const start = new M.Vector(0, 0, 0);
-    const stations = new Map();
-    stations.set('Plm0@Plöm_plöm', start);
+export function getStationsAndSplays(startName, startPosition, csvData) {
 
+    const shots = [];    
+    const stations = new Map();
+    const splays = []
+    const stationsPoints = []
+
+    stations.set(startName, startPosition);
 
     for (let i = 0; i < csvData.length; i++) {
         const row = csvData[i];
@@ -117,6 +120,8 @@ export function getStationsAndSplays(csvData) {
         const distance = row[2];
         const azimuth = row[3];
         const clino = row[4];
+        const type = to === '-' ? 'splay' : 'polyline'
+        shots.push(new M.Shot(i, from, to, distance, azimuth, clino));
         const polarVector = U.fromPolar(distance, U.degreesToRads(azimuth), U.degreesToRads(clino));
         const stationFrom = stations.get(from);
         const stationTo = new M.Vector(stationFrom.x, stationFrom.y, stationFrom.z).add(polarVector);
@@ -138,6 +143,6 @@ export function getStationsAndSplays(csvData) {
             stationsPoints.push(stationFrom.x, stationFrom.y, stationFrom.z, stationTo.x, stationTo.y, stationTo.z);
         }
     }
-    return [stations, stationsPoints, splays]
+    return [stations, shots, stationsPoints, splays]
 }
 

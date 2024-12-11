@@ -41,6 +41,25 @@
   cursor: pointer;
   user-select: none;
 }
+.infinite-tree-content .infinite-tree-edit {
+  background-color: rgb(216, 223, 234);
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  box-sizing: border-box;
+  color: rgb(59, 89, 152);
+  cursor: default;
+  height: 18px;
+  line-height: 18px;
+  padding-bottom: 0px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 0px;
+  position: absolute;
+  right: 4px;
+  text-align: center
+}
 .infinite-tree-no-data {
   text-align: center;
 }

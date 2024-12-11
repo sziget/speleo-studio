@@ -2,10 +2,26 @@ import { classNames } from './external/classnames.js';
 import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
 import * as U from "./utils.js";
+import * as D from "./datapanel.js";
 
 export function renderSurveyPanel(caves, show, renderFn) {
-    const mapSurvey = (survey) => { return { id: U.randomAlphaNumbericString(8), name: survey.name, loadOnDemand: true, state: {checked: survey.visible, survey: survey } }; }
-    const mapCave = (cave) => { return { id: U.randomAlphaNumbericString(8), name: cave.name, children: cave.surveys.map(mapSurvey), loadOnDemand: true, state: {checked: cave.visible, cave: cave }}; }
+    const mapSurvey = (survey) => {
+        return {
+            id: U.randomAlphaNumbericString(8),
+            name: survey.name,
+            loadOnDemand: true,
+            state: { checked: survey.visible, survey: survey }
+        };
+    }
+    const mapCave = (cave) => {
+        return {
+            id: U.randomAlphaNumbericString(8),
+            name: cave.name, 
+            children: cave.surveys.map(mapSurvey), 
+            loadOnDemand: true, 
+            state: { checked: cave.visible, cave: cave }
+        };
+    }
     document.querySelector('#tree-panel').innerHTML = '';
 
     caves.forEach((cave) => {
@@ -14,17 +30,18 @@ export function renderSurveyPanel(caves, show, renderFn) {
             data: mapCave(cave),
             autoOpen: false,
             rowRenderer: renderer,
-        })
+        });
 
-        tree.on('click', function(event) {
+        tree.on('click', function (event) {
+            console.log(event.target);
             const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
             if (!currentNode) {
                 return;
             }
-        
+
             if (event.target.className === 'checkbox') {
                 event.stopPropagation();
-                const value = ! currentNode.state.checked;
+                const value = !currentNode.state.checked;
 
                 if (currentNode.state.survey !== undefined) {
                     const survey = currentNode.state.survey;
@@ -48,16 +65,22 @@ export function renderSurveyPanel(caves, show, renderFn) {
                     });
                     renderFn();
                 }
-                
+
                 tree.checkNode(currentNode);
                 return;
+            } else if (event.target.id === "edit") {
+                datapanel.style.display = "block";
+                console.log(' state ', currentNode.state);
+                console.log(' survey ', currentNode.state.survey);
+                D.setupTable(currentNode.state.survey.shots);
+
             }
         });
-        
+
         tree.on('contentDidUpdate', () => {
             updateIndeterminateState(tree);
         });
-        
+
         tree.on('clusterDidChange', () => {
             updateIndeterminateState(tree);
         });
@@ -161,10 +184,15 @@ function renderer(node, treeOptions) {
         )
     }, '');
 
+    const editIcon = tag('span', {
+        'id': 'edit',
+        'class': classNames('infinite-tree-edit', 'glyphicon', 'glyphicon-edit')
+    }, '');
+
     const treeNode = tag('div', {
-        'class': 'infinite-tree-node'   ,
+        'class': 'infinite-tree-node',
         'style': 'margin-left: ' + depth * 18 + 'px'
-    }, toggler + checkbox + icon + title + loadingIcon );
+    }, toggler + checkbox + icon + title + loadingIcon + editIcon);
 
     let treeNodeAttributes = {
         'draggable': 'true',

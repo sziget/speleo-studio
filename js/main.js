@@ -15,6 +15,7 @@ import * as P from "./panel.js";
 import * as U from "./utils.js";
 import * as A from "./interactive.js";
 import * as MAT from "./materials.js";
+import * as DATA from "./datapanel.js";
 import { buildNavbar, addNavbarClickListener } from "./navbar.js";
 
 import { addGui } from "./gui.js";
@@ -42,6 +43,9 @@ let cavesStationNamesGroup;
 
 init();
 render();
+
+//datapanel.style.display = "block";
+
 
 function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -353,9 +357,9 @@ function importCsvFile(file) {
         comments: "#",
         dynamicTyping: true,
         complete: function (results) {
-            const [stations, polygonSegments, splaySegments] = I.getStationsAndSplays(results.data);
+            const [stations, shots, polygonSegments, splaySegments] = I.getStationsAndSplays('Plm0@Plöm_plöm', new M.Vector(0, 0, 0), results.data);
             const [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup] = addToScene(stations, polygonSegments, splaySegments);
-            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup)], true);
+            const cave = new M.Cave(file.name, [new M.Survey('Polygon', true, stations, shots, lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup)], true);
             caves.push(cave);
             P.renderSurveyPanel(caves, show, render);
             fitObjectsToCamera(cavesObjectGroup);
