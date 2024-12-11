@@ -4,15 +4,15 @@ import { escapeHtml } from "./external/escape-html.js";
 import * as U from "./utils.js";
 import * as D from "./datapanel.js";
 
-function setObjectsVisibility(cave, survey, cavesObjects, value, show) {
-    const entry = cavesObjects.find(o => o.cave === cave.name && o.survey === survey.name);
+function setObjectsVisibility(cave, survey, objects, value, show) {
+    const entry = objects.get(keyForObject(cave, survey));
     entry.centerLines.visible = value && show.polygon;
     entry.splays.visible = value && show.splays;
     entry.stationNames.visible = value && show.stationNames;
     entry.stationSpheres.visible = value && show.spheres;
 }
 
-export function renderSurveyPanel(caves, cavesObjects, show, renderFn) {
+export function renderSurveyPanel(caves, objects, show, renderFn, modified) {
     const mapSurvey = (cave, survey) => {
         return {
             id: U.randomAlphaNumbericString(8),
@@ -54,7 +54,7 @@ export function renderSurveyPanel(caves, cavesObjects, show, renderFn) {
                 if (state.survey !== undefined) {
 
                     state.survey.visible = value;
-                    setObjectsVisibility(state.cave, state.survey, cavesObjects, value, show);
+                    setObjectsVisibility(state.cave, state.survey, objects, value, show);
                     renderFn();
                 }
 
@@ -63,7 +63,7 @@ export function renderSurveyPanel(caves, cavesObjects, show, renderFn) {
                     cave.visible = value;
                     cave.surveys.forEach((survey) => {
                         survey.visible = value;
-                        setObjectsVisibility(cave, survey, cavesObjects, value, show);
+                        setObjectsVisibility(cave, survey, objects, value, show);
                     });
                     renderFn();
                 }
@@ -71,8 +71,8 @@ export function renderSurveyPanel(caves, cavesObjects, show, renderFn) {
                 tree.checkNode(currentNode);
                 return;
             } else if (event.target.id === "edit") {
-                datapanel.style.display = "block";
-                D.setupTable(state.survey.shots);
+                surveydatapanel.style.display = "block";
+                D.setupTable(state.cave.name, state.survey.name, state.survey.shots, modified);
 
             }
         });

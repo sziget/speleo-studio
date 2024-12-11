@@ -56,9 +56,9 @@ export function getCaveFromPolygonFile(wholeFileInText) {
                 iterateUntil(lineIterator, (v) => v !== "Survey data");
                 lineIterator.next(); //From To ...
                 const shots = getShotsFromPolygonSurvey(lineIterator);
-                const startName = !firstSurveyProcessed ? '0' : shots[0].from;
-                const startPosition = !firstSurveyProcessed ? new M.Vector(0, 0, 0) : stationsGlobal.get(shots[0].from);
-                const stationsLocal = calculateSurveyStations(shots, startName, startPosition);
+                const startName = !firstSurveyProcessed ? '0' : undefined;
+                const startPosition = !firstSurveyProcessed ? new M.Vector(0, 0, 0) : undefined;
+                const stationsLocal = calculateSurveyStations(shots, stationsGlobal, [], startName, startPosition);
 
                 for (const [stationName, stationPosition] of stationsLocal) {
                     stationsGlobal.set(stationName, stationPosition);
@@ -74,40 +74,9 @@ export function getCaveFromPolygonFile(wholeFileInText) {
     }
 }
 
-// function getStationsAndSplaysPolygon(surveyData, stationsFromPreviousSurveys) {
-//     const stationsSegments = [];
-//     const stations = new Map();
-//     const shots = [];
-    
-//     for (let i = 0; i < surveyData.length; i++) {
-//         const row = surveyData[i];
-//         if (row === null || row.length != 5) {
-//             continue;
-//         }
-//         const from = row[0];
-//         const to = row[1];
-//         const distance = row[2];
-//         const azimuth = row[3];
-//         const clino = row[4];
-//         shots.push(new M.Shot(i, from, to, distance, azimuth, clino));
-//         const polarVector = U.fromPolar(distance, U.degreesToRads(azimuth), U.degreesToRads(clino));
-//         const stationFrom = stations.has(from) ? stations.get(from) : stationsFromPreviousSurveys.get(from);
-//         const stationTo = new M.Vector(stationFrom.x, stationFrom.y, stationFrom.z).add(polarVector);
-
-//         if (!stations.has(to)) {
-//             stations.set(to, stationTo);
-//         }
-
-//         stationsSegments.push(stationFrom.x, stationFrom.y, stationFrom.z, stationTo.x, stationTo.y, stationTo.z);
-
-//     }
-
-//     return [stations, shots, stationsSegments]
-// }
-
 export function importCsvFile(csvData) {
     const shots = getShotsFromCsv(csvData);
-    const stationsLocal = calculateSurveyStations(shots);
+    const stationsLocal = calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
     const [clSegments, splaySegments] = getSegments(stationsLocal, shots);
     return [stationsLocal, shots, clSegments, splaySegments];
 }
@@ -131,45 +100,92 @@ function getShotsFromCsv(csvData) {
     return shots;
 }
 
-function calculateSurveyStations(shots, startName, startPosition) {
-
+export function calculateSurveyStations(shots, prevStations, aliases, startName, startPosition) {
     const stations = new Map();
+    if (shots.length === 0) return stations;
 
+    let isolated = true;
     const startStationName = startName !== undefined ? startName : shots[0].from;
-    stations.set(startStationName, startPosition !== undefined ? startPosition : new M.Vector(0, 0, 0));
 
-    // This algorithm is O(n^2)
+    if (startPosition !== undefined) {
+        stations.set(startStationName, startPosition);
+    } else if (startPosition === undefined && prevStations.has(shots[0].from)) {
+        stations.set(startStationName, prevStations.get(shots[0].from));
+        isolated = false;
+    }
+
+    shots.forEach(sh => {
+        sh.processed = false;
+    });
+
     var repeat = true;
+
     while (repeat) {
         repeat = false;
         shots.forEach((sh) => {
             if (sh.processed) return; // think of it like a continue statement in a for loop
-            const fromStation = stations.get(sh.from);
-            const toStation = stations.get(sh.to);
+
+            let fromStation = stations.get(sh.from);
+            let toStation = stations.get(sh.to);
+
+            if (fromStation === undefined && prevStations.has(sh.from)) {
+                fromStation = prevStations.get(sh.from);
+                isolated = false;
+            }
+
+            if (toStation === undefined && prevStations.has(sh.to)) {
+                toStation = prevStations.get(sh.to);
+                isolated = false;
+            }
 
             if (fromStation !== undefined) {
-                if (toStation === undefined) {  // FROM exists and TO does not exist
+                if (toStation === undefined) {  // from = 1, to = 0
                     const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
                     const st = new M.Vector(fromStation.x, fromStation.y, fromStation.z).add(polarVector);
                     stations.set(sh.to, st);
                     repeat = true;
                 } else {
-                    // skip: both shot stations exist
+                    //from = 1, to = 1
                 }
-                sh.processed = true
-            } else if (toStation !== undefined) { // FROM does not exist, but TO exists
-                const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
+                sh.processed = true;
+            } else if (toStation !== undefined) { // from = 0, to = 1
+
                 const st = new M.Vector(toStation.x, toStation.y, toStation.z).sub(polarVector);
                 stations.set(sh.from, st);
                 sh.processed = true;
                 repeat = true;
-            } else { // the two shot stations do not exist: check aliases
+            } else { //from = 0, to = 0, look for aliases
+                let falias = aliases.find(a => a.contains(sh.from));
+                let talias = aliases.find(a => a.contains(sh.to));
+                if (falias === undefined && talias === undefined) return;  // think of it like a continue statement in a for loop
+                const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
+               
+                if (falias !== undefined) {
+                    const pairName = falias.getPair(sh.from);
+                    if (prevStations.has(pairName)) {
+                        const from = prevStations.get(pairName);
+                        const to = new M.Vector(from.x, from.y, from.z).add(polarVector);
+                        stations.set(sh.to, to);
+                        repeat = true;
+                        isolated = false;
+                    }
+                }
 
+                if (talias !== undefined) {
+                    const pairName = talias.getPair(sh.to);
+                    if (prevStations.has(pairName)) {
+                        const to = prevStations.get(pairName);
+                        const from = new M.Vector(to.x, to.y, to.z).sub(polarVector);
+                        stations.set(sh.from, from);
+                        repeat = true;
+                        isolated = false;
+                    }
+                }
             }
 
         });
     }
-
+    
     const unprocessedShots = shots.filter((sh) => !sh.processed);
     if (unprocessedShots.length > 0) {
         //TODO: return error messages
@@ -179,7 +195,6 @@ function calculateSurveyStations(shots, startName, startPosition) {
 
 function calculateStationsGlobalWorld(stations, diff) {
     const stationsGlobal = new Map();
-    console.log(stations);
     stations.forEach((name, vector) => stationsGlobal.put(name, vector.add(diff)));
     return stationsGlobal;
 }
@@ -202,7 +217,7 @@ export function getSegments(stationsGlobal, shots) {
                     throw new Error(`Undefined segment type ${sh.type}`);
 
             }
-            
+
         }
     });
     return [centerlineSegments, splaySegments];

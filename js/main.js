@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
@@ -13,11 +12,12 @@ import * as P from "./panel.js";
 import * as U from "./utils.js";
 import * as A from "./interactive.js";
 import * as MAT from "./materials.js";
-import * as DATA from "./datapanel.js";
 import { buildNavbar, addNavbarClickListener } from "./navbar.js";
 
 import { addGui } from "./gui.js";
 
+
+    
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, orbit, gui;
 
@@ -35,17 +35,60 @@ let configuration = {
 
 let stationFont;
 let caves = [];
-let cavesStationSpheresGroup = [];
-let cavesObjectGroup = new THREE.Group();
-let cavesObjects = [];
 
+let cavesObjectGroup = new THREE.Group();
+const cavesObjects = new Map();
+const cavesModified = new Set();
 let cavesStationNamesGroup;
+
 
 init();
 render();
 
-//datapanel.style.display = "block";
+document.getElementById("surveydatapanel-close").addEventListener("click", function () {
 
+    //surveydata.innerHTML = '';
+    surveydatapanel.style.display = 'none';
+
+    if (cavesModified.size > 0) {
+        cavesModified.forEach(cn => {
+            const editedCave = caves.find(c => c.name === cn);
+            let surveyStations = new Map();
+            editedCave.surveys.entries().forEach(([index, es]) => {
+                es.isolated = false;
+                const startName = index === 0 ? es.shots[0].from : undefined;
+                const startPosition = index === 0 ? new M.Vector(0, 0, 0) : undefined;
+                const stations = I.calculateSurveyStations(es.shots, surveyStations, [], startName, startPosition);
+                es.isolated = (stations.size === 0);
+                es.stations = stations;
+                stations.forEach((v, k) => surveyStations.set(k, v));
+                const [clSegments, splaySegments] = I.getSegments(stations, es.shots);
+                const e = cavesObjects.get(cn).get(es.name);
+                e.centerLines.geometry.dispose();
+                e.stationNames.children.forEach(c => c.geometry.dispose());
+                e.stationNames.clear();
+                e.stationSpheres.children.forEach(c => c.geometry.dispose());
+                e.stationSpheres.clear();
+                e.group.clear();
+                scene.remove(e.group);
+                const [cl, sl, sn, ss, group] = addToScene(stations, clSegments, splaySegments);
+                cavesObjects.get(cn).set(es.name, {'id': U.randomAlphaNumbericString(5), 'cave': cn, 'survey': es.name, 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
+
+            });
+        });
+        cavesModified.clear();
+        render();
+    }
+});
+
+function getAllStationSpheres() {
+
+    let spheres = cavesObjects.map((id, objects) => {
+        return objects.stationSpheres.children;
+    });
+    return spheres.flat();
+
+}
 
 function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -72,7 +115,7 @@ function init() {
         function (event) {
             A.onClick(
                 event,
-                cavesStationSpheresGroup,
+                getAllStationSpheres(),
                 currentCamera,
                 MAT.materials,
                 render
@@ -82,7 +125,7 @@ function init() {
         function (event) {
             A.onMouseDown(
                 event,
-                cavesStationSpheresGroup,
+                getAllStationSpheres(),
                 currentCamera,
                 MAT.materials,
                 renderer.domElement.getBoundingClientRect(),
@@ -113,6 +156,8 @@ function init() {
     scene = new THREE.Scene();
     const grid = new THREE.GridHelper(100, 10, 0x888888, 0x444444).rotateX(U.degreesToRads(90));
     scene.add(grid);
+
+    scene.add(cavesObjectGroup);
 
     const loader = new FontLoader();
     loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
@@ -198,7 +243,7 @@ function zoom(step) {
 
 function fitObjectsToCamera(objectGroup) {
     const boundingBox = new THREE.Box3().setFromObject(objectGroup);
-    
+
     const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
     const aspect = window.innerWidth / window.innerHeight;
     const rotation = new THREE.Matrix4().extractRotation(currentCamera.matrix);
@@ -254,8 +299,6 @@ function onWindowResize() {
 
 }
 
-
-
 function addStationName(stationName, position, fontGroup) {
     const shortName = stationName.split("@")[0]
     const textShape = stationFont.generateShapes(shortName, 0.7);
@@ -281,7 +324,6 @@ function addStationSpheres(stationName, position, sphereGroup) {
     sphere.position.z = position.z;
     sphere.name = stationName;
     sphereGroup.add(sphere);
-    cavesStationSpheresGroup.push(sphere); // global assignment
 }
 
 function addToScene(stations, polygonSegments, splaySegments) {
@@ -306,32 +348,31 @@ function addToScene(stations, polygonSegments, splaySegments) {
         addStationSpheres(stationName, stationPosition, stationSpheresGroup);
     }
 
-    cavesStationNamesGroup.push(stationNamesGroup);
-
     stationNamesGroup.visible = show.stationNames;
     stationSpheresGroup.visible = show.spheres;
 
     group.add(stationNamesGroup);
     group.add(stationSpheresGroup);
-    //scene.add(group); maybe needs to remove
     cavesObjectGroup.add(group);
-    scene.add(cavesObjectGroup);
+
     render();
-    return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup];
+    return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup, group];
 }
 
 function importPolygonFile(file) {
     const reader = new FileReader();
     reader.onload = (event) => {
         const wholeFileInText = event.target.result;
-        const cave = I.getCaveFromPolygonFile(wholeFileInText, addToScene);
+        const cave = I.getCaveFromPolygonFile(wholeFileInText);
         caves.push(cave);
+        const sMaps = new Map();
+        cavesObjects.set(cave.name, sMaps);
         cave.surveys.forEach(s => {
             const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
-            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup] = addToScene(s.stations, centerLineSegments, splaySegments);
-            cavesObjects.push({ 'cave': cave.name, 'survey': s.name, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup })
+            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = addToScene(s.stations, centerLineSegments, splaySegments);
+            sMaps.set(s.name, { 'id': U.randomAlphaNumbericString(5), 'cave': cave.name, 'survey': s.name, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
         });
-        P.renderSurveyPanel(caves, cavesObjects, show, render);
+        P.renderSurveyPanel(caves, cavesObjects, show, render, cavesModified);
         fitObjectsToCamera(cavesObjectGroup);
     };
     reader.readAsText(file, "iso_8859-2");
@@ -348,13 +389,13 @@ function importCsvFile(file) {
         dynamicTyping: true,
         complete: function (results) {
             const [stations, shots, centerLineSegments, splaySegments] = I.importCsvFile(results.data);
-            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup] = addToScene(stations, centerLineSegments, splaySegments);
+            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = addToScene(stations, centerLineSegments, splaySegments);
             const caveName = file.name;
             const surveyName = 'polygon';
             const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
-            cavesObjects.push({ 'cave': caveName, 'survey': surveyName, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup });
+            cavesObjects.set(caveName, new Map([[surveyName, {'id': U.randomAlphaNumbericString(5), 'cave': caveName, 'survey': surveyName, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group }]]));
             caves.push(cave);
-            P.renderSurveyPanel(caves, cavesObjects, show, render);
+            P.renderSurveyPanel(caves, cavesObjects, show, render, cavesModified);
             fitObjectsToCamera(cavesObjectGroup);
         },
         error: function (error) {

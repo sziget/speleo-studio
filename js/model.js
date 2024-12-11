@@ -26,14 +26,38 @@ export class Shot {
         this.processed = false;
     }
 }
+
 export class Survey {
-    constructor(name, visible, stations, shots, polygonSegments, splaySegments, stationNames, stationSpheres) {
+    constructor(name, visible, stations, shots) {
         this.name = name;
         this.visible = visible;
         this.stations = stations;
         this.shots = shots;
+        this.isolated = false;
     }
 }
+
+export class SurveyAlias {
+    constructor(from, to) {
+        this.from = from;
+        this.to = to;
+    }
+
+    contains(n) {
+        return this.from === n || this.to === n;
+    }
+
+    getPair(n) {
+        if (this.from === n) {
+            return this.to;
+        } else if (this.to === n) {
+            return this.from;
+        } else {
+            return undefined;
+        }
+    }
+}
+
 
 export class Cave {
     constructor(name, surveys, visible) {
@@ -42,10 +66,3 @@ export class Cave {
         this.visible = visible;
     }
 }
-
-// this.polygonSegments = polygonSegments;
-// this.splaySegments = splaySegments;
-// this.stationNames = stationNames;
-// this.stationSpheres = stationSpheres;
-
-
