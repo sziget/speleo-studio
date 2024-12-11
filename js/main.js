@@ -20,7 +20,7 @@ import { buildNavbar, addNavbarClickListener } from "./navbar.js";
 import { addGui } from "./gui.js";
 
 
-    
+
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, orbit, gui;
 
@@ -59,7 +59,7 @@ document.getElementById("surveydatapanel-close").addEventListener("click", funct
                 const [clSegments, splaySegments] = I.getSegments(stations, es.shots);
                 myscene.disposeSurvey(cn, es.name);
                 const [cl, sl, sn, ss, group] = addToScene(stations, clSegments, splaySegments);
-                myscene.addSurvey(cn, es.name, {'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
+                myscene.addSurvey(cn, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
 
             });
         });
@@ -178,7 +178,6 @@ function init() {
         {
             "tooltip": "Zoom to fit", "glyphName": "fullscreen", "click": function () {
                 fitObjectsToCamera(cavesObjectGroup);
-
             }
         },
         {
@@ -214,6 +213,14 @@ function init() {
     myscene = new MyScene(OPTIONS, scene, render);
     explorer = new ProjectExplorer(OPTIONS, db, myscene, cavesModified);
     gui = addGui(OPTIONS, myscene, MAT.materials);
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('cave')) {
+        const caveNameUrl = urlParams.get('cave');
+
+        if (caveNameUrl.includes('.cave')) {
+            fetch(caveNameUrl).then(data => data.blob()).then(res => imporPolygonFromFile(res)).catch(error => console.error(error));
+        }
+    }
 }
 
 function zoom(step) {
@@ -329,7 +336,7 @@ function addToScene(stations, polygonSegments, splaySegments) {
     const stationSpheresGroup = new THREE.Group();
     for (const [stationName, stationPosition] of stations) {
         addStationName(stationName, stationPosition, stationNamesGroup);
-        addStationSpheres(stationName, stationPosition, stationSpheresGroup,new THREE.SphereGeometry(OPTIONS.scene.stationSphereRadius / 10.0, 5, 5));
+        addStationSpheres(stationName, stationPosition, stationSpheresGroup, new THREE.SphereGeometry(OPTIONS.scene.stationSphereRadius / 10.0, 5, 5));
     }
 
     stationNamesGroup.visible = OPTIONS.scene.show.stationNames;
@@ -343,21 +350,23 @@ function addToScene(stations, polygonSegments, splaySegments) {
     return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup, group];
 }
 
-function importPolygonFile(file) {
+function imporPolygonFromFile(file) {
     const reader = new FileReader();
-    reader.onload = (event) => {
-        const wholeFileInText = event.target.result;
-        const cave = I.getCaveFromPolygonFile(wholeFileInText);
-        db.caves.push(cave);
-        cave.surveys.forEach(s => {
-            const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
-            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = addToScene(s.stations, centerLineSegments, splaySegments);
-            myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
-        });
-        explorer.renderTrees();
-        fitObjectsToCamera(cavesObjectGroup);
-    };
+    reader.onload = (event) => importPolygon(event.target.result);
     reader.readAsText(file, "iso_8859-2");
+}
+
+function importPolygon(wholeFileInText) {
+    const cave = I.getCaveFromPolygonFile(wholeFileInText);
+    db.caves.push(cave);
+    cave.surveys.forEach(s => {
+        const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
+        const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = addToScene(s.stations, centerLineSegments, splaySegments);
+        myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
+    });
+    explorer.renderTrees();
+    fitObjectsToCamera(cavesObjectGroup);
+
 }
 
 function importCsvFile(file) {
@@ -372,7 +381,7 @@ function importCsvFile(file) {
             const surveyName = 'polygon';
             const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
             db.caves.push(cave);
-            myscene.addSurvey(caveName, surveyName, {'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
+            myscene.addSurvey(caveName, surveyName, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
             explorer.renderTrees();
             fitObjectsToCamera(cavesObjectGroup);
         },
@@ -392,6 +401,6 @@ document.getElementById('topodroidInput').addEventListener('change', function (e
 document.getElementById('polygonInput').addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (file) {
-        importPolygonFile(file);
+        imporPolygonFromFile(file);
     }
 });
