@@ -8,7 +8,10 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as C from "./constants.js";
 import * as I from "./import.js";
 import * as M from "./model.js";
-import * as P from "./panel.js";
+import { ProjectExplorer } from "./explorer.js";
+import { OPTIONS } from "./config.js";
+import { Database } from "./db.js";
+import { MyScene } from "./scene.js";
 import * as U from "./utils.js";
 import * as A from "./interactive.js";
 import * as MAT from "./materials.js";
@@ -21,23 +24,14 @@ import { addGui } from "./gui.js";
 let cameraPersp, cameraOrtho, currentCamera;
 let scene, renderer, orbit, gui;
 
-let show = {
-    stationNames: false,
-    polygon: true,
-    splays: false,
-    spheres: true
-};
-
-let configuration = {
-    stationSphereRadius: 1,
-    zoomStep: 0.1
-};
+let db = new Database()
+let explorer;
+let myscene;
 
 let stationFont;
-let caves = [];
+
 
 let cavesObjectGroup = new THREE.Group();
-const cavesObjects = new Map();
 const cavesModified = new Set();
 let cavesStationNamesGroup;
 
@@ -52,7 +46,7 @@ document.getElementById("surveydatapanel-close").addEventListener("click", funct
 
     if (cavesModified.size > 0) {
         cavesModified.forEach(cn => {
-            const editedCave = caves.find(c => c.name === cn);
+            const editedCave = db.caves.find(c => c.name === cn);
             let surveyStations = new Map();
             editedCave.surveys.entries().forEach(([index, es]) => {
                 es.isolated = false;
@@ -63,30 +57,19 @@ document.getElementById("surveydatapanel-close").addEventListener("click", funct
                 es.stations = stations;
                 stations.forEach((v, k) => surveyStations.set(k, v));
                 const [clSegments, splaySegments] = I.getSegments(stations, es.shots);
-                const e = cavesObjects.get(cn).get(es.name);
-                e.centerLines.geometry.dispose();
-                e.stationNames.children.forEach(c => c.geometry.dispose());
-                e.stationNames.clear();
-                e.stationSpheres.children.forEach(c => c.geometry.dispose());
-                e.stationSpheres.clear();
-                e.group.clear();
-                scene.remove(e.group);
+                myscene.disposeSurvey(cn, es.name);
                 const [cl, sl, sn, ss, group] = addToScene(stations, clSegments, splaySegments);
-                cavesObjects.get(cn).set(es.name, {'id': U.randomAlphaNumbericString(5), 'cave': cn, 'survey': es.name, 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
+                myscene.addSurvey(cn, es.name, {'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
 
             });
         });
         cavesModified.clear();
-        render();
+        myscene.renderScene();
     }
 });
 
 function getAllStationSpheres() {
-
-    let spheres = cavesObjects.map((id, objects) => {
-        return objects.stationSpheres.children;
-    });
-    return spheres.flat();
+    return myscene.getAllStationSpheres();
 
 }
 
@@ -166,8 +149,6 @@ function init() {
 
     cavesStationNamesGroup = [];
 
-    gui = addGui(caves, show, configuration, MAT.materials, render);
-
     buildNavbar(document.getElementById("navbarcontainer"), [
         {
             "name": "File", elements: [
@@ -230,6 +211,11 @@ function init() {
     ]);
     addNavbarClickListener();
 
+    myscene = new MyScene(OPTIONS, scene, render);
+    explorer = new ProjectExplorer(OPTIONS, db, myscene, cavesModified);
+    gui = addGui(OPTIONS, myscene, MAT.materials);
+
+
 }
 
 function zoom(step) {
@@ -252,7 +238,7 @@ function fitObjectsToCamera(objectGroup) {
     const height = boundingBox.max.y - boundingBox.min.y
     const maxSize = Math.max(width, height);
 
-    configuration.zoomStep = C.FRUSTRUM / maxSize;
+    OPTIONS.scene.zoomStep = C.FRUSTRUM / maxSize;
     const zoomLevel = Math.min(
         (2 * C.FRUSTRUM * aspect) / width,
         (2 * C.FRUSTRUM) / height,
@@ -273,7 +259,7 @@ function fitObjectsToCamera(objectGroup) {
 }
 
 function render() {
-    if (cavesStationNamesGroup !== undefined && show.stationNames) {
+    if (cavesStationNamesGroup !== undefined && OPTIONS.scene.show.stationNames) {
         cavesStationNamesGroup.forEach(
             group => group.children.forEach(fontMesh =>
                 fontMesh.lookAt(currentCamera.position)
@@ -316,8 +302,8 @@ function addStationName(stationName, position, fontGroup) {
     fontGroup.add(textMesh);
 }
 
-function addStationSpheres(stationName, position, sphereGroup) {
-    const geometry = new THREE.SphereGeometry(configuration.stationSphereRadius / 10.0, 5, 5);
+function addStationSpheres(stationName, position, sphereGroup, geometry) {
+    //const geometry = new THREE.SphereGeometry(OPTIONS.scene.stationSphereRadius / 10.0, 5, 5);
     const sphere = new THREE.Mesh(geometry, MAT.materials.sphere);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
@@ -330,12 +316,12 @@ function addToScene(stations, polygonSegments, splaySegments) {
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
     const lineSegmentsPolygon = new LineSegments2(geometryStations, MAT.materials.polygon);
-    lineSegmentsPolygon.visible = show.polygon;
+    lineSegmentsPolygon.visible = OPTIONS.scene.show.polygon;
 
     const splaysGeometry = new LineSegmentsGeometry();
     splaysGeometry.setPositions(splaySegments);
     const lineSegmentsSplays = new LineSegments2(splaysGeometry, MAT.materials.splay);
-    lineSegmentsSplays.visible = show.splays;
+    lineSegmentsSplays.visible = OPTIONS.scene.show.splays;
     const group = new THREE.Group();
 
     group.add(lineSegmentsPolygon);
@@ -345,11 +331,11 @@ function addToScene(stations, polygonSegments, splaySegments) {
     const stationSpheresGroup = new THREE.Group();
     for (const [stationName, stationPosition] of stations) {
         addStationName(stationName, stationPosition, stationNamesGroup);
-        addStationSpheres(stationName, stationPosition, stationSpheresGroup);
+        addStationSpheres(stationName, stationPosition, stationSpheresGroup,new THREE.SphereGeometry(OPTIONS.scene.stationSphereRadius / 10.0, 5, 5));
     }
 
-    stationNamesGroup.visible = show.stationNames;
-    stationSpheresGroup.visible = show.spheres;
+    stationNamesGroup.visible = OPTIONS.scene.show.stationNames;
+    stationSpheresGroup.visible = OPTIONS.scene.show.spheres;
 
     group.add(stationNamesGroup);
     group.add(stationSpheresGroup);
@@ -364,22 +350,16 @@ function importPolygonFile(file) {
     reader.onload = (event) => {
         const wholeFileInText = event.target.result;
         const cave = I.getCaveFromPolygonFile(wholeFileInText);
-        caves.push(cave);
-        const sMaps = new Map();
-        cavesObjects.set(cave.name, sMaps);
+        db.caves.push(cave);
         cave.surveys.forEach(s => {
             const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
             const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = addToScene(s.stations, centerLineSegments, splaySegments);
-            sMaps.set(s.name, { 'id': U.randomAlphaNumbericString(5), 'cave': cave.name, 'survey': s.name, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
+            myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
         });
-        P.renderSurveyPanel(caves, cavesObjects, show, render, cavesModified);
+        explorer.renderTrees();
         fitObjectsToCamera(cavesObjectGroup);
     };
     reader.readAsText(file, "iso_8859-2");
-}
-
-function showError(message) {
-    alert(message);
 }
 
 function importCsvFile(file) {
@@ -393,9 +373,9 @@ function importCsvFile(file) {
             const caveName = file.name;
             const surveyName = 'polygon';
             const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
-            cavesObjects.set(caveName, new Map([[surveyName, {'id': U.randomAlphaNumbericString(5), 'cave': caveName, 'survey': surveyName, 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group }]]));
-            caves.push(cave);
-            P.renderSurveyPanel(caves, cavesObjects, show, render, cavesModified);
+            db.caves.push(cave);
+            myscene.addSurvey(caveName, surveyName, {'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
+            explorer.renderTrees();
             fitObjectsToCamera(cavesObjectGroup);
         },
         error: function (error) {
