@@ -1,15 +1,9 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(caves, show, configuration, gizmo, materials, renderFn) {
+export function addGui(caves, show, configuration, materials, renderFn) {
     const gui = new GUI();
-
-    const param = {
-        'show gizmo': true
-    };
-
     const polygonParam = {
-
         'show polygon lines': show.polygon,
         'line color': materials.polygon.color.getHex(),
         'world units': false,
@@ -33,10 +27,6 @@ export function addGui(caves, show, configuration, gizmo, materials, renderFn) {
 
     }
 
-    gui.add(param, 'show gizmo').onChange(function (val) {
-        gizmo.visible = val;
-        renderFn();
-    });
 
     const polygonFolder = gui.addFolder('Polygon');
 

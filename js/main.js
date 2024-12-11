@@ -2,14 +2,12 @@ import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 import * as C from "./constants.js";
 import * as I from "./import.js";
-import * as L from "./listeners.js";
 import * as M from "./model.js";
 import * as P from "./panel.js";
 import * as U from "./utils.js";
@@ -21,7 +19,7 @@ import { buildNavbar, addNavbarClickListener } from "./navbar.js";
 import { addGui } from "./gui.js";
 
 let cameraPersp, cameraOrtho, currentCamera;
-let scene, renderer, control, orbit, gizmo, gui;
+let scene, renderer, orbit, gui;
 
 let show = {
     stationNames: false,
@@ -65,21 +63,10 @@ function init() {
     currentCamera.lookAt(C.ORBIT_TARGET);
 
     orbit = new OrbitControls(currentCamera, renderer.domElement);
-    //orbit.enableZoom = true;
     orbit.update();
     orbit.addEventListener('change', render);
 
-    control = new TransformControls(currentCamera, renderer.domElement);
-    control.addEventListener('change', render);
-    control.addEventListener('dragging-changed', function (event) {
-        orbit.enabled = !event.value;
-    });
-
-    const listener = new L.EventListener(control, orbit, currentCamera, cameraPersp, cameraOrtho, onWindowResize);
-
     window.addEventListener('resize', onWindowResize);
-    window.addEventListener('keydown', function (event) { listener.keyDownListener(event); });
-    window.addEventListener('keyup', function (event) { listener.keyUpListener(event); });
     document.addEventListener('pointermove', A.onPointerMove);
     renderer.domElement.addEventListener('click',
         function (event) {
@@ -127,9 +114,6 @@ function init() {
     const grid = new THREE.GridHelper(100, 10, 0x888888, 0x444444).rotateX(U.degreesToRads(90));
     scene.add(grid);
 
-    gizmo = control.getHelper();
-    scene.add(gizmo);
-
     const loader = new FontLoader();
     loader.load('fonts/helvetiker_regular.typeface.json', function (font) {
         stationFont = font;
@@ -137,7 +121,7 @@ function init() {
 
     cavesStationNamesGroup = [];
 
-    gui = addGui(caves, show, configuration, gizmo, MAT.materials, render);
+    gui = addGui(caves, show, configuration, MAT.materials, render);
 
     buildNavbar(document.getElementById("navbarcontainer"), [
         {
@@ -332,7 +316,6 @@ function addToScene(stations, polygonSegments, splaySegments) {
     //scene.add(group); maybe needs to remove
     cavesObjectGroup.add(group);
     scene.add(cavesObjectGroup);
-    control.attach(cavesObjectGroup);
     render();
     return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup];
 }
