@@ -2,16 +2,15 @@ import { classNames } from './external/classnames.js';
 import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
 import * as U from "./utils.js";
-import * as D from "./datapanel.js";
 
 export class ProjectExplorer {
     
-    constructor(options, db, scene, modifiedTmp) {
+    constructor(options, db, scene, surveyeditor) {
         this.options = options;
         this.db = db;
         this.scene = scene;
         this.trees = new Map();
-        this.modifiedTmp = modifiedTmp;
+        this.surveyeditor = surveyeditor;
     }
 
 
@@ -87,8 +86,8 @@ export class ProjectExplorer {
             tree.checkNode(currentNode);
             return;
         } else if (event.target.id === "edit") {
-            surveydatapanel.style.display = "block";
-            D.setupTable(state.cave.name, state.survey.name, state.survey.shots, this.modifiedTmp);
+            this.surveyeditor.show();
+            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots);
         }
     }
 

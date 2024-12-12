@@ -8,48 +8,18 @@ import * as U from "./utils.js";
 import { SceneInteraction } from "./interactive.js";
 import * as MAT from "./materials.js";
 import { NavigationBar } from "./navbar.js";
-
+import { SurveyHelper } from "./survey.js";
+import { SurveyEditor } from "./surveyeditor.js";
 import { addGui } from "./gui.js";
 
 let gui;
 let db = new Database()
-let explorer, myscene, navbar;
+let explorer, myscene, navbar, surveyeditor;
 
-
-const cavesModified = new Set();
 let cavesStationNamesGroup;
 
 init();
 myscene.renderScene();
-
-document.getElementById("surveydatapanel-close").addEventListener("click", function () {
-
-    //surveydata.innerHTML = '';
-    surveydatapanel.style.display = 'none';
-
-    if (cavesModified.size > 0) {
-        cavesModified.forEach(cn => {
-            const editedCave = db.caves.find(c => c.name === cn);
-            let surveyStations = new Map();
-            editedCave.surveys.entries().forEach(([index, es]) => {
-                es.isolated = false;
-                const startName = index === 0 ? es.shots[0].from : undefined;
-                const startPosition = index === 0 ? new M.Vector(0, 0, 0) : undefined;
-                const stations = I.calculateSurveyStations(es.shots, surveyStations, [], startName, startPosition);
-                es.isolated = (stations.size === 0);
-                es.stations = stations;
-                stations.forEach((v, k) => surveyStations.set(k, v));
-                const [clSegments, splaySegments] = I.getSegments(stations, es.shots);
-                myscene.disposeSurvey(cn, es.name);
-                const [cl, sl, sn, ss, group] = addToScene(stations, clSegments, splaySegments);
-                myscene.addSurvey(cn, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
-
-            });
-        });
-        cavesModified.clear();
-        myscene.renderScene();
-    }
-});
 
 function init() {
 
@@ -69,7 +39,8 @@ function init() {
 
     myscene = new MyScene(OPTIONS, sceneDomElement);
     navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, myscene);
-    explorer = new ProjectExplorer(OPTIONS, db, myscene, cavesModified);
+    surveyeditor = new SurveyEditor(myscene, db, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"));
+    explorer = new ProjectExplorer(OPTIONS, db, myscene, surveyeditor);
     gui = addGui(OPTIONS, myscene, MAT.materials);
     let interaction = new SceneInteraction(myscene, MAT.materials, sceneDomElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
@@ -93,7 +64,7 @@ function importPolygon(wholeFileInText) {
     const cave = I.getCaveFromPolygonFile(wholeFileInText);
     db.caves.push(cave);
     cave.surveys.forEach(s => {
-        const [centerLineSegments, splaySegments] = I.getSegments(s.stations, s.shots);
+        const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
         const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(s.stations, centerLineSegments, splaySegments);
         myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
     });

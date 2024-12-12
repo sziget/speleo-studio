@@ -39,7 +39,7 @@ export class MyScene {
 
         this.raycaster = new THREE.Raycaster();
 
-        window.addEventListener('resize', this.onWindowResize);
+        window.addEventListener('resize', () => this.onWindowResize());
     }
 
     setFont(font) {
@@ -122,8 +122,8 @@ export class MyScene {
         //this.cameraPersp.aspect = aspect;
         //this.cameraPersp.updateProjectionMatrix();
 
-        this.cameraOrtho.left = cameraOrtho.bottom * aspect;
-        this.cameraOrtho.right = cameraOrtho.top * aspect;
+        this.cameraOrtho.left = this.cameraOrtho.bottom * aspect;
+        this.cameraOrtho.right = this.cameraOrtho.top * aspect;
         this.cameraOrtho.updateProjectionMatrix();
 
         this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -226,7 +226,6 @@ export class MyScene {
     }
 
     addStationSpheres(stationName, position, sphereGroup, geometry) {
-        //const geometry = new THREE.SphereGeometry(OPTIONS.scene.stationSphereRadius / 10.0, 5, 5);
         const sphere = new THREE.Mesh(geometry, MAT.materials.sphere);
         sphere.position.x = position.x;
         sphere.position.y = position.y;
