@@ -26,16 +26,19 @@ export class SurveyEditor {
         let surveyStations = new Map();
         cave.surveys.entries().forEach(([index, es]) => {
             SurveyHelper.recalculateSurvey(index, es, surveyStations);
-            //console.log('stations are ', stations);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
-            const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments);
+            const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
             this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
         });
     }
 
     recalculateCaves(caves) {
-        caves.forEach(c => this.recalculateCave(c))
+        caves.forEach(c => {
+            if (this.cavesModified.has(c.name)) {
+                this.recalculateCave(c)
+            }
+        });
         this.cavesModified.clear();
         this.scene.renderScene();
     }

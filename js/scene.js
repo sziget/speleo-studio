@@ -234,16 +234,16 @@ export class MyScene {
         sphereGroup.add(sphere);
     }
 
-    addToScene(stations, polygonSegments, splaySegments) {
+    addToScene(stations, polygonSegments, splaySegments, visibility) {
         const geometryStations = new LineSegmentsGeometry();
         geometryStations.setPositions(polygonSegments);
         const lineSegmentsPolygon = new LineSegments2(geometryStations, MAT.materials.polygon);
-        lineSegmentsPolygon.visible = this.options.scene.show.polygon;
+        lineSegmentsPolygon.visible = visibility && this.options.scene.show.polygon;
 
         const splaysGeometry = new LineSegmentsGeometry();
         splaysGeometry.setPositions(splaySegments);
         const lineSegmentsSplays = new LineSegments2(splaysGeometry, MAT.materials.splay);
-        lineSegmentsSplays.visible = this.options.scene.show.splays;
+        lineSegmentsSplays.visible = visibility && this.options.scene.show.splays;
         const group = new THREE.Group();
 
         group.add(lineSegmentsPolygon);
@@ -251,13 +251,14 @@ export class MyScene {
 
         const stationNamesGroup = new THREE.Group();
         const stationSpheresGroup = new THREE.Group();
+        const sphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0, 5, 5);
         for (const [stationName, stationPosition] of stations) {
             this.addStationName(stationName, stationPosition, stationNamesGroup);
-            this.addStationSpheres(stationName, stationPosition, stationSpheresGroup, new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0, 5, 5));
+            this.addStationSpheres(stationName, stationPosition, stationSpheresGroup, sphereGeo);
         }
 
-        stationNamesGroup.visible = this.options.scene.show.stationNames;
-        stationSpheresGroup.visible = this.options.scene.show.spheres;
+        stationNamesGroup.visible = visibility && this.options.scene.show.stationNames;
+        stationSpheresGroup.visible = visibility && this.options.scene.show.spheres;
 
         group.add(stationNamesGroup);
         group.add(stationSpheresGroup);

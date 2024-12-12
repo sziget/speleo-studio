@@ -62,10 +62,10 @@ function imporPolygonFromFile(file) {
 
 function importPolygon(wholeFileInText) {
     const cave = I.getCaveFromPolygonFile(wholeFileInText);
-    db.caves.push(cave);
+    db.caves.set(cave.name, cave);
     cave.surveys.forEach(s => {
         const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
-        const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(s.stations, centerLineSegments, splaySegments);
+        const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(s.stations, centerLineSegments, splaySegments, true);
         myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
     });
     explorer.renderTrees();
@@ -80,11 +80,11 @@ function importCsvFile(file) {
         dynamicTyping: true,
         complete: function (results) {
             const [stations, shots, centerLineSegments, splaySegments] = I.importCsvFile(results.data);
-            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(stations, centerLineSegments, splaySegments);
+            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(stations, centerLineSegments, splaySegments, true);
             const caveName = file.name;
             const surveyName = 'polygon';
             const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
-            db.caves.push(cave);
+            db.caves.set(caveName, cave);
             myscene.addSurvey(caveName, surveyName, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
             explorer.renderTrees();
             myscene.fitScene();

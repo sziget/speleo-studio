@@ -1,5 +1,5 @@
 export class Database {
     constructor() {
-        this.caves = [];
+        this.caves = new Map();
     }
 }

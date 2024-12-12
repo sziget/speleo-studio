@@ -20,7 +20,7 @@ export class ProjectExplorer {
                 id: U.randomAlphaNumbericString(8),
                 name: survey.name,
                 loadOnDemand: true,
-                state: { checked: survey.visible, cave: cave, survey: survey }
+                state: { checked: survey.visible, nodeType: 'survey', cave: cave, survey: survey }
             };
         }
         const mapCave = (cave) => {
@@ -29,7 +29,7 @@ export class ProjectExplorer {
                 name: cave.name,
                 children: cave.surveys.map(s => mapSurvey(cave, s)),
                 loadOnDemand: true,
-                state: { checked: cave.visible, cave: cave }
+                state: { checked: cave.visible, cave: cave, nodeType: 'cave', }
             };
         }
         document.querySelector('#tree-panel').innerHTML = '';
@@ -68,13 +68,10 @@ export class ProjectExplorer {
             event.stopPropagation();
             const value = !state.checked;
 
-
-            if (state.survey !== undefined) {
+            if (state.nodeType === "survey") {
                 state.survey.visible = value;
                 this.scene.setSurveyVisibility(state.cave.name, state.survey.name, value);
-            }
-
-            if (state.cave !== undefined && state.survey === undefined) {
+            } else if (state.nodeType === "cave") {
                 const cave = state.cave;
                 cave.visible = value;
                 cave.surveys.forEach((survey) => {
