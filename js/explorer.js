@@ -40,7 +40,7 @@ export class ProjectExplorer {
                 el: document.querySelector('#tree-panel'),
                 data: mapCave(cave),
                 autoOpen: false,
-                rowRenderer: this.renderer,
+                rowRenderer: this.treeRenderer,
                 scene: this.scene
             });
             this.trees.set(cave.name, tree);
@@ -104,7 +104,7 @@ export class ProjectExplorer {
         }
     }
 
-    renderer(node, treeOptions) {
+    treeRenderer(node, treeOptions) {
         const { id, name, loadOnDemand = false, children, state, props = {} } = node;
         const droppable = (treeOptions.droppable) && (props.droppable);
         const { depth, open, path, total, selected = false, filtered, checked, indeterminate } = state;

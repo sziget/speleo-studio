@@ -6,7 +6,8 @@ let pointer = new THREE.Vector2();
 let selectedStation, selectedStationForContext;
 let raycaster = new THREE.Raycaster();
 
-export function calcualteDistanceListener(event, rect, materials, scene, renderFn) {
+export function calcualteDistanceListener(event, scene, materials) {
+    const rect = scene.getBoundingClientRect();
     const left = event.clientX - rect.left;
     const top = event.clientY - rect.top;
 
@@ -29,7 +30,7 @@ export function calcualteDistanceListener(event, rect, materials, scene, renderF
         selectedStationForContext = undefined;
         selectedStation.material = materials.sphere;
         selectedStation = undefined;
-        renderFn();
+        scene.renderScene();
     }
 }
 
@@ -38,7 +39,8 @@ export function onPointerMove(event) {
     pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
-export function onClick(event, cavesStationSpheresGroup, currentCamera, materials, renderFn) {
+export function onClick(event, scene, materials) {
+    const cavesStationSpheresGroup = scene.getAllStationSpheres();
     if (cavesStationSpheresGroup !== undefined) {
         raycaster.setFromCamera(pointer, currentCamera);
         const intersects = raycaster.intersectObjects(cavesStationSpheresGroup);
@@ -72,7 +74,7 @@ export function onClick(event, cavesStationSpheresGroup, currentCamera, material
     }
 }
 
-export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, materials, rect, renderFn) {
+export function onMouseDown(event, scene, materials) {
     event.preventDefault();
     var rightclick;
     if (!event) var event = window.event;
@@ -80,6 +82,7 @@ export function onMouseDown(event, cavesStationSpheresGroup, currentCamera, mate
     else if (event.button) rightclick = (event.button == 2);
     if (!rightclick) return;
 
+    const cavesStationSpheresGroup = scene.getAllStationSpheres();
     if (cavesStationSpheresGroup !== undefined) {
         raycaster.setFromCamera(pointer, currentCamera);
 
