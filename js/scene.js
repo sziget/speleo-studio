@@ -20,9 +20,9 @@ export class MyScene {
         this.sceneRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.domElement });
         this.sceneRenderer.setPixelRatio(window.devicePixelRatio);
         this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
-    
+
         const aspect = window.innerWidth / window.innerHeight;
-    
+
         //this.cameraPersp = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
         this.cameraOrtho = new THREE.OrthographicCamera(- C.FRUSTRUM * aspect, C.FRUSTRUM * aspect, C.FRUSTRUM, - C.FRUSTRUM, -1000, 3000);
         this.currentCamera = this.cameraOrtho;
@@ -37,6 +37,8 @@ export class MyScene {
         this.threejsScene.add(grid);
         this.threejsScene.add(this.caveObject3DGroup);
 
+        this.raycaster = new THREE.Raycaster();
+
         window.addEventListener('resize', this.onWindowResize);
     }
 
@@ -45,7 +47,7 @@ export class MyScene {
     }
 
 
-    setCameraPosition(x,y, z) {
+    setCameraPosition(x, y, z) {
         this.currentCamera.position.set(x, y, z);
         this.currentCamera.lookAt(C.ORBIT_TARGET);
         this.currentCamera.updateMatrix();
@@ -74,7 +76,7 @@ export class MyScene {
 
     changeStationSpheresRadius() {
         const spheres = this.getAllStationSpheres();
-        const geometry = new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0 , 5, 5 );
+        const geometry = new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0, 5, 5);
         spheres.forEach(s => s.geometry = geometry);
         this.renderScene();
     }
@@ -87,7 +89,7 @@ export class MyScene {
         e.stationSpheres.children.forEach(c => c.geometry.dispose()); // all stations spheres use the same geometry
         e.stationSpheres.clear();
         e.group.clear();
-        this.scene.remove(e.group);
+        this.threejsScene.remove(e.group);
     }
 
     addSurvey(cave, survey, entry) {
@@ -100,27 +102,33 @@ export class MyScene {
 
     getAllStationSpheres() {
         const entries = Array.from(this.#getObjectsFlattened());
-        return entries.flatMap(e =>  e.stationSpheres.children);
-        
+        return entries.flatMap(e => e.stationSpheres.children);
+
     }
 
     getBoundingClientRect() {
         return this.domElement.getBoundingClientRect();
     }
 
+    getIntersectedStationSpheres(pointer) {
+        const spheres = this.getAllStationSpheres();
+        this.raycaster.setFromCamera(pointer, this.currentCamera);
+        return this.raycaster.intersectObjects(spheres);
+    }
+
     onWindowResize() {
         const aspect = window.innerWidth / window.innerHeight;
-    
+
         //this.cameraPersp.aspect = aspect;
         //this.cameraPersp.updateProjectionMatrix();
-    
+
         this.cameraOrtho.left = cameraOrtho.bottom * aspect;
         this.cameraOrtho.right = cameraOrtho.top * aspect;
         this.cameraOrtho.updateProjectionMatrix();
-    
+
         this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
         this.renderScene();
-    
+
     }
 
     zoomWithStep(step) {
@@ -138,7 +146,7 @@ export class MyScene {
 
     fitObjectsToCamera(object3DGroup) {
         const boundingBox = new THREE.Box3().setFromObject(object3DGroup);
-    
+
         const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
         const aspect = window.innerWidth / window.innerHeight;
         const rotation = new THREE.Matrix4().extractRotation(this.currentCamera.matrix);
@@ -146,18 +154,18 @@ export class MyScene {
         const width = boundingBox.max.x - boundingBox.min.x;
         const height = boundingBox.max.y - boundingBox.min.y
         const maxSize = Math.max(width, height);
-    
+
         this.options.scene.zoomStep = C.FRUSTRUM / maxSize;
         const zoomLevel = Math.min(
             (2 * C.FRUSTRUM * aspect) / width,
             (2 * C.FRUSTRUM) / height,
         );
         this.currentCamera.zoom = zoomLevel;
-    
+
         const moveCameraBy = boundingBoxCenter.clone().sub(C.ORBIT_TARGET);
         const oldPosition = this.currentCamera.position.clone();
         const newCameraPosition = oldPosition.add(moveCameraBy);
-    
+
         C.ORBIT_TARGET.copy(boundingBoxCenter)
         this.currentCamera.position.copy(newCameraPosition);
         this.currentCamera.lookAt(C.ORBIT_TARGET);
@@ -166,7 +174,7 @@ export class MyScene {
         this.orbit.update();
         this.renderScene();
     }
-    
+
     lookAtPlan() {
         this.setCameraPosition(C.ORBIT_TARGET.x, C.ORBIT_TARGET.y, C.ORBIT_TARGET.z + 100);
         this.fitObjectsToCamera(this.caveObject3DGroup);
@@ -192,15 +200,23 @@ export class MyScene {
         return this.caveObjects.values().flatMap(c => Array.from(c.values()));
     }
 
+    addObjectToScene(object) {
+        this.threejsScene.add(object);
+    }
+
+    removeFromScene(object) {
+        this.threejsScene.remove(object);
+    }
+
     addStationName(stationName, position, fontGroup) {
         const shortName = stationName.split("@")[0]
         const textShape = this.stationFont.generateShapes(shortName, 0.7);
         const textGeometry = new THREE.ShapeGeometry(textShape);
         textGeometry.computeBoundingBox();
-    
+
         const xMid = - 0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
         textGeometry.translate(xMid, 0, 0);
-    
+
         const textMesh = new THREE.Mesh(textGeometry, MAT.materials.text);
         textMesh.lookAt(this.currentCamera.position)
         textMesh.position.x = position.x;
@@ -224,26 +240,26 @@ export class MyScene {
         geometryStations.setPositions(polygonSegments);
         const lineSegmentsPolygon = new LineSegments2(geometryStations, MAT.materials.polygon);
         lineSegmentsPolygon.visible = this.options.scene.show.polygon;
-    
+
         const splaysGeometry = new LineSegmentsGeometry();
         splaysGeometry.setPositions(splaySegments);
         const lineSegmentsSplays = new LineSegments2(splaysGeometry, MAT.materials.splay);
         lineSegmentsSplays.visible = this.options.scene.show.splays;
         const group = new THREE.Group();
-    
+
         group.add(lineSegmentsPolygon);
         group.add(lineSegmentsSplays);
-    
+
         const stationNamesGroup = new THREE.Group();
         const stationSpheresGroup = new THREE.Group();
         for (const [stationName, stationPosition] of stations) {
             this.addStationName(stationName, stationPosition, stationNamesGroup);
             this.addStationSpheres(stationName, stationPosition, stationSpheresGroup, new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0, 5, 5));
         }
-    
+
         stationNamesGroup.visible = this.options.scene.show.stationNames;
         stationSpheresGroup.visible = this.options.scene.show.spheres;
-    
+
         group.add(stationNamesGroup);
         group.add(stationSpheresGroup);
         this.caveObject3DGroup.add(group);

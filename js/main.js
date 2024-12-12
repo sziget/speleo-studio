@@ -1,6 +1,3 @@
-import * as THREE from 'three';
-
-
 import * as I from "./import.js";
 import * as M from "./model.js";
 import { ProjectExplorer } from "./explorer.js";
@@ -8,7 +5,7 @@ import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene.js";
 import * as U from "./utils.js";
-import * as A from "./interactive.js";
+import { SceneInteraction } from "./interactive.js";
 import * as MAT from "./materials.js";
 import { NavigationBar } from "./navbar.js";
 
@@ -66,43 +63,15 @@ function init() {
         });
     }
 
-
-    const sceneDOMElement = document.querySelector("canvas"); //document.getElementById("#threejscanvas");
+    const sceneDomElement = document.querySelector("canvas"); //document.getElementById("#threejscanvas");
 
     cavesStationNamesGroup = [];
 
-    
-    myscene = new MyScene(OPTIONS, sceneDOMElement);
+    myscene = new MyScene(OPTIONS, sceneDomElement);
     navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, myscene);
     explorer = new ProjectExplorer(OPTIONS, db, myscene, cavesModified);
     gui = addGui(OPTIONS, myscene, MAT.materials);
-
-
-    //document.addEventListener('pointermove', A.onPointerMove);
-    // sceneDOMElement.addEventListener('click',
-    //     function (event) {
-    //         A.onClick(
-    //             event,
-    //             scene,
-    //             MAT.materials
-    //         );
-    //     }, false);
-    //     sceneDOMElement.addEventListener('mousedown',
-    //     function (event) {
-    //         A.onMouseDown(
-    //             event,
-    //             myscene,
-    //             MAT.materials
-    //         );
-    //     }, false);
-    // getdistance.addEventListener("click",
-    //     function (event) {
-    //         A.calcualteDistanceListener(
-    //             event,
-    //             myscene,
-    //             MAT.materials
-    //         );
-    //     }, false);
+    let interaction = new SceneInteraction(myscene, MAT.materials, sceneDomElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('cave')) {

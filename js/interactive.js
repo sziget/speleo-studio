@@ -2,143 +2,145 @@ import * as THREE from 'three';
 
 import * as PANELS from "./panels.js";
 
-let pointer = new THREE.Vector2();
-let selectedStation, selectedStationForContext;
-let raycaster = new THREE.Raycaster();
+export class SceneInteraction {
 
-export function calcualteDistanceListener(event, scene, materials) {
-    const rect = scene.getBoundingClientRect();
-    const left = event.clientX - rect.left;
-    const top = event.clientY - rect.top;
+    constructor(scene, materials, sceneDOMElement, calcDistanceButton, contextMenu, infoPanel) {
+        this.scene = scene;
+        this.materials = materials;
+        this.pointer = new THREE.Vector2();
+        this.contextMenu = contextMenu;
+        this.infoPanel = infoPanel;
+        this.selectedStation = undefined;
+        this.selectedStationForContext = undefined;
 
-    if (selectedStation === undefined) {
-        PANELS.showErrorPanel("You should select the starting point for distance measurement", left, top);
-    } else {
-        const from = selectedStation.position.clone();
-        const to = selectedStationForContext.position.clone();
-        const diff = to.clone().sub(from);
-        hideContextMenu();
+        document.addEventListener('pointermove', (event) => this.onPointerMove(event));
+        sceneDOMElement.addEventListener('click', (event) => this.onClick(event), false);
+        sceneDOMElement.addEventListener('mousedown', (event) => this.onMouseDown(event), false);
 
-        const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
-        const line = new THREE.Line(geometry, materials.distanceLine);
-        line.computeLineDistances();
-        scene.add(line);
-
-        showDistancePanel(selectedStation.name, selectedStationForContext.name, diff, left, top, function() { scene.remove(line); renderFn(); });
-
-        selectedStationForContext.material = materials.sphere;
-        selectedStationForContext = undefined;
-        selectedStation.material = materials.sphere;
-        selectedStation = undefined;
-        scene.renderScene();
+        calcDistanceButton.addEventListener("click", (event) => this.calcualteDistanceListener(event), false);
     }
-}
 
-export function onPointerMove(event) {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-}
+    onPointerMove(event) {
+        this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    }
 
-export function onClick(event, scene, materials) {
-    const cavesStationSpheresGroup = scene.getAllStationSpheres();
-    if (cavesStationSpheresGroup !== undefined) {
-        raycaster.setFromCamera(pointer, currentCamera);
-        const intersects = raycaster.intersectObjects(cavesStationSpheresGroup);
+    calcualteDistanceListener(event) {
+        const rect = this.scene.getBoundingClientRect();
+        const left = event.clientX - rect.left;
+        const top = event.clientY - rect.top;
+
+        if (this.selectedStation === undefined) {
+            PANELS.showErrorPanel("You should select the starting point for distance measurement", left, top);
+        } else {
+            const from = this.selectedStation.position.clone();
+            const to = this.selectedStationForContext.position.clone();
+            const diff = to.clone().sub(from);
+            this.hideContextMenu();
+
+            const geometry = new THREE.BufferGeometry().setFromPoints([from, to]);
+            const line = new THREE.Line(geometry, this.materials.distanceLine);
+            line.computeLineDistances();
+            this.scene.addObjectToScene(line);
+
+            this.showDistancePanel(this.selectedStation.name, this.selectedStationForContext.name, diff, left, top, () =>  { this.scene.removeFromScene(line); this.scene.renderScene(); });
+
+            this.selectedStationForContext.material = this.materials.sphere;
+            this.selectedStationForContext = undefined;
+            this.selectedStation.material = this.materials.sphere;
+            this.selectedStation = undefined;
+            this.scene.renderScene();
+        }
+    }
+
+    onClick(event) {
+        const intersects = this.scene.getIntersectedStationSpheres(this.pointer);
 
         if (intersects.length) {
             const intersectedObject = intersects[0].object; // first intersected object
 
-            if (intersectedObject === selectedStation) {
-                intersectedObject.material = materials.sphere;
-                selectedStation = undefined;
+            if (intersectedObject === this.selectedStation) {
+                intersectedObject.material = this.materials.sphere;
+                this.selectedStation = undefined;
             } else {
-                if (selectedStation !== undefined) {
-                    selectedStation.material = materials.sphere;
+                if (this.selectedStation !== undefined) {
+                    this.selectedStation.material = this.materials.sphere;
                 }
 
-                if (selectedStationForContext === intersectedObject) {
-                    hideContextMenu();
+                if (this.selectedStationForContext === intersectedObject) {
+                    this.hideContextMenu();
                 }
-                intersectedObject.material = materials.selectedSphere;
-                selectedStation = intersectedObject;
+                intersectedObject.material = this.materials.selectedSphere;
+                this.selectedStation = intersectedObject;
             }
-
-
-        } else if (selectedStation !== undefined) {
-            selectedStation.material = materials.sphere;
-            selectedStation = undefined;
+        } else if (this.selectedStation !== undefined) {
+            this.selectedStation.material = this.materials.sphere;
+            this.selectedStation = undefined;
         }
 
-        renderFn();
-
+        this.scene.renderScene();
     }
-}
 
-export function onMouseDown(event, scene, materials) {
-    event.preventDefault();
-    var rightclick;
-    if (!event) var event = window.event;
-    if (event.which) rightclick = (event.which == 3);
-    else if (event.button) rightclick = (event.button == 2);
-    if (!rightclick) return;
+    onMouseDown(event) { // right click
+        event.preventDefault();
+        var rightclick;
+        if (!event) var event = window.event;
+        if (event.which) rightclick = (event.which == 3);
+        else if (event.button) rightclick = (event.button == 2);
+        if (!rightclick) return;
 
-    const cavesStationSpheresGroup = scene.getAllStationSpheres();
-    if (cavesStationSpheresGroup !== undefined) {
-        raycaster.setFromCamera(pointer, currentCamera);
-
-        var intersects = raycaster.intersectObjects(cavesStationSpheresGroup);
+        const rect = this.scene.getBoundingClientRect();
+        const intersects = this.scene.getIntersectedStationSpheres(this.pointer);;
 
         if (intersects.length) {
             const intersectedObject = intersects[0].object;
-            if (intersectedObject === selectedStation) {
-                if (selectedStationForContext !== undefined) {
-                    selectedStationForContext.material = materials.sphere;
-                    showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
+            if (intersectedObject === this.selectedStation) {
+                if (this.selectedStationForContext !== undefined) {
+                    this.selectedStationForContext.material = this.materials.sphere;
+                    this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
                 }
-                selectedStationForContext = intersectedObject;
-                selectedStationForContext.material = materials.selectedContextSphere;
-                selectedStation = undefined;
+                this.selectedStationForContext = intersectedObject;
+                this.selectedStationForContext.material = this.materials.selectedContextSphere;
+                this.selectedStation = undefined;
             } else {
-                if (selectedStationForContext !== undefined) {
-                    selectedStationForContext.material = materials.sphere;
+                if (this.selectedStationForContext !== undefined) {
+                    this.selectedStationForContext.material = this.materials.sphere;
                 }
-                selectedStationForContext = intersectedObject;
-                intersectedObject.material = materials.selectedContextSphere;
-                showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
+                this.selectedStationForContext = intersectedObject;
+                intersectedObject.material = this.materials.selectedContextSphere;
+                this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
             }
-
-            renderFn();
+            this.scene.renderScene();
         }
-
     }
-}
 
-function showContextMenu(left, top) {
-    contextmenu.style.left = left + "px";
-    contextmenu.style.top = top + "px";
-    contextmenu.style.display = "";
-}
-
-function hideContextMenu() {
-    contextmenu.style.display = "none";
-}
-
-function showDistancePanel(fromName, toName, diffVector, left, top, lineRemoveFn) {
-    infopanel.children.namedItem("close").onclick = function() {
-        lineRemoveFn();
-        infopanel.style.display='none';
-        return false;
+    showContextMenu(left, top) {
+        this.contextMenu.style.left = left + "px";
+        this.contextMenu.style.top = top + "px";
+        this.contextMenu.style.display = "";
     }
-    infopanel.style.left = left + "px";
-    infopanel.style.top = top + "px";
-    infopanel.style.display = "block";
-    infopanelcontent.innerHTML = `
-    From: ${fromName}<br>
-    To: ${toName}<br>
-    X distance: ${diffVector.x}<br>
-    Y distance: ${diffVector.y}<br>
-    Z distance: ${diffVector.z}<br>
-    Horizontal distance: ${Math.sqrt(Math.pow(diffVector.x, 2), Math.pow(diffVector.y))}<br>
-    Spatial distance: ${diffVector.length()}
-    `
+
+    hideContextMenu() {
+        this.contextMenu.style.display = "none";
+    }
+
+    showDistancePanel(fromName, toName, diffVector, left, top, lineRemoveFn) {
+        this.infoPanel.children.namedItem("close").onclick = () => {
+            lineRemoveFn();
+            this.infoPanel.style.display = 'none';
+            return false;
+        }
+        this.infoPanel.style.left = left + "px";
+        this.infoPanel.style.top = top + "px";
+        this.infoPanel.style.display = "block";
+        this.infoPanel.children.namedItem("content").innerHTML = `
+        From: ${fromName}<br>
+        To: ${toName}<br>
+        X distance: ${diffVector.x}<br>
+        Y distance: ${diffVector.y}<br>
+        Z distance: ${diffVector.z}<br>
+        Horizontal distance: ${Math.sqrt(Math.pow(diffVector.x, 2), Math.pow(diffVector.y))}<br>
+        Spatial distance: ${diffVector.length()}
+        `
+    }
 }
