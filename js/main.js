@@ -1,6 +1,6 @@
 import * as I from "./import.js";
 import * as M from "./model.js";
-import { ProjectExplorer } from "./explorer.js";
+import { ProjectExplorer, ProjectManager } from "./explorer.js";
 import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene.js";
@@ -14,7 +14,7 @@ import { addGui } from "./gui.js";
 
 let gui;
 let db = new Database()
-let explorer, myscene, navbar, surveyeditor;
+let explorer, manager, myscene, navbar, surveyeditor;
 
 let cavesStationNamesGroup;
 
@@ -39,8 +39,10 @@ function init() {
 
     myscene = new MyScene(OPTIONS, sceneDomElement);
     navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, myscene);
-    surveyeditor = new SurveyEditor(myscene, db, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"));
+    surveyeditor = new SurveyEditor(myscene, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"));
     explorer = new ProjectExplorer(OPTIONS, db, myscene, surveyeditor);
+    manager = new ProjectManager(db, myscene, explorer);
+
     gui = addGui(OPTIONS, myscene, MAT.materials);
     let interaction = new SceneInteraction(myscene, MAT.materials, sceneDomElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 

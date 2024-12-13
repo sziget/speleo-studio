@@ -1,7 +1,57 @@
 import { classNames } from './external/classnames.js';
 import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
+
 import * as U from "./utils.js";
+import { SurveyHelper } from "./survey.js";
+
+
+export class ProjectManager {
+    constructor (db, scene, explorer) {
+        this.db = db;
+        this.scene = scene;
+        this.explorer = explorer;
+        document.addEventListener('surveyChanged', (e) => this.onSurveyChanged(e));
+        document.addEventListener('surveyDeleted', (e) => this.onSurveyDeleted(e));
+    }
+
+    onSurveyChanged(e) {
+        const caveName = e.detail.cave;
+        const surveyName = e.detail.survey;
+        this.recalculateCave(this.db.caves.get(caveName));
+        this.scene.renderScene();
+    }
+
+    onSurveyDeleted(e) {
+        const caveName = e.detail.cave;
+        const surveyName = e.detail.survey;
+        this.scene.disposeSurvey(caveName, surveyName);
+        this.recalculateCave(this.db.caves.get(caveName));
+        this.scene.renderScene();
+        this.explorer.deleteSurvey(caveName, surveyName);
+    }
+
+    recalculateCave(cave) {
+        let surveyStations = new Map();
+        cave.surveys.entries().forEach(([index, es]) => {
+            SurveyHelper.recalculateSurvey(index, es, surveyStations);
+            const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
+            this.scene.disposeSurvey(cave.name, es.name);
+            const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
+            this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
+        });
+    }
+
+    // recalculateCaves() {
+    //     this.db.caves.forEach(c => {
+            
+    //     this.recalculateCave(c)
+            
+    //     });
+    //     this.scene.renderScene();
+    // }
+
+}
 
 export class ProjectExplorer {
     
@@ -13,6 +63,12 @@ export class ProjectExplorer {
         this.surveyeditor = surveyeditor;
     }
 
+    deleteSurvey(caveName, surveyName) {
+        const tree = this.trees.get(caveName);
+        const rootCave = tree.getChildNodes()[0];
+        const surveyNode = tree.getChildNodes(rootCave).find(n => n.name === surveyName);
+        tree.removeNode(surveyNode);
+    }
 
     renderTrees() {
         const mapSurvey = (cave, survey) => {
@@ -29,7 +85,7 @@ export class ProjectExplorer {
                 name: cave.name,
                 children: cave.surveys.map(s => mapSurvey(cave, s)),
                 loadOnDemand: true,
-                state: { checked: cave.visible, cave: cave, nodeType: 'cave', }
+                state: { checked: cave.visible, nodeType: 'cave', cave: cave }
             };
         }
         document.querySelector('#tree-panel').innerHTML = '';
@@ -85,6 +141,10 @@ export class ProjectExplorer {
         } else if (event.target.id === "edit") {
             this.surveyeditor.show();
             this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots);
+        } else if (event.target.id === "delete") {
+            if (state.nodeType === "survey") {
+                this.db.deleteSurvey(state.cave.name, state.survey.name);
+            }
         }
     }
 
@@ -183,6 +243,14 @@ export class ProjectExplorer {
             )
         }, '');
 
+        const deleteOrClose = state.nodeType === 'survey' ? 'delete' : 'close';
+        const deleteOrCloseGlyph = state.nodeType === 'survey' ? 'trash' : 'remove';
+        const deleteIcon = tag('span', {
+            'id': deleteOrClose, 
+            'class': classNames('infinite-tree-delete', 'glyphicon', `glyphicon-${deleteOrCloseGlyph}`)
+        }, '')
+
+
         const editIcon = tag('span', {
             'id': 'edit',
             'class': classNames('infinite-tree-edit', 'glyphicon', 'glyphicon-edit')
@@ -191,7 +259,7 @@ export class ProjectExplorer {
         const treeNode = tag('div', {
             'class': 'infinite-tree-node',
             'style': 'margin-left: ' + depth * 18 + 'px'
-        }, toggler + checkbox + icon + title + loadingIcon + editIcon);
+        }, toggler + checkbox + icon + title + loadingIcon + deleteIcon + editIcon);
 
         let treeNodeAttributes = {
             'draggable': 'true',

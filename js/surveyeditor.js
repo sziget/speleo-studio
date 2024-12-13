@@ -1,14 +1,13 @@
-import { SurveyHelper } from "./survey.js";
-import * as U from "./utils.js";
-
 export class SurveyEditor {
 
-    constructor(scene, db, panel, closeButton) {
+    constructor(scene, panel, closeButton) {
         this.scene = scene;
-        this.db = db;
+        this.caveName = undefined;
+        this.surveyName = undefined;
         this.panel = panel;
         this.closeButton = closeButton;
-        this.cavesModified = new Set();
+        this.table = undefined;
+        this.surveyModified = false;
         closeButton.addEventListener("click", () => this.closeEditor());
     }
 
@@ -18,32 +17,26 @@ export class SurveyEditor {
 
     closeEditor() {
         //surveydata.innerHTML = '';
+        if (this.table !== undefined) {
+            this.table.destroy();
+            this.table = undefined;
+        }
         this.panel.style.display = 'none';
-        this.recalculateCaves(this.db.caves);
+        if (this.surveyModified) {
+            const event = new CustomEvent("surveyChanged", {
+                detail: {
+                    cave: this.caveName,
+                    survey: this.surveyName
+                }
+            });
+            document.dispatchEvent(event);
+        }
     }
 
-    recalculateCave(cave) {
-        let surveyStations = new Map();
-        cave.surveys.entries().forEach(([index, es]) => {
-            SurveyHelper.recalculateSurvey(index, es, surveyStations);
-            const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
-            this.scene.disposeSurvey(cave.name, es.name);
-            const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
-            this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
-        });
-    }
 
-    recalculateCaves(caves) {
-        caves.forEach(c => {
-            if (this.cavesModified.has(c.name)) {
-                this.recalculateCave(c)
-            }
-        });
-        this.cavesModified.clear();
-        this.scene.renderScene();
-    }
-
-    setupTable(cave, survey, shots) {
+    setupTable(caveName, surveyName, shots) {
+        this.caveName = caveName;
+        this.surveyName = surveyName;
 
         const floatPattern = /^[+-]?\d+([.,]\d+)?$/
         var isFloatNumber = function (cell, value, parameters) {
@@ -62,7 +55,7 @@ export class SurveyEditor {
             table.clearFilter();
         });
 
-        var table = new Tabulator("#surveydata", {
+        this.table = new Tabulator("#surveydata", {
             height: 215,
             data: shots,
             layout: "fitColumns",
@@ -83,9 +76,9 @@ export class SurveyEditor {
             ],
         });
 
-        table.on("dataChanged", (data) => {
+        this.table.on("dataChanged", (data) => {
             console.log(' data changed ');
-            this.cavesModified.add(cave);
+            this.surveyModified = true;
         });
 
     }
