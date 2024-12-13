@@ -37,6 +37,11 @@
   color: #333;
   text-decoration: none;
 }
+
+.infinite-tree-content .infinite-tree-folder-icon {
+  padding-right: 3px;
+}
+
 .infinite-tree-content .infinite-tree-title {
   cursor: pointer;
   user-select: none;
@@ -83,6 +88,10 @@
   position: absolute;
   right: 38px;
   text-align: center
+}
+
+.infinite-tree-isolated {
+  color: rgb(255, 89, 0);
 }
 
 .infinite-tree-content .infinite-tree-delete:hover {

@@ -18,19 +18,21 @@ export class ProjectManager {
 
     onSurveyChanged(e) {
         const caveName = e.detail.cave;
-        const surveyName = e.detail.survey;
-        this.recalculateCave(this.db.caves.get(caveName));
+        const cave = this.db.caves.get(caveName);
+        this.recalculateCave(cave);
         this.scene.renderScene();
+        this.explorer.updateCave(cave);
     }
 
     onSurveyDeleted(e) {
         const caveName = e.detail.cave;
-        console.log('delete cave ', caveName);
         const surveyName = e.detail.survey;
         this.scene.disposeSurvey(caveName, surveyName);
-        this.recalculateCave(this.db.caves.get(caveName));
+        const cave = this.db.caves.get(caveName);
+        this.recalculateCave(cave);
         this.scene.renderScene();
         this.explorer.deleteSurvey(caveName, surveyName);
+        this.explorer.updateCave(cave);
     }
 
     onCaveDeleted(e) {
@@ -75,6 +77,12 @@ export class ProjectExplorer {
         this.itree.removeNode(caveNode);
     }
 
+    updateCave(cave) {
+        const caveNode = this.itree.getChildNodes().find(n => n.name === cave.name);
+        const data = this.transformCave(cave);
+        this.itree.updateNode(caveNode, data);
+    }
+
     initializeTree(data) {
         this.itree = new InfiniteTree({
             el: document.querySelector('#tree-panel'),
@@ -94,7 +102,7 @@ export class ProjectExplorer {
         });
     }
 
-    addCave(cave) {
+    transformCave(cave) {
         const mapSurvey = (cave, survey) => {
             return {
                 id: U.randomAlphaNumbericString(8),
@@ -112,7 +120,11 @@ export class ProjectExplorer {
                 state: { checked: cave.visible, nodeType: 'cave', cave: cave }
             };
         }
-        const data = mapCave(cave);
+        return mapCave(cave);
+    }
+
+    addCave(cave) {
+        const data = this.transformCave(cave);
 
         if (this.itree === undefined) {
             this.initializeTree(data)
@@ -175,6 +187,8 @@ export class ProjectExplorer {
         const { depth, open, path, total, selected = false, filtered, checked, indeterminate } = state;
         const childrenLength = Object.keys(children).length;
         const more = node.hasChildren();
+        
+        const isolatedSurvey = state.nodeType === 'survey' && state.survey.isolated === true;
 
         if (filtered === false) {
             return;
@@ -225,7 +239,9 @@ export class ProjectExplorer {
                 'glyphicon',
                 { 'glyphicon-folder-open': more && open },
                 { 'glyphicon-folder-close': more && !open },
-                { 'glyphicon-file': !more }
+                { 'glyphicon-file': !more && !isolatedSurvey },
+                { 'glyphicon-exclamation-sign': !more && isolatedSurvey },
+                { 'infinite-tree-isolated': isolatedSurvey }
             )
         }, '');
 
@@ -239,7 +255,10 @@ export class ProjectExplorer {
         });
 
         const title = tag('span', {
-            'class': classNames('infinite-tree-title')
+            'class': classNames(
+                'infinite-tree-title',
+                { 'infinite-tree-isolated': isolatedSurvey }
+            )
         }, escapeHtml(name));
 
         const loadingIcon = tag('i', {

@@ -74,11 +74,10 @@ export function getCaveFromPolygonFile(wholeFileInText) {
     }
 }
 
-export function importCsvFile(csvData) {
+export function getCaveFromCsvFile(fileName, csvData) {
     const shots = getShotsFromCsv(csvData);
     const stationsLocal = SurveyHelper.calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
-    const [clSegments, splaySegments] = SurveyHelper.getSegments(stationsLocal, shots);
-    return [stationsLocal, shots, clSegments, splaySegments];
+    return new M.Cave(fileName, [new M.Survey('polygon', true, stationsLocal, shots)], true);
 }
 
 function getShotsFromCsv(csvData) {
