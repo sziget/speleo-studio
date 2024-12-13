@@ -18,6 +18,7 @@ export class ProjectManager {
 
     onSurveyChanged(e) {
         const caveName = e.detail.cave;
+        const surveyName = e.detail.survey;
         const cave = this.db.caves.get(caveName);
         this.recalculateCave(cave);
         this.scene.renderScene();
@@ -45,12 +46,25 @@ export class ProjectManager {
     recalculateCave(cave) {
         let surveyStations = new Map();
         cave.surveys.entries().forEach(([index, es]) => {
-            SurveyHelper.recalculateSurvey(index, es, surveyStations);
+            const ns = SurveyHelper.recalculateSurvey(index, es, surveyStations);
+            this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
             this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
         });
+    }
+
+    #emitSurveyRecalculated(caveName, surveyName, shots, orphanShotIds) {
+        const event = new CustomEvent("surveyRecalculated", {
+            detail: {
+                cave: caveName,
+                survey: surveyName,
+                shots: shots,
+                orphanShotIds: orphanShotIds
+            }
+        });
+        document.dispatchEvent(event);
     }
 
 }
@@ -159,7 +173,7 @@ export class ProjectExplorer {
             return;
         } else if (event.target.id === "edit") {
             this.surveyeditor.show();
-            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots);
+            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots, state.survey.orphanShotIds);
         } else if (event.target.id === "delete") {
             if (state.nodeType === "survey") {
                 this.db.deleteSurvey(state.cave.name, state.survey.name);

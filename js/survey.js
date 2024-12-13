@@ -7,24 +7,24 @@ export class SurveyHelper {
         es.isolated = false;
         const startName = index === 0 ? es.shots[0].from : undefined;
         const startPosition = index === 0 ? new M.Vector(0, 0, 0) : undefined;
-        const stations = SurveyHelper.calculateSurveyStations(es.shots, surveyStations, [], startName, startPosition);
+        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es.shots, surveyStations, [], startName, startPosition);
         es.isolated = (stations.size === 0);
         es.stations = stations;
+        es.orphanShotIds = orphanShotIds;
         stations.forEach((v, k) => surveyStations.set(k, v)); //merge
+        return es;
     }
 
     static calculateSurveyStations(shots, prevStations, aliases, startName, startPosition) {
         const stations = new Map();
         if (shots.length === 0) return stations;
 
-        let isolated = true;
         const startStationName = startName !== undefined ? startName : shots[0].from;
 
         if (startPosition !== undefined) {
             stations.set(startStationName, startPosition);
         } else if (startPosition === undefined && prevStations.has(shots[0].from)) {
             stations.set(startStationName, prevStations.get(shots[0].from));
-            isolated = false;
         }
 
         shots.forEach(sh => {
@@ -43,12 +43,10 @@ export class SurveyHelper {
 
                 if (fromStation === undefined && prevStations.has(sh.from)) {
                     fromStation = prevStations.get(sh.from);
-                    isolated = false;
                 }
 
                 if (toStation === undefined && prevStations.has(sh.to)) {
                     toStation = prevStations.get(sh.to);
-                    isolated = false;
                 }
 
                 if (fromStation !== undefined) {
@@ -80,7 +78,6 @@ export class SurveyHelper {
                             const to = new M.Vector(from.x, from.y, from.z).add(polarVector);
                             stations.set(sh.to, to);
                             repeat = true;
-                            isolated = false;
                         }
                     }
 
@@ -91,7 +88,6 @@ export class SurveyHelper {
                             const from = new M.Vector(to.x, to.y, to.z).sub(polarVector);
                             stations.set(sh.from, from);
                             repeat = true;
-                            isolated = false;
                         }
                     }
                 }
@@ -99,11 +95,8 @@ export class SurveyHelper {
             });
         }
 
-        const unprocessedShots = shots.filter((sh) => !sh.processed);
-        if (unprocessedShots.length > 0) {
-            //TODO: return error messages
-        }
-        return stations;
+        const unprocessedShots = new Set(shots.filter((sh) => !sh.processed).map(sh => sh.id));
+        return [stations, unprocessedShots];
     }
 
     static getSegments(stationsGlobal, shots) {

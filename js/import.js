@@ -1,4 +1,6 @@
 import * as M from "./model.js";
+import * as U from "./utils.js";
+
 import { SurveyHelper } from "./survey.js";
 
 const iterateUntil = function (iterator, condition) {
@@ -17,14 +19,14 @@ const iterateUntil = function (iterator, condition) {
 const getShotsFromPolygonSurvey = function (iterator) {
     var it;
     var i = 0;
-    const parseMyFloat = (str) => parseFloat(str.replace(',', '.'));
+
     const shots = []
     do {
         it = iterator.next();
         const parts = it.value[1].split(/\t|\s/);
         if (parts.length > 10) {
             // splays are not supported by polygon format
-            shots.push(new M.Shot(i++, 'center', parts[0], parts[1], parseMyFloat(parts[2]), parseMyFloat(parts[3]), parseMyFloat(parts[4])));
+            shots.push(new M.Shot(i++, 'center', parts[0], parts[1], U.parseMyFloat(parts[2]), U.parseMyFloat(parts[3]), U.parseMyFloat(parts[4])));
         }
     } while (!it.done && it.value[1] != '');
 
@@ -58,12 +60,11 @@ export function getCaveFromPolygonFile(wholeFileInText) {
                 const shots = getShotsFromPolygonSurvey(lineIterator);
                 const startName = !firstSurveyProcessed ? '0' : undefined;
                 const startPosition = !firstSurveyProcessed ? new M.Vector(0, 0, 0) : undefined;
-                const stationsLocal = SurveyHelper.calculateSurveyStations(shots, stationsGlobal, [], startName, startPosition);
-
-                for (const [stationName, stationPosition] of stationsLocal) {
+                const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(shots, stationsGlobal, [], startName, startPosition);
+                for (const [stationName, stationPosition] of stations) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
-                surveys.push(new M.Survey(surveyNameStr, true, stationsLocal, shots));
+                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds));
                 firstSurveyProcessed = true;
             }
 
@@ -76,8 +77,8 @@ export function getCaveFromPolygonFile(wholeFileInText) {
 
 export function getCaveFromCsvFile(fileName, csvData) {
     const shots = getShotsFromCsv(csvData);
-    const stationsLocal = SurveyHelper.calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
-    return new M.Cave(fileName, [new M.Survey('polygon', true, stationsLocal, shots)], true);
+    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
+    return new M.Cave(fileName, [new M.Survey('polygon', true, stations, shots, orphanShotIds)], true);
 }
 
 function getShotsFromCsv(csvData) {

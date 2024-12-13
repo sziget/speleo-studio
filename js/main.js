@@ -38,7 +38,7 @@ function init() {
 
     myscene = new MyScene(OPTIONS, sceneDomElement);
     navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, myscene);
-    surveyeditor = new SurveyEditor(myscene, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"));
+    surveyeditor = new SurveyEditor(myscene, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
     explorer = new ProjectExplorer(OPTIONS, db, myscene, surveyeditor);
     manager = new ProjectManager(db, myscene, explorer);
 
