@@ -81,8 +81,7 @@ export class MyScene {
         this.renderScene();
     }
 
-    disposeSurvey(cave, survey) {
-        const e = this.caveObjects.get(cave).get(survey);
+    #disposeSurveyObjects(e) {
         e.centerLines.geometry.dispose();
         e.stationNames.children.forEach(c => c.geometry.dispose());
         e.stationNames.clear();
@@ -90,6 +89,17 @@ export class MyScene {
         e.stationSpheres.clear();
         e.group.clear();
         this.threejsScene.remove(e.group);
+
+    }
+
+    disposeSurvey(caveName, surveyName) {
+        const e = this.caveObjects.get(caveName).get(surveyName);
+        this.#disposeSurveyObjects(e);
+    }
+
+    disposeCave(caveName) {
+        const cave = this.caveObjects.get(caveName);
+        cave.forEach(s => this.#disposeSurveyObjects(s));
     }
 
     addSurvey(cave, survey, entry) {

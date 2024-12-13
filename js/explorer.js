@@ -7,12 +7,13 @@ import { SurveyHelper } from "./survey.js";
 
 
 export class ProjectManager {
-    constructor (db, scene, explorer) {
+    constructor(db, scene, explorer) {
         this.db = db;
         this.scene = scene;
         this.explorer = explorer;
         document.addEventListener('surveyChanged', (e) => this.onSurveyChanged(e));
         document.addEventListener('surveyDeleted', (e) => this.onSurveyDeleted(e));
+        document.addEventListener('caveDeleted', (e) => this.onCaveDeleted(e));
     }
 
     onSurveyChanged(e) {
@@ -24,11 +25,19 @@ export class ProjectManager {
 
     onSurveyDeleted(e) {
         const caveName = e.detail.cave;
+        console.log('delete cave ', caveName);
         const surveyName = e.detail.survey;
         this.scene.disposeSurvey(caveName, surveyName);
         this.recalculateCave(this.db.caves.get(caveName));
         this.scene.renderScene();
         this.explorer.deleteSurvey(caveName, surveyName);
+    }
+
+    onCaveDeleted(e) {
+        const caveName = e.detail.cave;
+        this.scene.disposeCave(caveName);
+        this.scene.renderScene();
+        this.explorer.deleteCave(caveName);
     }
 
     recalculateCave(cave) {
@@ -42,35 +51,50 @@ export class ProjectManager {
         });
     }
 
-    // recalculateCaves() {
-    //     this.db.caves.forEach(c => {
-            
-    //     this.recalculateCave(c)
-            
-    //     });
-    //     this.scene.renderScene();
-    // }
-
 }
 
 export class ProjectExplorer {
-    
+
     constructor(options, db, scene, surveyeditor) {
         this.options = options;
         this.db = db;
         this.scene = scene;
         this.trees = new Map();
         this.surveyeditor = surveyeditor;
+        this.itree = undefined;
     }
 
     deleteSurvey(caveName, surveyName) {
-        const tree = this.trees.get(caveName);
-        const rootCave = tree.getChildNodes()[0];
-        const surveyNode = tree.getChildNodes(rootCave).find(n => n.name === surveyName);
-        tree.removeNode(surveyNode);
+        const caveNode = this.itree.getChildNodes().find(n => n.name === caveName);
+        const surveyNode = this.itree.getChildNodes(caveNode).find(n => n.name === surveyName);
+        this.itree.removeNode(surveyNode);
     }
 
-    renderTrees() {
+    deleteCave(caveName) {
+        const caveNode = this.itree.getChildNodes().find(n => n.name === caveName);
+        this.itree.removeNode(caveNode);
+    }
+
+    initializeTree(data) {
+        this.itree = new InfiniteTree({
+            el: document.querySelector('#tree-panel'),
+            data: data,
+            autoOpen: true,
+            rowRenderer: this.treeRenderer,
+            scene: this.scene
+        });
+        this.itree.on('click', this.click(this.itree));
+
+        this.itree.on('contentDidUpdate', () => {
+            this.updateIndeterminateState(this.itree);
+        });
+
+        this.itree.on('clusterDidChange', () => {
+            this.updateIndeterminateState(this.itree);
+        });
+    }
+
+    addCave(cave) {
         const mapSurvey = (cave, survey) => {
             return {
                 id: U.randomAlphaNumbericString(8),
@@ -88,30 +112,13 @@ export class ProjectExplorer {
                 state: { checked: cave.visible, nodeType: 'cave', cave: cave }
             };
         }
-        document.querySelector('#tree-panel').innerHTML = '';
+        const data = mapCave(cave);
 
-        this.db.caves.forEach((cave) => {
-            const tree = new InfiniteTree({
-                el: document.querySelector('#tree-panel'),
-                data: mapCave(cave),
-                autoOpen: false,
-                rowRenderer: this.treeRenderer,
-                scene: this.scene
-            });
-            this.trees.set(cave.name, tree);
-
-            tree.on('click', this.click(tree));
-
-            tree.on('contentDidUpdate', () => {
-                this.updateIndeterminateState(tree);
-            });
-
-            tree.on('clusterDidChange', () => {
-                this.updateIndeterminateState(tree);
-            });
-
-
-        });
+        if (this.itree === undefined) {
+            this.initializeTree(data)
+        } else {
+            this.itree.appendChildNode(data);
+        }
     }
 
     click = (tree) => (event) => {
@@ -144,6 +151,8 @@ export class ProjectExplorer {
         } else if (event.target.id === "delete") {
             if (state.nodeType === "survey") {
                 this.db.deleteSurvey(state.cave.name, state.survey.name);
+            } else if (state.nodeType === "cave") {
+                this.db.deleteCave(state.cave.name);
             }
         }
     }
@@ -243,10 +252,9 @@ export class ProjectExplorer {
             )
         }, '');
 
-        const deleteOrClose = state.nodeType === 'survey' ? 'delete' : 'close';
         const deleteOrCloseGlyph = state.nodeType === 'survey' ? 'trash' : 'remove';
         const deleteIcon = tag('span', {
-            'id': deleteOrClose, 
+            'id': 'delete',
             'class': classNames('infinite-tree-delete', 'glyphicon', `glyphicon-${deleteOrCloseGlyph}`)
         }, '')
 

@@ -70,7 +70,7 @@ function importPolygon(wholeFileInText) {
         const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = myscene.addToScene(s.stations, centerLineSegments, splaySegments, true);
         myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
     });
-    explorer.renderTrees();
+    explorer.addCave(cave);
     myscene.fitScene();
 
 }
@@ -88,7 +88,7 @@ function importCsvFile(file) {
             const cave = new M.Cave(caveName, [new M.Survey(surveyName, true, stations, shots)], true);
             db.caves.set(caveName, cave);
             myscene.addSurvey(caveName, surveyName, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
-            explorer.renderTrees();
+            explorer.addCave(cave);
             myscene.fitScene();
         },
         error: function (error) {

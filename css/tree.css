@@ -90,5 +90,6 @@
 }
 .infinite-tree-no-data {
   text-align: center;
+  display: none;
 }
 

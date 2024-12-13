@@ -8,11 +8,25 @@ export class Database {
             const cave = this.caves.get(caveName);
             const survey = cave.surveys.find(s => s.name === surveyName)
             const indexToDelete = cave.surveys.indexOf(survey);
-            cave.surveys.splice(indexToDelete, 1);
-            const event = new CustomEvent("surveyDeleted", {
+            if (indexToDelete !== -1) {
+                cave.surveys.splice(indexToDelete, 1);
+                const event = new CustomEvent("surveyDeleted", {
+                    detail: {
+                        cave: caveName,
+                        survey: surveyName
+                    }
+                });
+                document.dispatchEvent(event);
+            }
+        }
+    }
+
+    deleteCave(caveName) {
+        if (this.caves.has(caveName)) {
+            this.caves.delete(caveName);
+            const event = new CustomEvent("caveDeleted", {
                 detail: {
-                    cave: caveName,
-                    survey: surveyName
+                    cave: caveName
                 }
             });
             document.dispatchEvent(event);
