@@ -32,18 +32,16 @@ function init() {
         });
     }
 
-    const sceneDomElement = document.querySelector("canvas"); //document.getElementById("#threejscanvas");
-
     cavesStationNamesGroup = [];
 
-    myscene = new MyScene(OPTIONS, sceneDomElement);
+    myscene = new MyScene(OPTIONS);
     navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, myscene);
     surveyeditor = new SurveyEditor(myscene, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
     explorer = new ProjectExplorer(OPTIONS, db, myscene, surveyeditor);
     manager = new ProjectManager(db, myscene, explorer);
 
-    gui = addGui(OPTIONS, myscene, MAT.materials);
-    let interaction = new SceneInteraction(myscene, MAT.materials, sceneDomElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
+    gui = addGui(OPTIONS, myscene, MAT.materials, document.getElementById( 'guicontrols' ));
+    let interaction = new SceneInteraction(myscene, MAT.materials, myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('cave')) {

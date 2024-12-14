@@ -9,17 +9,18 @@ import * as MAT from "./materials.js";
 
 export class MyScene {
 
-    constructor(options, canvas) {
+    constructor(options) {
         this.options = options;
         this.caveObjects = new Map();
         this.caveObject3DGroup = new THREE.Group();
-        this.domElement = canvas;
         this.stationFont = undefined;
         const loader = new FontLoader();
         loader.load('fonts/helvetiker_regular.typeface.json', (font) => this.setFont(font));
-        this.sceneRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: this.domElement });
+        this.sceneRenderer = new THREE.WebGLRenderer({ antialias: true });
         this.sceneRenderer.setPixelRatio(window.devicePixelRatio);
         this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
+        this.domElement = this.sceneRenderer.domElement; // auto generate canvas
+        document.body.appendChild(this.domElement);
 
         const aspect = window.innerWidth / window.innerHeight;
 

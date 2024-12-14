@@ -1,8 +1,8 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
-export function addGui(options, scene, materials) {
-    const gui = new GUI();
+export function addGui(options, scene, materials, element) {
+    const gui = new GUI({ container: element });
     const polygonParam = {
         'show polygon lines': options.scene.show.polygon,
         'line color': materials.polygon.color.getHex(),

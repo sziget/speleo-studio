@@ -93,13 +93,9 @@ export class SurveyEditor {
         }
         
 
-        document.getElementById("hide-splays").addEventListener("click", function () {
-            table.setFilter("type", "=", "center");
-        });
+        document.getElementById("hide-splays").addEventListener("click", () => this.table.setFilter("type", "=", "center"));
 
-        document.getElementById("filter-clear").addEventListener("click", function () {
-            table.clearFilter();
-        });
+        document.getElementById("filter-clear").addEventListener("click", () => this.table.clearFilter());
 
         this.table = new Tabulator("#surveydata", {
             height: 215,

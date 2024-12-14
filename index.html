@@ -13,6 +13,14 @@
 			margin: 0;
 		}
 
+		#guicontrols {
+			color: red;
+			position: absolute;
+			top: 48px;
+			right: 0px;
+			z-index: 100;
+		}
+
 		#close {
 			float: right;
 			display: inline-block;
@@ -98,7 +106,9 @@
 			color: azure;
 			background-color: rgb(85, 130, 110);
 			background: rgb(85, 130, 110);
+			display: none;
 		}
+
 		.surveydatapanel.b {
 			color: black;
 		}
@@ -108,10 +118,10 @@
 	<script src="js/external/tree.js"></script>
 	<script type="importmap">
             {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@v0.170.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.170.0/examples/jsm/"
-            }
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@v0.170.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.170.0/examples/jsm/"
+				}
             }
     </script>
 	<script src="js/external/tabulator.js"></script>
@@ -147,7 +157,7 @@
 		<button class="surveydatapanel b" id="surveydatapanel-close">Close</button>
 		<div id="surveydata"></div>
 	</div>
-	<canvas id="threejscanvas"></canvas>
+	<div id="guicontrols"></div>
 
 </body>
 
