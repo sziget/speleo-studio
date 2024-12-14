@@ -47,7 +47,7 @@ export class ProjectManager {
         let surveyStations = new Map();
         cave.surveys.entries().forEach(([index, es]) => {
             const ns = SurveyHelper.recalculateSurvey(index, es, surveyStations);
-            this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds);
+            this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds, es.attributes);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
@@ -55,13 +55,14 @@ export class ProjectManager {
         });
     }
 
-    #emitSurveyRecalculated(caveName, surveyName, shots, orphanShotIds) {
+    #emitSurveyRecalculated(caveName, surveyName, shots, orphanShotIds, attributes) {
         const event = new CustomEvent("surveyRecalculated", {
             detail: {
                 cave: caveName,
                 survey: surveyName,
                 shots: shots,
-                orphanShotIds: orphanShotIds
+                orphanShotIds: orphanShotIds,
+                attributes: attributes
             }
         });
         document.dispatchEvent(event);
@@ -173,7 +174,7 @@ export class ProjectExplorer {
             return;
         } else if (event.target.id === "edit") {
             this.surveyeditor.show();
-            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots, state.survey.orphanShotIds);
+            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots, state.survey.orphanShotIds, state.survey.attributes);
         } else if (event.target.id === "delete") {
             if (state.nodeType === "survey") {
                 this.db.deleteSurvey(state.cave.name, state.survey.name);

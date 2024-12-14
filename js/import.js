@@ -64,7 +64,19 @@ export function getCaveFromPolygonFile(wholeFileInText) {
                 for (const [stationName, stationPosition] of stations) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
-                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds));
+                const attributes = (surveyNameStr === "Fogadalom-ág") ? new Map([
+                    [
+                        "Fo19", [
+                            new Map([["id", 2], ["params", {"dip": 45.0, "azimuth": 1}]])
+                        ]
+                    ],
+                    [
+                        "Fo21", [
+                            new Map([["id", 1], ["params", {"type": "dripstone"}]])
+                        ]
+                    ]
+                ]) : new Map();
+                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds, attributes));
                 firstSurveyProcessed = true;
             }
 

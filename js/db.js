@@ -1,6 +1,9 @@
+import { attributeDb } from "./attributes.js";
 export class Database {
+
     constructor() {
         this.caves = new Map();
+        this.attributeDb = attributeDb;
     }
 
     deleteSurvey(caveName, surveyName) {
@@ -31,5 +34,13 @@ export class Database {
             });
             document.dispatchEvent(event);
         }
+    }
+
+    getAttributeIdByName(name) {
+        return this.attributeDb.definitions.find(d => d.name === name).id;
+    }
+
+    getAttributeNameById(id) {
+        return this.attributeDb.definitions.find(d => d.id === id).name;
     }
 }

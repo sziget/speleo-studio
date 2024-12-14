@@ -28,12 +28,13 @@ export class Shot {
 }
 
 export class Survey {
-    constructor(name, visible, stations, shots, orphanShotIds) {
+    constructor(name, visible, stations, shots, orphanShotIds, attributes) {
         this.name = name;
         this.visible = visible;
         this.stations = stations;
         this.shots = shots;
         this.orphanShotIds = orphanShotIds;
+        this.attributes = attributes;
         this.isolated = false;
     }
 }
