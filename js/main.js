@@ -79,8 +79,11 @@ class Main {
         cave.surveys.forEach(s => {
             if (s.name === "Laci-zsomboly") {
                 s.attributes.set('1', [this.attributeDefs.createByName("bedding")(90.0, 80, 10, 40)]);
-                //s.attributes.set('Fo21', [this.attributeDefs.createById(1)("dripstone", "desc")]);
+            } else if (s.name === "Fogadalom-ág") {
+                s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
+                s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
             }
+
             const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
             const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = this.myscene.addToScene(s.stations, centerLineSegments, splaySegments, true);
             this.myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });

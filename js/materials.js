@@ -24,6 +24,6 @@ export const materials = {
     distanceLine: new THREE.LineDashedMaterial({ color: 0xffffff, linewidth: 2, scale: 2, dashSize: 1, gapSize: 1, }),
     planes: new Map([
         ["bedding", new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })],
-        ["fault", new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })]
+        ["fault", new THREE.MeshBasicMaterial({ color: 0xfff0f, side: THREE.DoubleSide })]
     ])
 }

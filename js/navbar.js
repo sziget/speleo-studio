@@ -46,6 +46,9 @@ export class NavigationBar {
         {
             "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
         },
+        {
+            "tooltip": "Show faults", "icon": "/icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
+        },        
     ]}
 
     #addNavbarClickListener() {
