@@ -1,8 +1,8 @@
-import * as THREE from 'three';
+import { Vector } from "./model.js";
 
 export function fromPolar(distance, azimuth, clino) {
     const h = Math.cos(clino) * distance;
-    return new THREE.Vector3(
+    return new Vector(
         Math.sin(azimuth) * h, //TODO: don't forget declination
         Math.cos(azimuth) * h, //TODO: don't forget declination
         Math.sin(clino) * distance

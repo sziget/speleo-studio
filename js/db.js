@@ -1,9 +1,9 @@
-import { attributeDb } from "./attributes.js";
+import { Survey } from "./model.js";
+
 export class Database {
 
     constructor() {
         this.caves = new Map();
-        this.attributeDb = attributeDb;
     }
 
     deleteSurvey(caveName, surveyName) {
@@ -24,6 +24,14 @@ export class Database {
         }
     }
 
+    /**
+     * Returns all the surveys for all caves
+     * @returns {Array[Survey]} Surveys of all caves
+     */
+    getAllSurveys() {
+        return this.caves.values().flatMap(c => c.surveys);
+    }
+
     deleteCave(caveName) {
         if (this.caves.has(caveName)) {
             this.caves.delete(caveName);
@@ -36,11 +44,4 @@ export class Database {
         }
     }
 
-    getAttributeIdByName(name) {
-        return this.attributeDb.definitions.find(d => d.name === name).id;
-    }
-
-    getAttributeNameById(id) {
-        return this.attributeDb.definitions.find(d => d.id === id).name;
-    }
 }

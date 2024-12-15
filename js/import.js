@@ -64,19 +64,7 @@ export function getCaveFromPolygonFile(wholeFileInText) {
                 for (const [stationName, stationPosition] of stations) {
                     stationsGlobal.set(stationName, stationPosition);
                 }
-                const attributes = (surveyNameStr === "Fogadalom-ág") ? new Map([
-                    [
-                        "Fo19", [
-                            new Map([["id", 2], ["params", {"dip": 45.0, "azimuth": 1}]])
-                        ]
-                    ],
-                    [
-                        "Fo21", [
-                            new Map([["id", 1], ["params", {"type": "dripstone"}]])
-                        ]
-                    ]
-                ]) : new Map();
-                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds, attributes));
+                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds, new Map()));
                 firstSurveyProcessed = true;
             }
 
@@ -90,7 +78,7 @@ export function getCaveFromPolygonFile(wholeFileInText) {
 export function getCaveFromCsvFile(fileName, csvData) {
     const shots = getShotsFromCsv(csvData);
     const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
-    return new M.Cave(fileName, [new M.Survey('polygon', true, stations, shots, orphanShotIds)], true);
+    return new M.Cave(fileName, [new M.Survey('polygon', true, stations, shots, orphanShotIds, new Map())], true);
 }
 
 function getShotsFromCsv(csvData) {

@@ -9,6 +9,7 @@ import * as MAT from "./materials.js";
 import { NavigationBar } from "./navbar.js";
 import { SurveyHelper } from "./survey.js";
 import { SurveyEditor } from "./surveyeditor.js";
+import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
 import { addGui } from "./gui.js";
 
 
@@ -26,10 +27,10 @@ class Main {
                 window.event.returnValue = false;
             });
         }
-
-        this.myscene = new MyScene(OPTIONS);
+        this.attributeDefs = new AttributesDefinitions(attributeDefintions);
+        this.myscene = new MyScene(OPTIONS, this.db);
         this.navbar = new NavigationBar(document.getElementById("navbarcontainer"), OPTIONS, this.myscene);
-        this.surveyeditor = new SurveyEditor(this.myscene, this.db, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
+        this.surveyeditor = new SurveyEditor(this.myscene, this.db, this.attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
         this.explorer = new ProjectExplorer(OPTIONS, this.db, this.myscene, this.surveyeditor);
         this.manager = new ProjectManager(this.db, this.myscene, this.explorer);
     
@@ -76,6 +77,10 @@ class Main {
     addCave(cave) {
         this.db.caves.set(cave.name, cave);
         cave.surveys.forEach(s => {
+            if (s.name === "Fogadalom-ág") {
+                s.attributes.set('Fo19', [this.attributeDefs.createByName("bedding")(45.0, 34.12)]);
+                s.attributes.set('Fo21', [this.attributeDefs.createById(1)("dripstone", "desc")]);
+            }
             const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
             const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = this.myscene.addToScene(s.stations, centerLineSegments, splaySegments, true);
             this.myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });

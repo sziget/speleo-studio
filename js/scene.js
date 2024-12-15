@@ -6,11 +6,19 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as C from "./constants.js";
 import * as U from "./utils.js";
 import * as MAT from "./materials.js";
+import { Database } from "./db.js";
 
 export class MyScene {
 
-    constructor(options) {
+    /**
+     * A class that creates the 3D scene that makes user interactions and scene modifications (camera position, add/remove 3D objects) possible
+     * 
+     * @param {Map<String, Map>} options - The project options
+     * @param {Database} db - The database of the application, containing caves and other infomations
+     */
+    constructor(options, db) {
         this.options = options;
+        this.db = db;
         this.caveObjects = new Map();
         this.caveObject3DGroup = new THREE.Group();
         this.stationFont = undefined;
@@ -39,6 +47,7 @@ export class MyScene {
         this.threejsScene.add(this.caveObject3DGroup);
 
         this.boundingBox = undefined;
+        this.planes = undefined;
 
         this.raycaster = new THREE.Raycaster();
 
@@ -145,6 +154,34 @@ export class MyScene {
             this.boundingBox = undefined;
         }
         this.renderScene();
+    }
+
+    toogleBeddings() {
+        if (this.planes === undefined) {
+            this.planes = [];
+            this.db.getAllSurveys().forEach(s => {
+                s.getSurveyAttributesById(2).forEach(([position, attributes]) => {
+                    const firstAttribute = attributes[0];
+                    const geometry = new THREE.PlaneGeometry(10, 29);
+                    const plane = new THREE.Mesh(geometry, MAT.materials.plane);
+                    plane.position.set(position.x, position.y, position.z);
+                    const dir = U.fromPolar(1, U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip))
+                    const lookAt = plane.position.sub(dir);
+                    plane.lookAt(lookAt.x, lookAt.y, lookAt.z);
+                    this.threejsScene.add(plane);
+                    this.planes.push(plane);
+                    this.renderScene();
+                })
+            })
+        } else if (this.planes.length > 0) {
+            this.planes.forEach(p => {
+                p.geometry.dispose();
+                this.threejsScene.remove(p);
+            });
+            this.planes = undefined;
+            this.renderScene();
+        }
+        
     }
 
     zoomWithStep(step) {

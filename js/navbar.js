@@ -1,6 +1,13 @@
+import { MyScene } from "./scene.js";
 
 export class NavigationBar {
 
+    /**
+     * 
+     * @param {HTMLElement} domElement - The HTML DOM element of the navigation bar
+     * @param {Map<String, Map>} options - Global project options, like global visibility of an object
+     * @param {MyScene} scene - The 3D scene
+     */
     constructor (domElement, options, scene) {
         this.options = options;
         this.scene = scene;
@@ -35,6 +42,9 @@ export class NavigationBar {
         },
         {
             "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
+        },
+        {
+            "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.toogleBeddings()
         },
     ]}
 

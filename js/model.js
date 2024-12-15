@@ -28,6 +28,16 @@ export class Shot {
 }
 
 export class Survey {
+
+    /**
+     * 
+     * @param {string} name - The name of the Survey
+     * @param {boolean} visible 
+     * @param {Map<String, Vector>} stations - A map of station names and station positions
+     * @param {Array[Shot]} shots - An array of shots holding the measurements for this Survey
+     * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
+     * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
+     */
     constructor(name, visible, stations, shots, orphanShotIds, attributes) {
         this.name = name;
         this.visible = visible;
@@ -37,6 +47,25 @@ export class Survey {
         this.attributes = attributes;
         this.isolated = false;
     }
+
+    /**
+     * Returns all the attributes with the given id for all stations
+     * 
+     * @param {Number} id - The numerical identifier of an attribute, see attribute definitons for more information
+     * @returns {Array[Array[Vector, Object]]>} - Attribute params with 3D position
+     */
+    getSurveyAttributesById(id) {
+        //stationName -> [ { id, params},  ]
+        const vv = Array.from(this.attributes.entries().map(([station, arrayOfAtrs]) => {
+            const pos = this.stations.get(station);
+            const matchingAttrs = arrayOfAtrs.filter(a => a.id === id);
+            if (matchingAttrs.length > 0) {
+                return [pos, matchingAttrs];
+            } 
+        }));
+        return vv.filter(x => x !== undefined);
+    }
+
 }
 
 export class SurveyAlias {
@@ -62,6 +91,12 @@ export class SurveyAlias {
 
 
 export class Cave {
+    /**
+     * 
+     * @param {*} name - The name of the cave
+     * @param {Survey[]} surveys - The surveys associated to a cave
+     * @param {boolean} visible - The visibility property of a cave
+     */
     constructor(name, surveys, visible) {
         this.name = name;
         this.surveys = surveys;

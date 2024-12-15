@@ -2,9 +2,10 @@ import * as U from "./utils.js";
 
 export class SurveyEditor {
 
-    constructor(scene, db, panel, closeButton, updateButton) {
+    constructor(scene, db, attributeDefs, panel, closeButton, updateButton) {
         this.scene = scene;
         this.db = db;
+        this.attributeDefs = attributeDefs;
         this.panel = panel;
         this.caveName = undefined;
         this.surveyName = undefined;
@@ -62,17 +63,16 @@ export class SurveyEditor {
     #getTableData(shots, orphanShotIds, attributes) {
         return shots.map(s => {
             s.isOrphan = orphanShotIds.has(s.id);
-            s.attributes = attributes.has(s.to) ? attributes.get(s.to) : 0;
+            s.attributes = attributes.has(s.to) ? attributes.get(s.to) : undefined;
             return s;
         });
     }
 
     getAttributesAsString(attrs) {
         return attrs.map(a => {
-            const id = a.get("id");
-            const name = this.db.getAttributeNameById(id);
-            const paramsJson = JSON.stringify(a.get("params"));
-            return `${name}(${paramsJson})`
+            const paramNames = Object.keys(a.params);
+            const paramValues = paramNames.map(n => a[n]).join(',')
+            return `${a.name}(${paramValues})`
         }).join('|');
     }
 
@@ -106,17 +106,14 @@ export class SurveyEditor {
         });
         const metaPattern = /((?<name>[A-Za-z]+)(\((?<params>[A-Za-z0-9., ":{}]+)\))?)/g
         //when the value has been set, trigger the cell to update
-        const database = this.db;
+        const attributeDefs = this.attributeDefs;
 
         function successFunc() {
             const editedAttrs = []
             for (const match of editor.value.matchAll(metaPattern)) {
-                const aid = database.getAttributeIdByName(match.groups.name);
-                const params = JSON.parse(match.groups.params);
-                editedAttrs.push(new Map([
-                    ["id", aid],
-                    ["params", params]
-                ]));
+                const a = attributeDefs.createByName(match.groups.name);
+                const params = match.groups.params.split(',');
+                editedAttrs.push(a(...params));
 
             }
             success(editedAttrs);
