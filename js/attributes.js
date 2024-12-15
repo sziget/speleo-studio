@@ -42,7 +42,26 @@ export const attributeDefintions = {
                     "type": "int"
                 }
             }
-        }
+        },
+        {
+            "id": 3,
+            "type": 1,
+            "name": "fault",
+            "params": {
+                "azimuth": {
+                    "type": "float"
+                },
+                "dip": {
+                    "type": "float"
+                },                
+                "width": {
+                    "type": "int"
+                },
+                "height": {
+                    "type": "int"
+                }
+            }
+        }        
     ]
 }
 

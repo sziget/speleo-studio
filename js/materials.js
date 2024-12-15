@@ -17,10 +17,13 @@ export const materials = {
         vertexColors: false,
         alphaToCoverage: false,
     }),
-    text: new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}),
+    text: new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
     sphere: new THREE.MeshBasicMaterial({ color: 0xffff00 }),
     selectedSphere: new THREE.MeshBasicMaterial({ color: 0xF00FFF }),
     selectedContextSphere: new THREE.MeshBasicMaterial({ color: 0x20ff3d }),
-    distanceLine: new THREE.LineDashedMaterial( { color: 0xffffff, linewidth: 2, scale: 2, dashSize: 1, gapSize: 1, } ),
-    plane: new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} )
+    distanceLine: new THREE.LineDashedMaterial({ color: 0xffffff, linewidth: 2, scale: 2, dashSize: 1, gapSize: 1, }),
+    planes: new Map([
+        ["bedding", new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })],
+        ["fault", new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })]
+    ])
 }

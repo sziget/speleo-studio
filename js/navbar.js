@@ -35,16 +35,16 @@ export class NavigationBar {
             "tooltip": "Zoom out", "glyphName": "zoom-out", "click": () => this.scene.zoomWithStep(-1 * this.options.scene.zoomStep)
         },
         {
-            "tooltip": "Plan", "glyphName": "arrow-down", "click": () => this.scene.lookAtPlan()
+            "tooltip": "Plan", "icon": "/icons/plan.svg", "click": () => this.scene.lookAtPlan()
         },
         {
-            "tooltip": "Profile", "glyphName": "arrow-right", "click": () => this.scene.lookAtProfile()
+            "tooltip": "Profile", "icon": "/icons/profile.svg", "click": () => this.scene.lookAtProfile()
         },
         {
             "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
         },
         {
-            "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.toogleBeddings()
+            "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
         },
     ]}
 

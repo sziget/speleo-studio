@@ -4,9 +4,9 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import * as C from "./constants.js";
-import * as U from "./utils.js";
-import * as MAT from "./materials.js";
 import { Database } from "./db.js";
+import * as MAT from "./materials.js";
+import * as U from "./utils.js";
 
 export class MyScene {
 
@@ -47,7 +47,7 @@ export class MyScene {
         this.threejsScene.add(this.caveObject3DGroup);
 
         this.boundingBox = undefined;
-        this.planes = undefined;
+        this.planeMeshes = new Map();
 
         this.raycaster = new THREE.Raycaster();
 
@@ -156,33 +156,52 @@ export class MyScene {
         this.renderScene();
     }
 
-    toogleBeddings() {
-        if (this.planes === undefined) {
-            this.planes = [];
-            this.db.getAllSurveys().forEach(s => {
-                s.getSurveyAttributesById(2).forEach(([position, attributes]) => {
-                    const firstAttribute = attributes[0];
-                    const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
-                    const plane = new THREE.Mesh(geometry, MAT.materials.plane);
-                    plane.position.set(0, 0, 0);
-                    const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip))
-                    plane.lookAt(dir.x, dir.y, dir.z);
-                    const v = new THREE.Vector3(position.x, position.y, position.z);
-                    plane.position.copy(v);
-                    this.threejsScene.add(plane);
-                    this.planes.push(plane);
-                    this.renderScene();
-                })
+    showPlaneFor(attributeName) {
+        const planes = [];
+        this.db.getAllSurveys().forEach(s => {
+            s.getSurveyAttributesByName(attributeName).forEach(([position, attributes]) => {
+                const firstAttribute = attributes[0];
+                const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
+                const plane = new THREE.Mesh(geometry, MAT.materials.planes.get(attributeName));
+                plane.position.set(0, 0, 0);
+                const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip))
+                plane.lookAt(dir.x, dir.y, dir.z);
+                const v = new THREE.Vector3(position.x, position.y, position.z);
+                plane.position.copy(v);
+                planes.push(plane);
+                this.threejsScene.add(plane);
             })
-        } else if (this.planes.length > 0) {
-            this.planes.forEach(p => {
+        });
+        
+        this.planeMeshes.set(attributeName, planes); // even set if planes is emptry
+        this.renderScene();
+    }
+
+    disposePlaneFor(attributeName, shouldDelete = true) {
+        const planes = this.planeMeshes.get(attributeName);
+            planes.forEach(p => {
                 p.geometry.dispose();
                 this.threejsScene.remove(p);
             });
-            this.planes = undefined;
+            if (shouldDelete) {
+                this.planeMeshes.delete(attributeName);
+            }
+            
             this.renderScene();
+    }
+
+    tooglePlaneFor(attributeName) {
+        if (!this.planeMeshes.has(attributeName)) {
+            this.showPlaneFor(attributeName);
+        } else {
+            this.disposePlaneFor(attributeName);
         }
         
+    }
+
+    updateVisiblePlanes() {
+        this.planeMeshes.keys().forEach((k) => this.disposePlaneFor(k, false));
+        this.planeMeshes.keys().forEach((k) => this.showPlaneFor(k));
     }
 
     zoomWithStep(step) {

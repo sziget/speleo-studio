@@ -1,12 +1,20 @@
 import { classNames } from './external/classnames.js';
 import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
-
+import { Database } from "./db.js";
+import { MyScene } from "./scene.js";
 import * as U from "./utils.js";
 import { SurveyHelper } from "./survey.js";
 
 
 export class ProjectManager {
+
+    /**
+     * Creates a new project manager that is used on survey updates
+     * @param {Database} db - The project database containing caves and surveys
+     * @param {MyScene} scene - The 3D scene
+     * @param {ProjectExplorer} explorer - The project explorer that displays caves and surveys in a tree view
+     */
     constructor(db, scene, explorer) {
         this.db = db;
         this.scene = scene;
@@ -47,12 +55,14 @@ export class ProjectManager {
         let surveyStations = new Map();
         cave.surveys.entries().forEach(([index, es]) => {
             const ns = SurveyHelper.recalculateSurvey(index, es, surveyStations);
+            //ns === es
             this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds, es.attributes);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
             this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
         });
+        this.scene.updateVisiblePlanes();
     }
 
     #emitSurveyRecalculated(caveName, surveyName, shots, orphanShotIds, attributes) {

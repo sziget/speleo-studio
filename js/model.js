@@ -51,19 +51,18 @@ export class Survey {
     /**
      * Returns all the attributes with the given id for all stations
      * 
-     * @param {Number} id - The numerical identifier of an attribute, see attribute definitons for more information
+     * @param {string} name - The name an attribute, see attribute definitons for more information.
      * @returns {Array[Array[Vector, Object]]>} - Attribute params with 3D position
      */
-    getSurveyAttributesById(id) {
+    getSurveyAttributesByName(name) {
         //stationName -> [ { id, params},  ]
-        const vv = Array.from(this.attributes.entries().map(([station, arrayOfAtrs]) => {
+        return this.attributes.entries().map(([station, arrayOfAtrs]) => {
             const pos = this.stations.get(station);
-            const matchingAttrs = arrayOfAtrs.filter(a => a.id === id);
+            const matchingAttrs = arrayOfAtrs.filter(a => a.name === name);
             if (matchingAttrs.length > 0) {
                 return [pos, matchingAttrs];
             } 
-        }));
-        return vv.filter(x => x !== undefined);
+        }).filter(x => x !== undefined); // TODO: replace with .reduce()
     }
 
 }
