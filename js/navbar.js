@@ -32,7 +32,10 @@ export class NavigationBar {
         },
         {
             "tooltip": "Profile", "glyphName": "arrow-right", "click": () => this.scene.lookAtProfile()
-        }
+        },
+        {
+            "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
+        },
     ]}
 
     #addNavbarClickListener() {
@@ -79,15 +82,26 @@ export class NavigationBar {
             return d;
         };
     
-        const createIcon = (tooltip, glyphName, click) => {
+        const createIcon = (tooltip, icon, glyphName, click) => {
             const a = document.createElement('a');
             a.onclick = click;
-            const i = document.createElement('i');
-            i.setAttribute("class", `glyphicon glyphicon-${glyphName}`);
+            
+            if (glyphName !== undefined) {
+                const i = document.createElement('i');
+                i.setAttribute("class", `glyphicon glyphicon-${glyphName}`);
+                a.appendChild(i);
+            } else if (icon !== undefined) {
+                const img = document.createElement('img');
+                img.setAttribute("src", icon);
+                img.setAttribute("width", "20");
+                img.setAttribute("height", "20");
+                a.appendChild(img);
+            }
+
             const t = document.createElement('span');
             t.setAttribute("class", "mytooltiptext")
             t.appendChild(document.createTextNode(tooltip));
-            a.appendChild(i);
+            
             a.appendChild(t);
             a.setAttribute("class", "mytooltip");
             return a;
@@ -95,7 +109,7 @@ export class NavigationBar {
     
         navbarHtmlElement.innerHTML = '';
         this.#getMenus().forEach((m) => navbarHtmlElement.appendChild(createMenu(m.name, m.elements)));
-        this.#getIcons().forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.glyphName, i.click)) });
+        this.#getIcons().forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.icon, i.glyphName, i.click)) });
     }
 }
 

@@ -38,6 +38,8 @@ export class MyScene {
         this.threejsScene.add(grid);
         this.threejsScene.add(this.caveObject3DGroup);
 
+        this.boundingBox = undefined;
+
         this.raycaster = new THREE.Raycaster();
 
         window.addEventListener('resize', () => this.onWindowResize());
@@ -82,27 +84,6 @@ export class MyScene {
         this.renderScene();
     }
 
-    #disposeSurveyObjects(e) {
-        e.centerLines.geometry.dispose();
-        e.stationNames.children.forEach(c => c.geometry.dispose());
-        e.stationNames.clear();
-        e.stationSpheres.children.forEach(c => c.geometry.dispose()); // all stations spheres use the same geometry
-        e.stationSpheres.clear();
-        e.group.clear();
-        this.threejsScene.remove(e.group);
-
-    }
-
-    disposeSurvey(caveName, surveyName) {
-        const e = this.caveObjects.get(caveName).get(surveyName);
-        this.#disposeSurveyObjects(e);
-    }
-
-    disposeCave(caveName) {
-        const cave = this.caveObjects.get(caveName);
-        cave.forEach(s => this.#disposeSurveyObjects(s));
-    }
-
     addSurvey(cave, survey, entry) {
         if (!this.caveObjects.has(cave)) {
             this.caveObjects.set(cave, new Map());
@@ -140,6 +121,30 @@ export class MyScene {
         this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
         this.renderScene();
 
+    }
+
+    toogleBoundingBox() {
+        if (this.boundingBox === undefined) {
+            const bb = new THREE.Box3();
+            this.caveObjects.forEach(c => {
+                c.forEach(e => {
+                    if (e.centerLines.visible) {
+                        bb.expandByObject(e.centerLines);
+                    }
+                    if (e.splays) {
+                        bb.expandByObject(e.splays);
+                    }
+                });
+            });
+            const boundingBoxHelper = new THREE.Box3Helper(bb, 0xffffff);
+            this.boundingBox = boundingBoxHelper;
+            this.threejsScene.add(boundingBoxHelper);
+        } else {
+            this.threejsScene.remove(this.boundingBox);
+            this.boundingBox.dispose();
+            this.boundingBox = undefined;
+        }
+        this.renderScene();
     }
 
     zoomWithStep(step) {
@@ -276,6 +281,28 @@ export class MyScene {
         this.caveObject3DGroup.add(group);
         this.renderScene();
         return [lineSegmentsPolygon, lineSegmentsSplays, stationNamesGroup, stationSpheresGroup, group];
+    }
+
+    disposeSurvey(caveName, surveyName) {
+        const e = this.caveObjects.get(caveName).get(surveyName);
+        this.#disposeSurveyObjects(e);
+    }
+
+    #disposeSurveyObjects(e) {
+        e.centerLines.geometry.dispose();
+        e.splays.geometry.dispose();
+        e.stationNames.children.forEach(c => c.geometry.dispose());
+        e.stationNames.clear();
+        e.stationSpheres.children.forEach(c => c.geometry.dispose()); // all stations spheres use the same geometry
+        e.stationSpheres.clear();
+        e.group.clear();
+        this.threejsScene.remove(e.group);
+    }
+
+
+    disposeCave(caveName) {
+        const cave = this.caveObjects.get(caveName);
+        cave.forEach(s => this.#disposeSurveyObjects(s));
     }
 
 
