@@ -162,12 +162,13 @@ export class MyScene {
             this.db.getAllSurveys().forEach(s => {
                 s.getSurveyAttributesById(2).forEach(([position, attributes]) => {
                     const firstAttribute = attributes[0];
-                    const geometry = new THREE.PlaneGeometry(10, 29);
+                    const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
                     const plane = new THREE.Mesh(geometry, MAT.materials.plane);
-                    plane.position.set(position.x, position.y, position.z);
-                    const dir = U.fromPolar(1, U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip))
-                    const lookAt = plane.position.sub(dir);
-                    plane.lookAt(lookAt.x, lookAt.y, lookAt.z);
+                    plane.position.set(0, 0, 0);
+                    const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip))
+                    plane.lookAt(dir.x, dir.y, dir.z);
+                    const v = new THREE.Vector3(position.x, position.y, position.z);
+                    plane.position.copy(v);
                     this.threejsScene.add(plane);
                     this.planes.push(plane);
                     this.renderScene();

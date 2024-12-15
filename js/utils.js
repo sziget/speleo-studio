@@ -9,6 +9,16 @@ export function fromPolar(distance, azimuth, clino) {
     );
 }
 
+// https://courses.eas.ualberta.ca/eas421/formulasheets/formulasheetxythetaP12010.pdf
+export function normal(azimuth, clino) {
+    const h = Math.sin(clino);
+    return new Vector(
+        - Math.cos(azimuth) * h, //TODO: don't forget declination
+        Math.sin(azimuth) * h, //TODO: don't forget declination
+        - Math.cos(clino)
+    );
+}
+
 const deg2rad = Math.PI / 180.0;
 
 export function degreesToRads(deg) { return deg * deg2rad; }

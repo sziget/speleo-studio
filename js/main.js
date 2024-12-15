@@ -77,9 +77,9 @@ class Main {
     addCave(cave) {
         this.db.caves.set(cave.name, cave);
         cave.surveys.forEach(s => {
-            if (s.name === "Fogadalom-ág") {
-                s.attributes.set('Fo19', [this.attributeDefs.createByName("bedding")(45.0, 34.12)]);
-                s.attributes.set('Fo21', [this.attributeDefs.createById(1)("dripstone", "desc")]);
+            if (s.name === "Laci-zsomboly") {
+                s.attributes.set('1', [this.attributeDefs.createByName("bedding")(90.0, 80, 10, 40)]);
+                //s.attributes.set('Fo21', [this.attributeDefs.createById(1)("dripstone", "desc")]);
             }
             const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
             const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] = this.myscene.addToScene(s.stations, centerLineSegments, splaySegments, true);

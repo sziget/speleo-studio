@@ -29,11 +29,17 @@ export const attributeDefintions = {
             "type": 1,
             "name": "bedding",
             "params": {
-                "dip": {
-                    "type": "number"
-                },
                 "azimuth": {
-                    "type": "number"
+                    "type": "float"
+                },
+                "dip": {
+                    "type": "float"
+                },                
+                "width": {
+                    "type": "int"
+                },
+                "height": {
+                    "type": "int"
                 }
             }
         }
@@ -60,7 +66,14 @@ export class AttributesDefinitions {
         o.create = function (...varargs) {
             Array.from(varargs.entries()).forEach(([index, value]) => {
                 const pName = paramNames[index];
-                o[pName] = value;
+                const dataType = o.params[pName].type;
+                switch (dataType) {
+                    case "float": o[pName] = parseFloat(value); break;
+                    case "int": o[pName] = parseInt(value); break;
+                    case "string": o[pName] = value; break;
+                    default : throw new Error($`Not supported data type ${dataType}`);
+                }
+                
             });
             return o;
         }
