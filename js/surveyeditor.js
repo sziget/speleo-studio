@@ -171,7 +171,7 @@ export class SurveyEditor {
         this.table = new Tabulator("#surveydata", {
             height: 215,
             data: this.#getTableData(shots, orphanShotIds, attributes),
-            layout: "fitDataTable",
+            layout: "fitDataStretch",
             validationMode: "highlight",
             rowHeader: { formatter: "rownum", headerSort: false, hozAlign: "center", resizable: false, frozen: true },
             rowFormatter: function (row) {
