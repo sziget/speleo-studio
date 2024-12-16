@@ -13,7 +13,40 @@ export class Vector {
     sub(v) {
         return new Vector(this.x - v.x, this.y - v.y, this.z - v.z);
     }
+
+    mul(d) {
+        return new Vector(this.x * d, this.y * d, this.z * d);
+    }
 }
+
+export class Color {
+
+    constructor(r, g, b) {
+        if (typeof r === 'number' && g === undefined && b === undefined) {
+            const hex = Math.floor(r);
+            this.r = (hex >> 16 & 255) / 255;
+            this.g = (hex >> 8 & 255) / 255;
+            this.b = (hex & 255) / 255;
+        } else {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+        }
+    }
+
+    add(c) {
+        return new Color(this.r + c.r, this.g + c.g, this.b + c.b);
+    }
+
+    sub(c) {
+        return new Color(this.r - c.r, this.g - c.g, this.b - c.b);
+    }
+
+    mul(d) {
+        return new Color(this.r * d, this.g * d, this.b * d);
+    }
+}
+
 export class Shot {
     constructor(id, type, from, to, length, azimuth, clino) {
         this.id = id;

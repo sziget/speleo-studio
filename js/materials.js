@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 export const materials = {
-    polygon: new LineMaterial({
+    centerLine: new LineMaterial({
         color: 0xff0000,
         linewidth: 1, // in world units with size attenuation, pixels otherwise
         worldUnits: false,
@@ -25,5 +25,12 @@ export const materials = {
     planes: new Map([
         ["bedding", new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })],
         ["fault", new THREE.MeshBasicMaterial({ color: 0xfff0f, side: THREE.DoubleSide })]
-    ])
+    ]),
+    whiteLine:  new LineMaterial({
+        color: 0xffffff, // this is very important to be white for gradient materials, don't change this
+        linewidth: 0, // in world units with size attenuation, pixels otherwise
+        worldUnits: false,
+        vertexColors: true,
+        alphaToCoverage: false,
+    })
 }

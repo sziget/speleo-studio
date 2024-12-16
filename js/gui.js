@@ -5,7 +5,7 @@ export function addGui(options, scene, materials, element) {
     const gui = new GUI({ container: element });
     const polygonParam = {
         'show polygon lines': options.scene.show.polygon,
-        'line color': materials.polygon.color.getHex(),
+        'line color': materials.centerLine.color.getHex(),
         'world units': false,
         'width': 20,
         'show station': options.scene.show.spheres,
@@ -35,18 +35,19 @@ export function addGui(options, scene, materials, element) {
     });
 
     polygonFolder.addColor(polygonParam, 'line color').onChange(function (val) {
-        materials.polygon.color = new THREE.Color(val);
+        materials.centerLine.color = new THREE.Color(val);
         scene.renderScene();
     });
 
     polygonFolder.add(polygonParam, 'world units').onChange(function (val) {
-        materials.polygon.worldUnits = val;
+        materials.centerLine.worldUnits = val;
         scene.renderScene();
 
     });
 
     polygonFolder.add(polygonParam, 'width', 1, 50).onChange(function (val) {
-        materials.polygon.linewidth = val / 10;
+        materials.centerLine.linewidth = val / 10;
+        materials.whiteLine.linewidth = val / 10;
         scene.renderScene();
     });
 

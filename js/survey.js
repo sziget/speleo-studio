@@ -99,12 +99,12 @@ export class SurveyHelper {
         return [stations, unprocessedShots];
     }
 
-    static getSegments(stationsGlobal, shots) {
+    static getSegments(stations, shots) {
         const splaySegments = [];
         const centerlineSegments = [];
         shots.forEach(sh => {
-            const fromStation = stationsGlobal.get(sh.from);
-            const toStation = stationsGlobal.get(sh.to);
+            const fromStation = stations.get(sh.from);
+            const toStation = stations.get(sh.to);
             if (fromStation !== undefined && toStation !== undefined) {
                 switch (sh.type) {
                     case 'splay':
@@ -115,12 +115,55 @@ export class SurveyHelper {
                         break;
                     default:
                         throw new Error(`Undefined segment type ${sh.type}`);
-    
+
                 }
-    
+
             }
         });
         return [centerlineSegments, splaySegments];
-    
+
+    }
+
+    static calcVerticalStats(caves) {
+        return caves.values().flatMap(c => {
+            return Array.from(c.surveys.flatMap(s => Array.from(s.stations.values().map(x => x.z))));
+        });
+    }
+
+    static getColorGradientsForCaves(caves, clOptions) {
+        const colorGradients = new Map();
+
+        if (clOptions.color.mode.value !== 'gradientByZ') return colorGradients;
+
+        const zCoords = Array.from(SurveyHelper.calcVerticalStats(caves));
+        const maxZ = Math.max(...zCoords);
+        const minZ = Math.min(...zCoords);
+        const diffZ = maxZ - minZ;
+        caves.forEach(c => {
+            const sm = new Map();
+            colorGradients.set(c.name, sm);
+            c.surveys.forEach(s => {
+                sm.set(s.name, SurveyHelper.getColorGradients(s.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
+            });
+
+        });
+        return colorGradients;
+    }
+
+    static getColorGradients(stations, shots, diffZ, maxZ, startColor, endColor) {
+        const colors = [];
+        const colorDiff = endColor.sub(startColor);
+        shots.forEach(sh => {
+            const fromStation = stations.get(sh.from);
+            const toStation = stations.get(sh.to);
+            if (fromStation !== undefined && toStation !== undefined) {
+                const fromD = maxZ - fromStation.z;
+                const toD = maxZ - toStation.z;
+                const fc = startColor.add(colorDiff.mul(fromD / diffZ));
+                const tc = startColor.add(colorDiff.mul(toD / diffZ));
+                colors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+            }
+        });
+        return colors;
     }
 }

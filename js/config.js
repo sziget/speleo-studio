@@ -1,3 +1,5 @@
+import { Color } from "./model.js";
+
 export const OPTIONS = {
     scene: {
         show: {
@@ -7,7 +9,16 @@ export const OPTIONS = {
             spheres: true
         },
         stationSphereRadius: 1,
-        zoomStep: 0.1
-
+        zoomStep: 0.1,
+        caveLines: {
+            color: {
+                start: new Color(0xff0000),
+                end: new Color(0x0000ff),
+                mode: {
+                    value: 'gradientByZ', 
+                    choices: ['global', 'gradientByZ']
+                }
+            }
+        }
     }
 }

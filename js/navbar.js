@@ -8,48 +8,55 @@ export class NavigationBar {
      * @param {Map<String, Map>} options - Global project options, like global visibility of an object
      * @param {MyScene} scene - The 3D scene
      */
-    constructor (domElement, options, scene) {
+    constructor(domElement, options, scene) {
         this.options = options;
         this.scene = scene;
         this.#buildNavbar(domElement);
         this.#addNavbarClickListener();
     }
 
-    #getMenus() { return [
-        {
-            "name": "File", elements: [
-                { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
-                { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } }
-            ]
-        }
-    ]}
+    #getMenus() {
+        return [
+            {
+                "name": "File", elements: [
+                    { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
+                    { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } }
+                ]
+            }
+        ]
+    }
 
-    #getIcons() { return [
-        {
-            "tooltip": "Zoom to fit", "glyphName": "fullscreen", "click": () => this.scene.fitScene()
-        },
-        {
-            "tooltip": "Zoom in", "glyphName": "zoom-in", "click": () => this.scene.zoomWithStep(this.options.scene.zoomStep)
-        },
-        {
-            "tooltip": "Zoom out", "glyphName": "zoom-out", "click": () => this.scene.zoomWithStep(-1 * this.options.scene.zoomStep)
-        },
-        {
-            "tooltip": "Plan", "icon": "/icons/plan.svg", "click": () => this.scene.lookAtPlan()
-        },
-        {
-            "tooltip": "Profile", "icon": "/icons/profile.svg", "click": () => this.scene.lookAtProfile()
-        },
-        {
-            "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
-        },
-        {
-            "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
-        },
-        {
-            "tooltip": "Show faults", "icon": "/icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
-        },        
-    ]}
+    #getIcons() {
+        return [
+            {
+                "tooltip": "Zoom to fit", "glyphName": "fullscreen", "click": () => this.scene.fitScene()
+            },
+            {
+                "tooltip": "Zoom in", "glyphName": "zoom-in", "click": () => this.scene.zoomWithStep(this.options.scene.zoomStep)
+            },
+            {
+                "tooltip": "Zoom out", "glyphName": "zoom-out", "click": () => this.scene.zoomWithStep(-1 * this.options.scene.zoomStep)
+            },
+            {
+                "tooltip": "Plan", "icon": "/icons/plan.svg", "click": () => this.scene.lookAtPlan()
+            },
+            {
+                "tooltip": "Profile", "icon": "/icons/profile.svg", "click": () => this.scene.lookAtProfile()
+            },
+            {
+                "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
+            },
+            {
+                "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
+            },
+            {
+                "tooltip": "Show faults", "icon": "/icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
+            },
+            {
+                "tooltip": "Center line color mode", "icon": "/icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
+            },
+        ]
+    }
 
     #addNavbarClickListener() {
         //Close the dropdown if the user clicks outside of it
@@ -69,14 +76,14 @@ export class NavigationBar {
             const c = document.createElement('div');
             c.setAttribute("class", "mydropdown-content");
             c.setAttribute("id", "myDropdown");
-    
+
             elements.forEach((e) => {
                 const a = document.createElement('a');
                 a.appendChild(document.createTextNode(e.name))
                 a.onclick = e.click;
                 c.appendChild(a);
             });
-    
+
             const d = document.createElement('div');
             d.setAttribute("class", "mydropdown")
             const b = document.createElement('button');
@@ -94,11 +101,11 @@ export class NavigationBar {
             d.appendChild(c);
             return d;
         };
-    
+
         const createIcon = (tooltip, icon, glyphName, click) => {
             const a = document.createElement('a');
             a.onclick = click;
-            
+
             if (glyphName !== undefined) {
                 const i = document.createElement('i');
                 i.setAttribute("class", `glyphicon glyphicon-${glyphName}`);
@@ -114,12 +121,12 @@ export class NavigationBar {
             const t = document.createElement('span');
             t.setAttribute("class", "mytooltiptext")
             t.appendChild(document.createTextNode(tooltip));
-            
+
             a.appendChild(t);
             a.setAttribute("class", "mytooltip");
             return a;
         };
-    
+
         navbarHtmlElement.innerHTML = '';
         this.#getMenus().forEach((m) => navbarHtmlElement.appendChild(createMenu(m.name, m.elements)));
         this.#getIcons().forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.icon, i.glyphName, i.click)) });

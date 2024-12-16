@@ -43,7 +43,7 @@ export class SceneInteraction {
             line.computeLineDistances();
             this.scene.addObjectToScene(line);
 
-            this.showDistancePanel(this.selectedStation.name, this.selectedStationForContext.name, diff, left, top, () =>  { this.scene.removeFromScene(line); this.scene.renderScene(); });
+            this.showDistancePanel(this.selectedStation, this.selectedStationForContext, diff, left, top, () =>  { this.scene.removeFromScene(line); this.scene.renderScene(); });
 
             this.selectedStationForContext.material = this.materials.sphere;
             this.selectedStationForContext = undefined;
@@ -124,7 +124,7 @@ export class SceneInteraction {
         this.contextMenu.style.display = "none";
     }
 
-    showDistancePanel(fromName, toName, diffVector, left, top, lineRemoveFn) {
+    showDistancePanel(from, to, diffVector, left, top, lineRemoveFn) {
         this.infoPanel.children.namedItem("close").onclick = () => {
             lineRemoveFn();
             this.infoPanel.style.display = 'none';
@@ -133,13 +133,16 @@ export class SceneInteraction {
         this.infoPanel.style.left = left + "px";
         this.infoPanel.style.top = top + "px";
         this.infoPanel.style.display = "block";
+        const fp = from.position;
+        const formatCoords = (a) => a.map(x => x.toFixed(2)).join(",");
+        const tp = to.position;
         this.infoPanel.children.namedItem("content").innerHTML = `
-        From: ${fromName}<br>
-        To: ${toName}<br>
+        From: ${from.name} (${formatCoords([fp.x, fp.y, fp.z])})<br>
+        To: ${to.name} (${formatCoords([tp.x, tp.y, tp.z])})<br>
         X distance: ${diffVector.x}<br>
         Y distance: ${diffVector.y}<br>
         Z distance: ${diffVector.z}<br>
-        Horizontal distance: ${Math.sqrt(Math.pow(diffVector.x, 2), Math.pow(diffVector.y))}<br>
+        Horizontal distance: ${Math.sqrt(Math.pow(diffVector.x, 2), Math.pow(diffVector.y, 2))}<br>
         Spatial distance: ${diffVector.length()}
         `
     }

@@ -32,6 +32,10 @@ export class Database {
         return this.caves.values().flatMap(c => c.surveys);
     }
 
+    addCavve(cave) {
+        this.caves.set(cave.name, cave);
+    }
+
     deleteCave(caveName) {
         if (this.caves.has(caveName)) {
             this.caves.delete(caveName);

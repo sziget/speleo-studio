@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+
+import { SurveyHelper } from "./survey.js";
 import * as C from "./constants.js";
 import { Database } from "./db.js";
 import * as MAT from "./materials.js";
@@ -15,10 +17,12 @@ export class MyScene {
      * 
      * @param {Map<String, Map>} options - The project options
      * @param {Database} db - The database of the application, containing caves and other infomations
+     * @param {*} - Collection of line and geometry materials
      */
-    constructor(options, db) {
+    constructor(options, db, materials) {
         this.options = options;
         this.db = db;
+        this.materials = materials;
         this.caveObjects = new Map();
         this.caveObject3DGroup = new THREE.Group();
         this.stationFont = undefined;
@@ -172,22 +176,56 @@ export class MyScene {
                 this.threejsScene.add(plane);
             })
         });
-        
+
         this.planeMeshes.set(attributeName, planes); // even set if planes is emptry
         this.renderScene();
     }
 
+    rotateCenterLineColor() {
+        const config = this.options.scene.caveLines.color.mode;
+        const index = config.choices.indexOf(config.value);
+
+        if (index >= 0 && index < config.choices.length - 1) {
+            config.value = config.choices[index + 1];
+        } else {
+            config.value = config.choices[0];
+        }
+
+        switch (config.value) {
+            case 'gradientByZ':
+                const colors = SurveyHelper.getColorGradientsForCaves(this.db.caves, this.options.scene.caveLines);
+                this.caveObjects.forEach((surveyEntrires, caveName) => {
+                    surveyEntrires.forEach((e, surveyName) => {
+                        e['centerLines'].material = this.materials.whiteLine;
+                        const surveyColors = colors.get(caveName).get(surveyName);
+                        e['centerLines'].geometry.setColors(surveyColors);
+                    });
+                });
+                break;
+            case 'global':
+                const entries = this.#getObjectsFlattened();
+                entries.forEach(e => {
+                    e['centerLines'].material = this.materials.centerLine;
+                    e['centerLines'].geometry.setColors([]);
+                });
+                break;
+            default: throw new Error(`unknown configuration for cave line colors: ${config.value}`);
+        }
+        this.renderScene();
+    }
+
+
     disposePlaneFor(attributeName, shouldDelete = true) {
         const planes = this.planeMeshes.get(attributeName);
-            planes.forEach(p => {
-                p.geometry.dispose();
-                this.threejsScene.remove(p);
-            });
-            if (shouldDelete) {
-                this.planeMeshes.delete(attributeName);
-            }
-            
-            this.renderScene();
+        planes.forEach(p => {
+            p.geometry.dispose();
+            this.threejsScene.remove(p);
+        });
+        if (shouldDelete) {
+            this.planeMeshes.delete(attributeName);
+        }
+
+        this.renderScene();
     }
 
     tooglePlaneFor(attributeName) {
@@ -196,7 +234,7 @@ export class MyScene {
         } else {
             this.disposePlaneFor(attributeName);
         }
-        
+
     }
 
     updateVisiblePlanes() {
@@ -307,10 +345,21 @@ export class MyScene {
         sphereGroup.add(sphere);
     }
 
-    addToScene(stations, polygonSegments, splaySegments, visibility) {
+    addToScene(stations, polygonSegments, splaySegments, visibility, colorGradients) {
         const geometryStations = new LineSegmentsGeometry();
         geometryStations.setPositions(polygonSegments);
-        const lineSegmentsPolygon = new LineSegments2(geometryStations, MAT.materials.polygon);
+        let lineMat;
+        if (colorGradients !== undefined && colorGradients.length > 0) {
+            geometryStations.setColors(colorGradients);
+            lineMat = this.materials.whiteLine;
+            if (lineMat.linewidth === 0) {
+                lineMat.linewidth = this.materials.centerLine.linewidth;
+            }
+        } else {
+            lineMat = this.materials.centerLine
+        }
+
+        const lineSegmentsPolygon = new LineSegments2(geometryStations, lineMat);
         lineSegmentsPolygon.visible = visibility && this.options.scene.show.polygon;
 
         const splaysGeometry = new LineSegmentsGeometry();
