@@ -59,8 +59,8 @@ export class ProjectManager {
             this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds, es.attributes);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
-            const [cl, sl, sn, ss, group] = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
-            this.scene.addSurvey(cave.name, es.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': cl, 'splays': sl, 'stationNames': sn, 'stationSpheres': ss, 'group': group });
+            const _3dObjects = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
+            this.scene.addSurvey(cave.name, es.name, _3dObjects);
         });
         this.scene.updateVisiblePlanes();
     }

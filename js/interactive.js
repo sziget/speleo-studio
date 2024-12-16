@@ -45,11 +45,19 @@ export class SceneInteraction {
 
             this.showDistancePanel(this.selectedStation, this.selectedStationForContext, diff, left, top, () =>  { this.scene.removeFromScene(line); this.scene.renderScene(); });
 
-            this.selectedStationForContext.material = this.materials.sphere;
+            this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
             this.selectedStationForContext = undefined;
-            this.selectedStation.material = this.materials.sphere;
+            this.selectedStation.material = this.getMaterialForType(this.selectedStation);
             this.selectedStation = undefined;
             this.scene.renderScene();
+        }
+    }
+
+    getMaterialForType(object) {
+        switch (object.type) {
+            case 'splay' : return this.materials.sphere.splay;
+            case 'center' : return this.materials.sphere.centerLine;
+            default: throw new Error(`Uknown object type for sphere ${object.type}`);
         }
     }
 
@@ -59,22 +67,22 @@ export class SceneInteraction {
         if (intersects.length) {
             const intersectedObject = intersects[0].object; // first intersected object
 
-            if (intersectedObject === this.selectedStation) {
-                intersectedObject.material = this.materials.sphere;
+            if (intersectedObject === this.selectedStation) { // clicked on the same sphere again
+                intersectedObject.material = this.getMaterialForType(intersectedObject);
                 this.selectedStation = undefined;
             } else {
-                if (this.selectedStation !== undefined) {
-                    this.selectedStation.material = this.materials.sphere;
+                if (this.selectedStation !== undefined) { // deactivate previouly selected sphere
+                    this.selectedStation.material = this.getMaterialForType(this.selectedStation);
                 }
 
                 if (this.selectedStationForContext === intersectedObject) {
                     this.hideContextMenu();
                 }
-                intersectedObject.material = this.materials.selectedSphere;
+                intersectedObject.material = this.materials.sphere.selected;
                 this.selectedStation = intersectedObject;
             }
         } else if (this.selectedStation !== undefined) {
-            this.selectedStation.material = this.materials.sphere;
+            this.selectedStation.material = this.getMaterialForType(this.selectedStation);
             this.selectedStation = undefined;
         }
 
@@ -96,18 +104,18 @@ export class SceneInteraction {
             const intersectedObject = intersects[0].object;
             if (intersectedObject === this.selectedStation) {
                 if (this.selectedStationForContext !== undefined) {
-                    this.selectedStationForContext.material = this.materials.sphere;
+                    this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
                     this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
                 }
                 this.selectedStationForContext = intersectedObject;
-                this.selectedStationForContext.material = this.materials.selectedContextSphere;
+                this.selectedStationForContext.material = this.materials.sphere.selectedForContext;
                 this.selectedStation = undefined;
             } else {
                 if (this.selectedStationForContext !== undefined) {
-                    this.selectedStationForContext.material = this.materials.sphere;
+                    this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
                 }
                 this.selectedStationForContext = intersectedObject;
-                intersectedObject.material = this.materials.selectedContextSphere;
+                intersectedObject.material = this.materials.sphere.selectedForContext;
                 this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
             }
             this.scene.renderScene();

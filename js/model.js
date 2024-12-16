@@ -95,7 +95,7 @@ export class Survey {
     }
 
     static getSplayStationName(surveyName, id) {
-        return `splayStation-${id}@${surveyName}`
+        return `splay-${id}@${surveyName}`
     }
 
     /**

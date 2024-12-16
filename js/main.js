@@ -81,7 +81,7 @@ class Main {
                 s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
             }
             const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, s.stations, s.shots);
-            const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] =
+            const _3dobjects =
                 this.myscene.addToScene(
                     s.stations,
                     centerLineSegments,
@@ -89,7 +89,7 @@ class Main {
                     true,
                     colorGradients !== undefined ? colorGradients.get(s.name) : undefined
                 );
-            this.myscene.addSurvey(cave.name, s.name, { 'id': U.randomAlphaNumbericString(5), 'centerLines': centerLines, 'splays': splayLines, 'stationNames': stationNamesGroup, 'stationSpheres': stationSpheresGroup, 'group': group });
+            this.myscene.addSurvey(cave.name, s.name, _3dobjects);
         });
         this.explorer.addCave(cave);
         this.myscene.fitScene();

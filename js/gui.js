@@ -2,99 +2,115 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 
 export function addGui(options, scene, materials, element) {
+    const show = options.scene.show;
     const gui = new GUI({ container: element });
-    const polygonParam = {
-        'show polygon lines': options.scene.show.polygon,
-        'line color': materials.centerLine.color.getHex(),
+    const centerLineParam = {
+        'show center lines': show.centerLine.segments,
+        'line color': materials.segments.centerLine.color.getHex(),
         'world units': false,
         'width': 20,
-        'show station': options.scene.show.spheres,
-        'station color': materials.sphere.color.getHex(),
-        'station size': options.scene.stationSphereRadius
+        'show station': show.centerLine.spheres,
+        'station color': materials.sphere.centerLine.color.getHex(),
+        'station size': options.scene.stationSphereRadius.centerLine
     };
 
     const splayParam = {
-
-        'show splays': options.scene.show.splays,
-        'line color': materials.splay.color.getHex(),
+        'show splays': show.splay.segments,
+        'line color': materials.segments.splay.color.getHex(),
         'world units': false,
         'width': 10,
+        'show station': show.splay.spheres,
+        'station color': materials.sphere.splay.color.getHex(),
+        'station size': options.scene.stationSphereRadius.splay 
     };
 
     const stationNamesParam = {
-        'show station names': options.scene.show.stationNames,
+        'show station names': show.stationNames,
         'font color': materials.text.color.getHex(),
-
     }
 
-    const polygonFolder = gui.addFolder('Polygon');
+    const centerLineFolder = gui.addFolder('Center lines');
 
-    polygonFolder.add(polygonParam, 'show polygon lines').onChange(function (val) {
-        options.scene.show.polygon = val;
+    centerLineFolder.add(centerLineParam, 'show center lines').onChange(function (val) {
+        show.centerLine.segments = val;
         scene.setObjectsVisibility('centerLines', val);
     });
 
-    polygonFolder.addColor(polygonParam, 'line color').onChange(function (val) {
-        materials.centerLine.color = new THREE.Color(val);
+    centerLineFolder.addColor(centerLineParam, 'line color').onChange(function (val) {
+        materials.segments.centerLine.color = new THREE.Color(val);
         scene.renderScene();
     });
 
-    polygonFolder.add(polygonParam, 'world units').onChange(function (val) {
-        materials.centerLine.worldUnits = val;
+    centerLineFolder.add(centerLineParam, 'world units').onChange(function (val) {
+        materials.segments.centerLine.worldUnits = val;
         scene.renderScene();
 
     });
 
-    polygonFolder.add(polygonParam, 'width', 1, 50).onChange(function (val) {
-        materials.centerLine.linewidth = val / 10;
+    centerLineFolder.add(centerLineParam, 'width', 1, 50).onChange(function (val) {
+        materials.segments.centerLine.linewidth = val / 10;
         materials.whiteLine.linewidth = val / 10;
         scene.renderScene();
     });
 
-    polygonFolder.add(polygonParam, 'show station').onChange(function (val) {
-        options.scene.show.polygon = val;
-        options.scene.show.polygon = val;
-        scene.setObjectsVisibility('stationSpheres', val);
+    centerLineFolder.add(centerLineParam, 'show station').onChange(function (val) {
+        show.centerLine.spheres = val;
+        scene.setObjectsVisibility('centerLinesSpheres', val);
     });
 
-    polygonFolder.addColor(polygonParam, 'station color').onChange(function (val) {
-        materials.sphere.color = new THREE.Color(val);
+    centerLineFolder.addColor(centerLineParam, 'station color').onChange(function (val) { 
+        materials.sphere.centerLine.color = new THREE.Color(val);
         scene.renderScene();
     });
 
-    polygonFolder.add(polygonParam, 'station size', 1, 50).step(1).onChange(function (val) {
-        options.scene.stationSphereRadius = val;
-        scene.changeStationSpheresRadius();
+    centerLineFolder.add(centerLineParam, 'station size', 1, 50).step(1).onChange(function (val) {
+        options.scene.stationSphereRadius.centerLine = val;
+        scene.changeStationSpheresRadius('centerLine');
     });
 
     const splaysFolder = gui.addFolder('Splays');
 
     splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
-        options.scene.show.splays = val;
+        show.splay.segments = val;
         scene.setObjectsVisibility('splays', val);
     });
 
     splaysFolder.addColor(splayParam, 'line color').onChange(function (val) {
-        materials.splay.color = new THREE.Color(val);
+        materials.segments.splay.color = new THREE.Color(val);
         scene.renderScene();
     });
 
     splaysFolder.add(splayParam, 'world units').onChange(function (val) {
-        materials.splay.worldUnits = val;
-        materials.splay.needsUpdate = true;
+        materials.segments.splay.worldUnits = val;
+        materials.segments.splay.needsUpdate = true;
         scene.renderScene();
 
     });
 
     splaysFolder.add(splayParam, 'width', 1, 30).onChange(function (val) {
-        materials.splay.linewidth = val / 10;
+        materials.segments.splay.linewidth = val / 10;
         scene.renderScene();
     });
+
+    splaysFolder.add(splayParam, 'show station').onChange(function (val) {
+        show.splay.spheres = val;
+        scene.setObjectsVisibility('splaysSpheres', val);
+    });
+
+    splaysFolder.addColor(splayParam, 'station color').onChange(function (val) { 
+        materials.sphere.splay.color = new THREE.Color(val);
+        scene.renderScene();
+    });
+
+    splaysFolder.add(splayParam, 'station size', 1, 50).step(1).onChange(function (val) {
+        options.scene.stationSphereRadius.splay = val;
+        scene.changeStationSpheresRadius('splay');
+    });    
 
     const stationNamesFolder = gui.addFolder('Station names');
 
     stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
-        options.scene.show.stationNames = val;
+        show.stationNames = val;
         scene.setObjectsVisibility('stationNames', val);
     });
 

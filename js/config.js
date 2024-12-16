@@ -4,11 +4,19 @@ export const OPTIONS = {
     scene: {
         show: {
             stationNames: false,
-            polygon: true,
-            splays: false,
-            spheres: true
+            centerLine: {
+                spheres: true,
+                segments: true
+            },
+            splay: {
+                spheres: true,
+                segments: true
+            },            
         },
-        stationSphereRadius: 1,
+        stationSphereRadius: {
+            centerLine: 1,
+            splay: 1
+        },
         zoomStep: 0.1,
         caveLines: {
             color: {
