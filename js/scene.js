@@ -70,15 +70,16 @@ export class MyScene {
 
     setSurveyVisibility(cave, survey, value) {
         const entry = this.caveObjects.get(cave).get(survey);
-        entry.centerLines.visible = value && this.options.scene.show.polygon;
+        const show = this.options.scene.show;
+        entry.centerLines.visible = value && show.centerLines.segments;
         entry.centerLines.hidden = !value; // hidden is a custom attribute set by me, used in setObjectsVisibility
-        entry.splays.visible = value && this.options.scene.show.splays;
+        entry.splays.visible = value && show.splay.segments;
         entry.splays.hidden = !value;
-        entry.stationNames.visible = value && this.options.scene.show.stationNames;
+        entry.stationNames.visible = value && show.stationNames;
         entry.stationNames.hidden = !value;
-        entry.centerLinesSpheres.visible = value && this.options.scene.show.spheres;
+        entry.centerLinesSpheres.visible = value && show.centerLine.spheres;
         entry.centerLinesSpheres.hidden = !value;
-        entry.splaysSpheres.visible = value && this.options.scene.show.spheres;
+        entry.splaysSpheres.visible = value && show.splay.spheres;
         entry.splaysSpheres.hidden = !value;
         this.renderScene();
     }
@@ -155,12 +156,12 @@ export class MyScene {
     toogleBoundingBox() {
         if (this.boundingBox === undefined) {
             const bb = new THREE.Box3();
-            this.caveObjects.forEach(c => {
-                c.forEach(e => {
+            this.caveObjects.forEach((sMap, caveName) => {
+                sMap.forEach((e, surveyName) => {
                     if (e.centerLines.visible) {
                         bb.expandByObject(e.centerLines);
                     }
-                    if (e.splays) {
+                    if (e.splays.visible) {
                         bb.expandByObject(e.splays);
                     }
                 });
@@ -367,11 +368,12 @@ export class MyScene {
     }
 
     addToScene(stations, polygonSegments, splaySegments, visibility, colorGradients) {
+        const show = this.options.scene.show;
+
         const geometryStations = new LineSegmentsGeometry();
         geometryStations.setPositions(polygonSegments);
         const splaysGeometry = new LineSegmentsGeometry();
         splaysGeometry.setPositions(splaySegments);
-
         let clLineMat, splayLineMat;
         const gradientMaterial = this.materials.whiteLine;
         if (gradientMaterial.linewidth === 0) {
@@ -388,10 +390,10 @@ export class MyScene {
         }
 
         const lineSegmentsPolygon = new LineSegments2(geometryStations, clLineMat);
-        lineSegmentsPolygon.visible = visibility && this.options.scene.show.polygon;
+        lineSegmentsPolygon.visible = visibility && show.centerLine.segments;
 
         const lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMat);
-        lineSegmentsSplays.visible = visibility && this.options.scene.show.splays;
+        lineSegmentsSplays.visible = visibility && show.splay.segments;
         const group = new THREE.Group();
 
         group.add(lineSegmentsPolygon);
@@ -412,7 +414,6 @@ export class MyScene {
                 this.addStationSpheres(stationName, station.type, station.position, splayStationSpheresGroup, splaySphereGeo, this.materials.sphere.splay);
             }
         }
-        const show = this.options.scene.show;
         stationNamesGroup.visible = visibility && show.stationNames;
         clStationSpheresGroup.visible = visibility && show.centerLine.spheres;
         splayStationSpheresGroup.visible = visibility && show.splay.spheres;

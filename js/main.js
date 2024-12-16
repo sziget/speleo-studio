@@ -46,7 +46,7 @@ class Main {
             if (caveNameUrl.includes('.cave')) {
                 fetch(caveNameUrl).then(data => data.blob()).then(res => this.imporPolygonFromFile(res)).catch(error => console.error(error));
             } else if (caveNameUrl.includes('.csv')) {
-                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importCsvFile(res)).catch(error => console.error(error));
+                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importCsvFile(res, caveNameUrl)).catch(error => console.error(error));
             }
         } else {
             this.myscene.renderScene();
@@ -95,14 +95,14 @@ class Main {
         this.myscene.fitScene();
     }
 
-    importCsvFile(file) {
+    importCsvFile(file, fileName) {
         if (file) {
             Papa.parse(file, {
                 header: false,
                 comments: "#",
                 dynamicTyping: true,
                 complete: (results) => {
-                    const caveName = file.name;
+                    const caveName = (fileName !== undefined) ? fileName : file.name;
                     const cave = I.getCaveFromCsvFile(caveName, results.data);
                     const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[caveName, cave]]), this.options.scene.caveLines);
                     this.addCave(cave, colorGradients.get(cave.name));

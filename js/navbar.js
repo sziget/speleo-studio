@@ -38,22 +38,22 @@ export class NavigationBar {
                 "tooltip": "Zoom out", "glyphName": "zoom-out", "click": () => this.scene.zoomWithStep(-1 * this.options.scene.zoomStep)
             },
             {
-                "tooltip": "Plan", "icon": "/icons/plan.svg", "click": () => this.scene.lookAtPlan()
+                "tooltip": "Plan", "icon": "./icons/plan.svg", "click": () => this.scene.lookAtPlan()
             },
             {
-                "tooltip": "Profile", "icon": "/icons/profile.svg", "click": () => this.scene.lookAtProfile()
+                "tooltip": "Profile", "icon": "./icons/profile.svg", "click": () => this.scene.lookAtProfile()
             },
             {
-                "tooltip": "Bounding box", "icon": "/icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
+                "tooltip": "Bounding box", "icon": "./icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
             },
             {
-                "tooltip": "Show beddings", "icon": "/icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
+                "tooltip": "Show beddings", "icon": "./icons/bedding.svg", "click": () => this.scene.tooglePlaneFor("bedding")
             },
             {
-                "tooltip": "Show faults", "icon": "/icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
+                "tooltip": "Show faults", "icon": "./icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
             },
             {
-                "tooltip": "Center and splay line color mode", "icon": "/icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
+                "tooltip": "Center and splay line color mode", "icon": "./icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
             },
         ]
     }
