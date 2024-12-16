@@ -197,8 +197,10 @@ export class MyScene {
                 this.caveObjects.forEach((surveyEntrires, caveName) => {
                     surveyEntrires.forEach((e, surveyName) => {
                         e['centerLines'].material = this.materials.whiteLine;
+                        e['splays'].material = this.materials.whiteLine;
                         const surveyColors = colors.get(caveName).get(surveyName);
-                        e['centerLines'].geometry.setColors(surveyColors);
+                        e['centerLines'].geometry.setColors(surveyColors.center);
+                        e['splays'].geometry.setColors(surveyColors.splays);
                     });
                 });
                 break;
@@ -207,6 +209,8 @@ export class MyScene {
                 entries.forEach(e => {
                     e['centerLines'].material = this.materials.centerLine;
                     e['centerLines'].geometry.setColors([]);
+                    e['splays'].material = this.materials.splay;
+                    e['splays'].geometry.setColors([]);
                 });
                 break;
             default: throw new Error(`unknown configuration for cave line colors: ${config.value}`);
@@ -348,13 +352,18 @@ export class MyScene {
     addToScene(stations, polygonSegments, splaySegments, visibility, colorGradients) {
         const geometryStations = new LineSegmentsGeometry();
         geometryStations.setPositions(polygonSegments);
+        const splaysGeometry = new LineSegmentsGeometry();
+        splaysGeometry.setPositions(splaySegments);
+
         let lineMat;
-        if (colorGradients !== undefined && colorGradients.length > 0) {
-            geometryStations.setColors(colorGradients);
-            lineMat = this.materials.whiteLine;
-            if (lineMat.linewidth === 0) {
-                lineMat.linewidth = this.materials.centerLine.linewidth;
-            }
+        const gradientMaterial = this.materials.whiteLine;
+        if (gradientMaterial.linewidth === 0) {
+            gradientMaterial.linewidth = this.materials.centerLine.linewidth;
+        }
+        if (colorGradients !== undefined) {
+            geometryStations.setColors(colorGradients.center);
+            splaysGeometry.setColors(colorGradients.splays);
+            lineMat = gradientMaterial;
         } else {
             lineMat = this.materials.centerLine
         }
@@ -362,9 +371,7 @@ export class MyScene {
         const lineSegmentsPolygon = new LineSegments2(geometryStations, lineMat);
         lineSegmentsPolygon.visible = visibility && this.options.scene.show.polygon;
 
-        const splaysGeometry = new LineSegmentsGeometry();
-        splaysGeometry.setPositions(splaySegments);
-        const lineSegmentsSplays = new LineSegments2(splaysGeometry, MAT.materials.splay);
+        const lineSegmentsSplays = new LineSegments2(splaysGeometry, lineMat);
         lineSegmentsSplays.visible = visibility && this.options.scene.show.splays;
         const group = new THREE.Group();
 
@@ -374,9 +381,14 @@ export class MyScene {
         const stationNamesGroup = new THREE.Group();
         const stationSpheresGroup = new THREE.Group();
         const sphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius / 10.0, 5, 5);
-        for (const [stationName, stationPosition] of stations) {
-            this.addStationName(stationName, stationPosition, stationNamesGroup);
-            this.addStationSpheres(stationName, stationPosition, stationSpheresGroup, sphereGeo);
+        for (const [stationName, station] of stations) {
+            if (station.type === 'center') {
+                this.addStationName(stationName, station.position, stationNamesGroup);
+            } else {
+
+            }
+            this.addStationSpheres(stationName, station.position, stationSpheresGroup, sphereGeo);
+
         }
 
         stationNamesGroup.visible = visibility && this.options.scene.show.stationNames;

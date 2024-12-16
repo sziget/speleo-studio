@@ -60,13 +60,26 @@ export class Shot {
     }
 }
 
+export class SurveyStation {
+
+    /**
+     * 
+     * @param {string} type - the type of the station, could be center and splay 
+     * @param {*} position - the 3D vector representing the position of the station
+     */
+    constructor(type, position) {
+        this.type = type;
+        this.position = position;
+    }
+}
+
 export class Survey {
 
     /**
      * 
      * @param {string} name - The name of the Survey
      * @param {boolean} visible 
-     * @param {Map<String, Vector>} stations - A map of station names and station positions
+     * @param {Map<String, SurveyStation>} stations - A map of station names and stations (type, position)
      * @param {Array[Shot]} shots - An array of shots holding the measurements for this Survey
      * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
      * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
@@ -81,6 +94,10 @@ export class Survey {
         this.isolated = false;
     }
 
+    static getSplayStationName(surveyName, id) {
+        return `splayStation-${id}@${surveyName}`
+    }
+
     /**
      * Returns all the attributes with the given id for all stations
      * 
@@ -90,7 +107,7 @@ export class Survey {
     getSurveyAttributesByName(name) {
         //stationName -> [ { id, params},  ]
         return this.attributes.entries().map(([station, arrayOfAtrs]) => {
-            const pos = this.stations.get(station);
+            const pos = this.stations.get(station).position;
             const matchingAttrs = arrayOfAtrs.filter(a => a.name === name);
             if (matchingAttrs.length > 0) {
                 return [pos, matchingAttrs];

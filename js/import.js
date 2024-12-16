@@ -60,9 +60,9 @@ export function getCaveFromPolygonFile(wholeFileInText) {
                 const shots = getShotsFromPolygonSurvey(lineIterator);
                 const startName = !firstSurveyProcessed ? '0' : undefined;
                 const startPosition = !firstSurveyProcessed ? new M.Vector(0, 0, 0) : undefined;
-                const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(shots, stationsGlobal, [], startName, startPosition);
-                for (const [stationName, stationPosition] of stations) {
-                    stationsGlobal.set(stationName, stationPosition);
+                const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, stationsGlobal, [], startName, startPosition);
+                for (const [stationName, station] of stations) {
+                    stationsGlobal.set(stationName, station);
                 }
                 surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds, new Map()));
                 firstSurveyProcessed = true;
@@ -77,8 +77,9 @@ export function getCaveFromPolygonFile(wholeFileInText) {
 
 export function getCaveFromCsvFile(fileName, csvData) {
     const shots = getShotsFromCsv(csvData);
-    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
-    return new M.Cave(fileName, [new M.Survey('polygon', true, stations, shots, orphanShotIds, new Map())], true);
+    const surveyName = 'polygon'; 
+    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
+    return new M.Cave(fileName, [new M.Survey(surveyName, true, stations, shots, orphanShotIds, new Map())], true);
 }
 
 function getShotsFromCsv(csvData) {
@@ -94,8 +95,9 @@ function getShotsFromCsv(csvData) {
         const distance = row[2];
         const azimuth = row[3];
         const clino = row[4];
-        const type = to === '-' ? 'splay' : 'center';
-        shots.push(new M.Shot(i, type, from, to, distance, azimuth, clino));
+        const type = (to === '-') ? 'splay' : 'center';
+        const toName = (type === 'splay') ? undefined : to;
+        shots.push(new M.Shot(i, type, from, toName, distance, azimuth, clino));
     }
     return shots;
 }

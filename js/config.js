@@ -15,7 +15,7 @@ export const OPTIONS = {
                 start: new Color(0xff0000),
                 end: new Color(0x0000ff),
                 mode: {
-                    value: 'gradientByZ', 
+                    value: 'global', 
                     choices: ['global', 'gradientByZ']
                 }
             }

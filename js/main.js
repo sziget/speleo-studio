@@ -15,6 +15,7 @@ import { addGui } from "./gui.js";
 class Main {
 
     constructor() {
+
         this.db = new Database()
         this.options = OPTIONS;
         this.materials = MAT.materials;
@@ -44,30 +45,24 @@ class Main {
 
             if (caveNameUrl.includes('.cave')) {
                 fetch(caveNameUrl).then(data => data.blob()).then(res => this.imporPolygonFromFile(res)).catch(error => console.error(error));
+            } else if (caveNameUrl.includes('.csv')) {
+                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importCsvFile(res)).catch(error => console.error(error));
             }
         } else {
             this.myscene.renderScene();
         }
 
-        document.getElementById('topodroidInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                this.importCsvFile(file);
-            }
-        });
+        document.getElementById('topodroidInput').addEventListener('change', (e) => this.importCsvFile(e.target.files[0]));
+        document.getElementById('polygonInput').addEventListener('change', (e) => this.imporPolygonFromFile(e.target.files[0]));
 
-        document.getElementById('polygonInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                this.imporPolygonFromFile(file);
-            }
-        });
     }
 
     imporPolygonFromFile(file) {
-        const reader = new FileReader();
-        reader.onload = (event) => this.importPolygon(event.target.result);
-        reader.readAsText(file, "iso_8859-2");
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => this.importPolygon(event.target.result);
+            reader.readAsText(file, "iso_8859-2");
+        }
     }
 
     importPolygon(wholeFileInText) {
@@ -85,7 +80,7 @@ class Main {
                 s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
                 s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
             }
-            const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.stations, s.shots);
+            const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, s.stations, s.shots);
             const [centerLines, splayLines, stationNamesGroup, stationSpheresGroup, group] =
                 this.myscene.addToScene(
                     s.stations,
@@ -101,19 +96,22 @@ class Main {
     }
 
     importCsvFile(file) {
-        Papa.parse(file, {
-            header: false,
-            comments: "#",
-            dynamicTyping: true,
-            complete: function (results) {
-                const caveName = file.name;
-                const cave = I.getCaveFromCsvFile(caveName, results.data);
-                this.addCave(cave);
-            },
-            error: function (error) {
-                console.error('Error parsing CSV:', error);
-            }
-        });
+        if (file) {
+            Papa.parse(file, {
+                header: false,
+                comments: "#",
+                dynamicTyping: true,
+                complete: (results) => {
+                    const caveName = file.name;
+                    const cave = I.getCaveFromCsvFile(caveName, results.data);
+                    const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[caveName, cave]]), this.options.scene.caveLines);
+                    this.addCave(cave, colorGradients.get(cave.name));
+                },
+                error: function (error) {
+                    console.error('Error parsing CSV:', error);
+                }
+            });
+        }
     }
 }
 

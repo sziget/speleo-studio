@@ -180,7 +180,7 @@ export class SurveyEditor {
                     row.getElement().style.backgroundColor = "#ff0000";
                 }
                 if (rowData.type === 'splay') {
-                    row.getElement().style.backgroundColor = "#bcffdb";
+                    row.getElement().style.backgroundColor = "#012109";
                 }
             },
             columns: [

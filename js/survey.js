@@ -1,5 +1,7 @@
 import * as M from "./model.js";
 import * as U from "./utils.js";
+import { Survey } from "./model.js";
+import { SurveyStation as ST } from "./model.js";
 
 export class SurveyHelper {
 
@@ -7,7 +9,7 @@ export class SurveyHelper {
         es.isolated = false;
         const startName = index === 0 ? es.shots[0].from : undefined;
         const startPosition = index === 0 ? new M.Vector(0, 0, 0) : undefined;
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es.shots, surveyStations, [], startName, startPosition);
+        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es.name, es.shots, surveyStations, [], startName, startPosition);
         es.isolated = (stations.size === 0);
         es.stations = stations;
         es.orphanShotIds = orphanShotIds;
@@ -15,14 +17,14 @@ export class SurveyHelper {
         return es;
     }
 
-    static calculateSurveyStations(shots, prevStations, aliases, startName, startPosition) {
+    static calculateSurveyStations(surveyName, shots, prevStations, aliases, startName, startPosition) {
         const stations = new Map();
         if (shots.length === 0) return stations;
 
         const startStationName = startName !== undefined ? startName : shots[0].from;
 
         if (startPosition !== undefined) {
-            stations.set(startStationName, startPosition);
+            stations.set(startStationName, new ST('center', startPosition));
         } else if (startPosition === undefined && prevStations.has(shots[0].from)) {
             stations.set(startStationName, prevStations.get(shots[0].from));
         }
@@ -52,17 +54,19 @@ export class SurveyHelper {
                 if (fromStation !== undefined) {
                     if (toStation === undefined) {  // from = 1, to = 0
                         const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
-                        const st = new M.Vector(fromStation.x, fromStation.y, fromStation.z).add(polarVector);
-                        stations.set(sh.to, st);
+                        const fp = fromStation.position;
+                        const st = new M.Vector(fp.x, fp.y, fp.z).add(polarVector);
+                        const stationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+                        stations.set(stationName, new ST(sh.type, st));
                         repeat = true;
                     } else {
                         //from = 1, to = 1
                     }
                     sh.processed = true;
                 } else if (toStation !== undefined) { // from = 0, to = 1
-
-                    const st = new M.Vector(toStation.x, toStation.y, toStation.z).sub(polarVector);
-                    stations.set(sh.from, st);
+                    const tp = toStation.position;
+                    const st = new M.Vector(tp.x, tp.y, tp.z).sub(polarVector);
+                    stations.set(sh.from, new ST(sh.type, st));
                     sh.processed = true;
                     repeat = true;
                 } else { //from = 0, to = 0, look for aliases
@@ -75,8 +79,9 @@ export class SurveyHelper {
                         const pairName = falias.getPair(sh.from);
                         if (prevStations.has(pairName)) {
                             const from = prevStations.get(pairName);
-                            const to = new M.Vector(from.x, from.y, from.z).add(polarVector);
-                            stations.set(sh.to, to);
+                            const fp = from.position;
+                            const to = new M.Vector(fp.x, fp.y, fp.z).add(polarVector);
+                            stations.set(sh.to, new ST(sh.type, to));
                             repeat = true;
                         }
                     }
@@ -85,8 +90,9 @@ export class SurveyHelper {
                         const pairName = talias.getPair(sh.to);
                         if (prevStations.has(pairName)) {
                             const to = prevStations.get(pairName);
-                            const from = new M.Vector(to.x, to.y, to.z).sub(polarVector);
-                            stations.set(sh.from, from);
+                            const tp = to.position;
+                            const from = new M.Vector(tp.x, tp.y, tp.z).sub(polarVector);
+                            stations.set(sh.from, new ST(sh.type, from));
                             repeat = true;
                         }
                     }
@@ -99,19 +105,23 @@ export class SurveyHelper {
         return [stations, unprocessedShots];
     }
 
-    static getSegments(stations, shots) {
+    static getSegments(surveyName, stations, shots) {
         const splaySegments = [];
         const centerlineSegments = [];
         shots.forEach(sh => {
             const fromStation = stations.get(sh.from);
-            const toStation = stations.get(sh.to);
+            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+            const toStation = stations.get(toStationName);
+
             if (fromStation !== undefined && toStation !== undefined) {
+                const fromPos = fromStation.position;
+                const toPos = toStation.position;
                 switch (sh.type) {
                     case 'splay':
-                        splaySegments.push(fromStation.x, fromStation.y, fromStation.z, toStation.x, toStation.y, toStation.z);;
+                        splaySegments.push(fromPos.x, fromPos.y, fromPos.z, toPos.x, toPos.y, toPos.z);;
                         break;
                     case 'center':
-                        centerlineSegments.push(fromStation.x, fromStation.y, fromStation.z, toStation.x, toStation.y, toStation.z);;
+                        centerlineSegments.push(fromPos.x, fromPos.y, fromPos.z, toPos.x, toPos.y, toPos.z);;
                         break;
                     default:
                         throw new Error(`Undefined segment type ${sh.type}`);
@@ -124,18 +134,21 @@ export class SurveyHelper {
 
     }
 
-    static calcVerticalStats(caves) {
-        return caves.values().flatMap(c => {
-            return Array.from(c.surveys.flatMap(s => Array.from(s.stations.values().map(x => x.z))));
-        });
-    }
+
 
     static getColorGradientsForCaves(caves, clOptions) {
         const colorGradients = new Map();
-
         if (clOptions.color.mode.value !== 'gradientByZ') return colorGradients;
+        const zCoords = Array.from(caves.values().flatMap(c => {
+            if (c.visible) {
+                return Array.from(c.surveys.flatMap(s => {
+                    if (s.visible) {
+                        return Array.from(s.stations.values().map(x => x.position.z))
+                    } else return;
+                })).filter(x => x !== undefined);
+            } else return;
+        })).filter(x => x !== undefined); //TODO: should use reduce
 
-        const zCoords = Array.from(SurveyHelper.calcVerticalStats(caves));
         const maxZ = Math.max(...zCoords);
         const minZ = Math.min(...zCoords);
         const diffZ = maxZ - minZ;
@@ -143,27 +156,33 @@ export class SurveyHelper {
             const sm = new Map();
             colorGradients.set(c.name, sm);
             c.surveys.forEach(s => {
-                sm.set(s.name, SurveyHelper.getColorGradients(s.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
+                sm.set(s.name, SurveyHelper.getColorGradients(s.name, s.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
             });
 
         });
         return colorGradients;
     }
 
-    static getColorGradients(stations, shots, diffZ, maxZ, startColor, endColor) {
-        const colors = [];
+    static getColorGradients(surveyName, stations, shots, diffZ, maxZ, startColor, endColor) {
+        const centerColors = [];
+        const splayColors = [];
         const colorDiff = endColor.sub(startColor);
         shots.forEach(sh => {
             const fromStation = stations.get(sh.from);
-            const toStation = stations.get(sh.to);
+            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+            const toStation = stations.get(toStationName);
             if (fromStation !== undefined && toStation !== undefined) {
-                const fromD = maxZ - fromStation.z;
-                const toD = maxZ - toStation.z;
+                const fromD = maxZ - fromStation.position.z;
+                const toD = maxZ - toStation.position.z;
                 const fc = startColor.add(colorDiff.mul(fromD / diffZ));
                 const tc = startColor.add(colorDiff.mul(toD / diffZ));
-                colors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+                if (sh.type === 'center') {
+                    centerColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+                } else if (sh.type === 'splay') {
+                    splayColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+                }
             }
         });
-        return colors;
+        return {center: centerColors, splays: splayColors};
     }
 }
