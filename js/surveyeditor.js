@@ -142,7 +142,11 @@ export class SurveyEditor {
 
         const countOrphans = function (values, data, calcParams) {
             const cnt = data.filter(v => v.isOrphan).length;
-            return `orphans: ${cnt}`;
+            return `o: ${cnt}`;
+        }
+
+        const countLines = function (values, data, calcParams) {
+            return data.length;
         }
 
         const sumCenterLines = function (values, data, calcParams) {
@@ -184,7 +188,7 @@ export class SurveyEditor {
                 }
             },
             columns: [
-                { title: "Id", field: "id", headerSort: false, bottomCalc: "count" },
+                { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
                 { title: "From", field: "from", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countOrphans },
                 { title: "To", field: "to", headerSort: false, editor: true, validator: ["required"], headerFilter: "input" },
                 { title: "Length", field: "length", headerSort: false, editor: true, validator: ["required", customValidator], bottomCalc: sumCenterLines },
