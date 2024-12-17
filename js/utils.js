@@ -34,3 +34,8 @@ export function parseMyFloat(strOrNum) {
         return parseFloat(strOrNum);
     }
 }
+
+export function get3DCoordsStr(vector) {
+    const s = ['x', 'y', 'z'].map(n => vector[n].toFixed(2)).join(', ');
+    return `(${s})`;
+}

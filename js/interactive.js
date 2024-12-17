@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { showErrorPanel } from './popups.js';
+import { get3DCoordsStr } from "./utils.js";
 
 export class SceneInteraction {
 
@@ -45,10 +46,8 @@ export class SceneInteraction {
 
             this.showDistancePanel(this.selectedStation, this.selectedStationForContext, diff, left, top, () =>  { this.scene.removeFromScene(line); this.scene.renderScene(); });
 
-            this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
-            this.selectedStationForContext = undefined;
-            this.selectedStation.material = this.getMaterialForType(this.selectedStation);
-            this.selectedStation = undefined;
+            this.#clearSelectedForContext();
+            this.#clearSelected();
             this.scene.renderScene();
         }
     }
@@ -61,6 +60,32 @@ export class SceneInteraction {
         }
     }
 
+    #setSelected(st) {
+        this.selectedStation = st;
+        this.selectedStation.material = this.materials.sphere.selected;
+        this.selectedStation.scale.setScalar(1.7);
+        this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+    }
+
+    #clearSelected() {
+        this.selectedStation.material = this.getMaterialForType(this.selectedStation);
+        this.selectedStation.scale.setScalar(1.0);
+        this.selectedStation = undefined;
+    }
+
+    #setSelectedForContext(st) {
+        this.selectedStationForContext = st;
+        this.selectedStationForContext.material = this.materials.sphere.selectedForContext;
+        this.selectedStationForContext.scale.setScalar(1.7);
+        this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+    }
+
+    #clearSelectedForContext() {
+        this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
+        this.selectedStationForContext.scale.setScalar(1.0);
+        this.selectedStationForContext = undefined;
+    }    
+
     onClick(event) {
         const intersects = this.scene.getIntersectedStationSpheres(this.pointer);
 
@@ -68,28 +93,19 @@ export class SceneInteraction {
             const intersectedObject = intersects[0].object; // first intersected object
 
             if (intersectedObject === this.selectedStation) { // clicked on the same sphere again
-                intersectedObject.material = this.getMaterialForType(intersectedObject);
-                this.selectedStation = undefined;
-            } else {
+                this.#clearSelected();
+            } else { // clicked an other object
                 if (this.selectedStation !== undefined) { // deactivate previouly selected sphere
-                    this.selectedStation.material = this.getMaterialForType(this.selectedStation);
+                    this.#clearSelected()
                 }
-
                 if (this.selectedStationForContext === intersectedObject) {
                     this.hideContextMenu();
                 }
-                intersectedObject.material = this.materials.sphere.selected;
-                this.selectedStation = intersectedObject;
+                this.#setSelected(intersectedObject);
             }
         } else if (this.selectedStation !== undefined) {
-            this.selectedStation.material = this.getMaterialForType(this.selectedStation);
-            this.selectedStation = undefined;
+            this.#clearSelected();
         }
-
-        if (this.selectedStation !== null) {
-            this.footer.addMessage(`${this.selectedStation.name} selected, position: ${this.selectedStation.position}`);
-        }
-
         this.scene.renderScene();
     }
 
@@ -107,19 +123,17 @@ export class SceneInteraction {
         if (intersects.length) {
             const intersectedObject = intersects[0].object;
             if (intersectedObject === this.selectedStation) {
-                if (this.selectedStationForContext !== undefined) {
-                    this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
+                if (this.selectedStationForContext !== undefined) { // deselect previously selected station for context
+                    this.#clearSelectedForContext();
                     this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
                 }
-                this.selectedStationForContext = intersectedObject;
-                this.selectedStationForContext.material = this.materials.sphere.selectedForContext;
-                this.selectedStation = undefined;
+                this.#clearSelected();
+                this.#setSelectedForContext(intersectedObject);
             } else {
-                if (this.selectedStationForContext !== undefined) {
-                    this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
+                if (this.selectedStationForContext !== undefined) { // clicked on the same sphere, that was already selected
+                    this.#clearSelectedForContext();
                 }
-                this.selectedStationForContext = intersectedObject;
-                intersectedObject.material = this.materials.sphere.selectedForContext;
+                this.#setSelectedForContext(intersectedObject);
                 this.showContextMenu(event.clientX - rect.left, event.clientY - rect.top);
             }
             this.scene.renderScene();
