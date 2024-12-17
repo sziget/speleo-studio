@@ -415,7 +415,7 @@ export class MyScene {
 
         for (const [stationName, station] of stations) {
             if (station.type === 'center') {
-                this.addStationName(stationName, station.type, station.position, stationNamesGroup);
+                this.addStationName(stationName, station.position, stationNamesGroup);
                 this.addStationSpheres(stationName, station.type, station.position, clStationSpheresGroup, clSphereGeo, this.materials.sphere.centerLine);
             } else if (station.type === 'splay') {
                 this.addStationSpheres(stationName, station.type, station.position, splayStationSpheresGroup, splaySphereGeo, this.materials.sphere.splay);

@@ -55,7 +55,7 @@
 			top: 50%;
 			width: 50%;
 			margin-top: -50px;
-			margin-left: -50px;			
+			margin-left: -50px;
 			color: white;
 			padding: 10px;
 			border-style: solid;
@@ -72,7 +72,7 @@
 
 		.cautionpanel-warning {
 			background-color: #251410;
-		}		
+		}
 
 		.file-upload {
 			position: absolute;
@@ -109,6 +109,22 @@
 			display: none;
 		}
 
+		.footer {
+			position: fixed;
+			left: 0;
+			bottom: 0;
+			width: 100%;
+			height: 6%;
+			background-color: rgb(9, 9, 66);
+			color: white;
+			text-align: left;
+		}
+
+		.footer #content {
+			margin-left: 10px;
+			margin-top: 5px;
+		}
+
 		.surveydatapanel.b {
 			color: black;
 		}
@@ -121,7 +137,6 @@
 			font-size: 12px;
 
 		}
-
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 	<script src="js/external/tree.js"></script>
@@ -140,8 +155,8 @@
 	<div id="tree-panel"></div>
 	<script type="module" src="js/main.js"></script>
 	<div class="file-upload">
-		<input type="file" id="topodroidInput" accept=".csv" />
-		<input type="file" id="polygonInput" accept=".cave" />
+		<input type="file" id="topodroidInput" accept=".csv" style="display:none" />
+		<input type="file" id="polygonInput" accept=".cave" style="display:none" />
 	</div>
 	<div id="contextmenu" style="position:absolute;display:none;background-color:red">
 		<span color="red">menu</span>
@@ -168,6 +183,7 @@
 		<div id="surveydata"></div>
 	</div>
 	<div id="guicontrols"></div>
+	<div id="footer" class="footer"><div id="content"></div></div>
 
 </body>
 

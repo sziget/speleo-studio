@@ -4,8 +4,9 @@ import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene.js";
 import { SceneInteraction } from "./interactive.js";
-import * as MAT from "./materials.js";
+import { materials as MAT} from "./materials.js";
 import { NavigationBar } from "./navbar.js";
+import { Footer } from "./footer.js";
 import { SurveyHelper } from "./survey.js";
 import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
@@ -17,7 +18,7 @@ class Main {
     constructor() {
         this.db = new Database()
         this.options = OPTIONS;
-        this.materials = MAT.materials;
+        this.materials = MAT;
 
         if (document.addEventListener) {
             document.addEventListener('contextmenu', function (e) {
@@ -31,12 +32,13 @@ class Main {
         this.attributeDefs = new AttributesDefinitions(attributeDefintions);
         this.myscene = new MyScene(this.options, this.db, this.materials);
         this.navbar = new NavigationBar(document.getElementById("navbarcontainer"), this.options, this.myscene);
+        this.footer = new Footer(document.getElementById('footer'));
         this.surveyeditor = new SurveyEditor(this.myscene, this.db, this.attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
         this.explorer = new ProjectExplorer(this.options, this.db, this.myscene, this.surveyeditor);
         this.manager = new ProjectManager(this.db, this.myscene, this.explorer);
 
         this.gui = addGui(this.options, this.myscene, this.materials, document.getElementById('guicontrols'));
-        this.interaction = new SceneInteraction(this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
+        this.interaction = new SceneInteraction(this.footer, this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('cave')) {

@@ -3,7 +3,8 @@ import { showErrorPanel } from './popups.js';
 
 export class SceneInteraction {
 
-    constructor(scene, materials, sceneDOMElement, calcDistanceButton, contextMenu, infoPanel) {
+    constructor(footer, scene, materials, sceneDOMElement, calcDistanceButton, contextMenu, infoPanel) {
+        this.footer = footer;
         this.scene = scene;
         this.materials = materials;
         this.pointer = new THREE.Vector2();
@@ -83,6 +84,10 @@ export class SceneInteraction {
         } else if (this.selectedStation !== undefined) {
             this.selectedStation.material = this.getMaterialForType(this.selectedStation);
             this.selectedStation = undefined;
+        }
+
+        if (this.selectedStation !== null) {
+            this.footer.addMessage(`${this.selectedStation.name} selected, position: ${this.selectedStation.position}`);
         }
 
         this.scene.renderScene();
