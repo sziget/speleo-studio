@@ -38,6 +38,7 @@ export class MyScene {
         //this.cameraPersp = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
         this.cameraOrtho = new THREE.OrthographicCamera(- C.FRUSTRUM * aspect, C.FRUSTRUM * aspect, C.FRUSTRUM, - C.FRUSTRUM, -1000, 3000);
         this.currentCamera = this.cameraOrtho;
+        this.orbitTarget = new THREE.Vector3(0, 0, 0);
         this.setCameraPosition(0, 0, 100);
 
         this.orbit = new OrbitControls(this.currentCamera, this.domElement);
@@ -64,7 +65,7 @@ export class MyScene {
 
     setCameraPosition(x, y, z) {
         this.currentCamera.position.set(x, y, z);
-        this.currentCamera.lookAt(C.ORBIT_TARGET);
+        this.currentCamera.lookAt(this.orbitTarget);
         this.currentCamera.updateMatrix();
     }
 
@@ -301,26 +302,26 @@ export class MyScene {
         );
         this.currentCamera.zoom = zoomLevel;
 
-        const moveCameraBy = boundingBoxCenter.clone().sub(C.ORBIT_TARGET);
+        const moveCameraBy = boundingBoxCenter.clone().sub(this.orbitTarget);
         const oldPosition = this.currentCamera.position.clone();
         const newCameraPosition = oldPosition.add(moveCameraBy);
 
-        C.ORBIT_TARGET.copy(boundingBoxCenter)
+        this.orbitTarget.copy(boundingBoxCenter)
         this.currentCamera.position.copy(newCameraPosition);
-        this.currentCamera.lookAt(C.ORBIT_TARGET);
+        this.currentCamera.lookAt(this.orbitTarget);
         this.currentCamera.updateProjectionMatrix();
-        this.orbit.target = C.ORBIT_TARGET;
+        this.orbit.target = this.orbitTarget;
         this.orbit.update();
         this.renderScene();
     }
 
     lookAtPlan() {
-        this.setCameraPosition(C.ORBIT_TARGET.x, C.ORBIT_TARGET.y, C.ORBIT_TARGET.z + 100);
+        this.setCameraPosition(this.orbitTarget.x, this.orbitTarget.y, this.orbitTarget.z + 100);
         this.fitObjectsToCamera(this.caveObject3DGroup);
     }
 
     lookAtProfile() {
-        this.setCameraPosition(C.ORBIT_TARGET.x, C.ORBIT_TARGET.y - 100, C.ORBIT_TARGET.z);
+        this.setCameraPosition(this.orbitTarget.x, this.orbitTarget.y - 100, this.orbitTarget.z);
         this.fitObjectsToCamera(this.caveObject3DGroup);
     }
 

@@ -12,6 +12,7 @@ import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
 import { showWarningPanel } from "./popups.js";
 import { addGui } from "./gui.js";
+import { CAVES_MAX_DISTANCE } from "./constants.js";
 
 class Main {
 
@@ -75,7 +76,7 @@ class Main {
     addCave(cave, colorGradients) {
         const cavesReallyFar = Array.from(this.db.caves.values()).reduce((acc, c) => {
             const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
-            if (distanceBetweenCaves > 1000) {
+            if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
                 acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
             } 
             return acc;
