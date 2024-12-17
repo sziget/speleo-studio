@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-
-import * as PANELS from "./panels.js";
+import { showErrorPanel } from './popups.js';
 
 export class SceneInteraction {
 
@@ -31,7 +30,7 @@ export class SceneInteraction {
         const top = event.clientY - rect.top;
 
         if (this.selectedStation === undefined) {
-            PANELS.showErrorPanel("You should select the starting point for distance measurement", left, top);
+            showErrorPanel("You should select the starting point for distance measurement");
         } else {
             const from = this.selectedStation.position.clone();
             const to = this.selectedStationForContext.position.clone();

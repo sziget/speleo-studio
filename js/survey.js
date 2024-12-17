@@ -1,14 +1,24 @@
-import * as M from "./model.js";
 import * as U from "./utils.js";
-import { Survey } from "./model.js";
+import { Vector, Survey } from "./model.js";
 import { SurveyStation as ST } from "./model.js";
 
 export class SurveyHelper {
 
+    /**
+     * Recalculates and updates survey's shots, station positions, orphan shots and isolatied property
+     * @param {number} index - The 0 based index of the survey withing the surveys array of a cave
+     * @param {Survey} es - The survey that will be updated in place
+     * @param {Map<string, SurveyStation> } surveyStations - Previously calculated survey stations
+     * @returns The survey with updated properties
+     */
     static recalculateSurvey(index, es, surveyStations) {
         es.isolated = false;
-        const startName = index === 0 ? es.shots[0].from : undefined;
-        const startPosition = index === 0 ? new M.Vector(0, 0, 0) : undefined;
+        let startName, startPosition;
+        if (index === 0) {
+            startName = (es.start !== undefined) ? es.start.name : es.shots[0].from;
+            startPosition = (es.start !== undefined) ? es.start.station.position : new Vector(0, 0, 0);
+        }
+
         const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es.name, es.shots, surveyStations, [], startName, startPosition);
         es.isolated = (stations.size === 0);
         es.stations = stations;
@@ -55,7 +65,7 @@ export class SurveyHelper {
                     if (toStation === undefined) {  // from = 1, to = 0
                         const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
                         const fp = fromStation.position;
-                        const st = new M.Vector(fp.x, fp.y, fp.z).add(polarVector);
+                        const st = new Vector(fp.x, fp.y, fp.z).add(polarVector);
                         const stationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
                         stations.set(stationName, new ST(sh.type, st));
                         repeat = true;
@@ -65,7 +75,7 @@ export class SurveyHelper {
                     sh.processed = true;
                 } else if (toStation !== undefined) { // from = 0, to = 1
                     const tp = toStation.position;
-                    const st = new M.Vector(tp.x, tp.y, tp.z).sub(polarVector);
+                    const st = new Vector(tp.x, tp.y, tp.z).sub(polarVector);
                     stations.set(sh.from, new ST(sh.type, st));
                     sh.processed = true;
                     repeat = true;
@@ -80,7 +90,7 @@ export class SurveyHelper {
                         if (prevStations.has(pairName)) {
                             const from = prevStations.get(pairName);
                             const fp = from.position;
-                            const to = new M.Vector(fp.x, fp.y, fp.z).add(polarVector);
+                            const to = new Vector(fp.x, fp.y, fp.z).add(polarVector);
                             stations.set(sh.to, new ST(sh.type, to));
                             repeat = true;
                         }
@@ -91,7 +101,7 @@ export class SurveyHelper {
                         if (prevStations.has(pairName)) {
                             const to = prevStations.get(pairName);
                             const tp = to.position;
-                            const from = new M.Vector(tp.x, tp.y, tp.z).sub(polarVector);
+                            const from = new Vector(tp.x, tp.y, tp.z).sub(polarVector);
                             stations.set(sh.from, new ST(sh.type, from));
                             repeat = true;
                         }
@@ -183,6 +193,6 @@ export class SurveyHelper {
                 }
             }
         });
-        return {center: centerColors, splays: splayColors};
+        return { center: centerColors, splays: splayColors };
     }
 }

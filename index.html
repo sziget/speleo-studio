@@ -48,19 +48,31 @@
 			background-color: rgb(63, 53, 53);
 		}
 
-		#errorpanel {
+		.cautionpanel {
 			position: absolute;
 			display: none;
-			color: wite;
+			left: 25%;
+			top: 50%;
+			width: 50%;
+			margin-top: -50px;
+			margin-left: -50px;			
+			color: white;
 			padding: 10px;
 			border-style: solid;
 			border-color: white;
 			border-width: 3px;
 			border-radius: 20px;
-			background-color: #f44336;
 			font-size: 16px;
 			text-align: center;
 		}
+
+		.cautionpanel-error {
+			background-color: #a93027;
+		}
+
+		.cautionpanel-warning {
+			background-color: #251410;
+		}		
 
 		.file-upload {
 			position: absolute;
@@ -105,6 +117,11 @@
 			color: white;
 		}
 
+		.tabulator {
+			font-size: 12px;
+
+		}
+
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 	<script src="js/external/tree.js"></script>
@@ -137,9 +154,9 @@
 		<span id="close">x</span>
 		<p id="content"></p>
 	</div>
-	<div id="errorpanel">
+	<div id="cautionpanel" class="cautionpanel">
 		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
-		<p id="errorpanelcontent"></p>
+		<p id="content"></p>
 	</div>
 	<div id="navbarcontainer" , class="topnavbar"></div>
 	<div id="surveydatapanel">

@@ -3,19 +3,18 @@ import { ProjectExplorer, ProjectManager } from "./explorer.js";
 import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene.js";
-import * as U from "./utils.js";
 import { SceneInteraction } from "./interactive.js";
 import * as MAT from "./materials.js";
 import { NavigationBar } from "./navbar.js";
 import { SurveyHelper } from "./survey.js";
 import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
+import { showWarningPanel } from "./popups.js";
 import { addGui } from "./gui.js";
 
 class Main {
 
     constructor() {
-
         this.db = new Database()
         this.options = OPTIONS;
         this.materials = MAT.materials;
@@ -72,27 +71,39 @@ class Main {
     }
 
     addCave(cave, colorGradients) {
-        this.db.caves.set(cave.name, cave);
-        cave.surveys.forEach(s => {
-            if (s.name === "Laci-zsomboly") {
-                s.attributes.set('1', [this.attributeDefs.createByName("bedding")(90.0, 80, 10, 40)]);
-            } else if (s.name === "Fogadalom-ág") {
-                s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
-                s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
+        const cavesReallyFar = Array.from(this.db.caves.values()).reduce((acc, c) => {
+            const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
+            if (distanceBetweenCaves > 1000) {
+                acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
+                return acc;
             }
-            const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, s.stations, s.shots);
-            const _3dobjects =
-                this.myscene.addToScene(
-                    s.stations,
-                    centerLineSegments,
-                    splaySegments,
-                    true,
-                    colorGradients !== undefined ? colorGradients.get(s.name) : undefined
-                );
-            this.myscene.addSurvey(cave.name, s.name, _3dobjects);
-        });
-        this.explorer.addCave(cave);
-        this.myscene.fitScene();
+        }, []);
+        if (cavesReallyFar.length > 0) {
+            const message = `Import failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(",")}`;
+            showWarningPanel(message, 20);
+        } else {
+            this.db.caves.set(cave.name, cave);
+            cave.surveys.forEach(s => {
+                if (s.name === "Laci-zsomboly") {
+                    s.attributes.set('1', [this.attributeDefs.createByName("bedding")(90.0, 80, 10, 40)]);
+                } else if (s.name === "Fogadalom-ág") {
+                    s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
+                    s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
+                }
+                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, s.stations, s.shots);
+                const _3dobjects =
+                    this.myscene.addToScene(
+                        s.stations,
+                        centerLineSegments,
+                        splaySegments,
+                        true,
+                        colorGradients !== undefined ? colorGradients.get(s.name) : undefined
+                    );
+                this.myscene.addSurvey(cave.name, s.name, _3dobjects);
+            });
+            this.explorer.addCave(cave);
+            this.myscene.fitScene();
+        }
     }
 
     importCsvFile(file, fileName) {

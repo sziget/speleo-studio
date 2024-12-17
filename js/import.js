@@ -1,6 +1,5 @@
-import * as M from "./model.js";
 import * as U from "./utils.js";
-
+import { Vector, Shot, Cave, Survey, SurveyStartStation, SurveyStation } from "./model.js";
 import { SurveyHelper } from "./survey.js";
 
 const iterateUntil = function (iterator, condition) {
@@ -26,7 +25,7 @@ const getShotsFromPolygonSurvey = function (iterator) {
         const parts = it.value[1].split(/\t|\s/);
         if (parts.length > 10) {
             // splays are not supported by polygon format
-            shots.push(new M.Shot(i++, 'center', parts[0], parts[1], U.parseMyFloat(parts[2]), U.parseMyFloat(parts[3]), U.parseMyFloat(parts[4])));
+            shots.push(new Shot(i++, 'center', parts[0], parts[1], U.parseMyFloat(parts[2]), U.parseMyFloat(parts[3]), U.parseMyFloat(parts[4])));
         }
     } while (!it.done && it.value[1] != '');
 
@@ -50,27 +49,40 @@ export function getCaveFromPolygonFile(wholeFileInText) {
         const surveys = []
         const stationsGlobal = new Map();
         var surveyName;
-        var firstSurveyProcessed = false;
+        var surveyIndex = 0;
+        let caveStartPosition;
         do {
             surveyName = iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
             if (surveyName !== undefined) {
                 const surveyNameStr = surveyName.substring(13);
+                let fixPoint = iterateUntil(lineIterator, (v) => !v.startsWith("Fix point")).substring(11);
+                let posLine = lineIterator.next();
+                let parts = posLine.value[1].split(/\t|\s/);
+                let parsed = parts.toSpliced(3).map(x => U.parseMyFloat(x));
+                let startPosParsed = new Vector(...parsed);
+                let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed))
                 iterateUntil(lineIterator, (v) => v !== "Survey data");
                 lineIterator.next(); //From To ...
                 const shots = getShotsFromPolygonSurvey(lineIterator);
-                const startName = !firstSurveyProcessed ? '0' : undefined;
-                const startPosition = !firstSurveyProcessed ? new M.Vector(0, 0, 0) : undefined;
+                let startName, startPosition;
+                if (surveyIndex == 0) {
+                    startName = fixPoint;
+                    startPosition = startPosParsed;
+                    caveStartPosition = startPosParsed;
+                    if (fixPoint != shots[0].from) {
+                        throw new Error(`Invalid Polygon survey, fix point ${fixPoint} != first shot's from value (${shots[0].from})`);
+                    }
+                }
                 const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, stationsGlobal, [], startName, startPosition);
                 for (const [stationName, station] of stations) {
                     stationsGlobal.set(stationName, station);
                 }
-                surveys.push(new M.Survey(surveyNameStr, true, stations, shots, orphanShotIds, new Map()));
-                firstSurveyProcessed = true;
+                surveys.push(new Survey(surveyNameStr, true, startPoint, stations, shots, orphanShotIds, new Map()));
+                surveyIndex++;
             }
 
         } while (surveyName !== undefined)
-
-        const cave = new M.Cave(projectName, surveys, true);
+        const cave = new Cave(projectName, caveStartPosition, surveys, true);
         return cave;
     }
 }
@@ -78,8 +90,9 @@ export function getCaveFromPolygonFile(wholeFileInText) {
 export function getCaveFromCsvFile(fileName, csvData) {
     const shots = getShotsFromCsv(csvData);
     const surveyName = 'polygon'; 
-    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, new Map(), [], shots[0].from, new M.Vector(0, 0, 0));
-    return new M.Cave(fileName, [new M.Survey(surveyName, true, stations, shots, orphanShotIds, new Map())], true);
+    const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
+    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, new Map(), [], startPoint.name, startPoint.station.position);
+    return new Cave(fileName, startPoint.station.position, [new Survey(surveyName, true, startPoint, stations, shots, orphanShotIds, new Map())], true);
 }
 
 function getShotsFromCsv(csvData) {
@@ -97,7 +110,7 @@ function getShotsFromCsv(csvData) {
         const clino = row[4];
         const type = (to === '-') ? 'splay' : 'center';
         const toName = (type === 'splay') ? undefined : to;
-        shots.push(new M.Shot(i, type, from, toName, distance, azimuth, clino));
+        shots.push(new Shot(i, type, from, toName, distance, azimuth, clino));
     }
     return shots;
 }

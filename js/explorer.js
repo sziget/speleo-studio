@@ -27,7 +27,9 @@ export class ProjectManager {
     onSurveyChanged(e) {
         const caveName = e.detail.cave;
         const surveyName = e.detail.survey;
+        const attributes = e.detail.attributes;
         const cave = this.db.caves.get(caveName);
+        cave.surveys.find(s => s.name === surveyName).attributes = attributes;
         this.recalculateCave(cave);
         this.scene.renderScene();
         this.explorer.updateCave(cave);
@@ -56,23 +58,26 @@ export class ProjectManager {
         cave.surveys.entries().forEach(([index, es]) => {
             const ns = SurveyHelper.recalculateSurvey(index, es, surveyStations);
             //ns === es
-            this.#emitSurveyRecalculated(cave.name, es.name, es.shots, es.orphanShotIds, es.attributes);
+            this.#emitSurveyRecalculated(cave.name, es);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, es.stations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
+            this.scene.removeSurvey(cave.name, es.name);
             this.scene.addSurvey(cave.name, es.name, _3dObjects);
         });
         this.scene.updateVisiblePlanes();
+        this.scene.fitScene();
     }
 
-    #emitSurveyRecalculated(caveName, surveyName, shots, orphanShotIds, attributes) {
+    #emitSurveyRecalculated(caveName, survey) {
         const event = new CustomEvent("surveyRecalculated", {
             detail: {
                 cave: caveName,
-                survey: surveyName,
-                shots: shots,
-                orphanShotIds: orphanShotIds,
-                attributes: attributes
+                survey: survey.name,
+                stations: survey.stations, 
+                shots: survey.shots,
+                orphanShotIds: survey.orphanShotIds,
+                attributes: survey.attributes
             }
         });
         document.dispatchEvent(event);
@@ -184,7 +189,7 @@ export class ProjectExplorer {
             return;
         } else if (event.target.id === "edit") {
             this.surveyeditor.show();
-            this.surveyeditor.setupTable(state.cave.name, state.survey.name, state.survey.shots, state.survey.orphanShotIds, state.survey.attributes);
+            this.surveyeditor.setupTable(state.cave.name, state.survey);
         } else if (event.target.id === "delete") {
             if (state.nodeType === "survey") {
                 this.db.deleteSurvey(state.cave.name, state.survey.name);

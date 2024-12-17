@@ -71,7 +71,7 @@ export class MyScene {
     setSurveyVisibility(cave, survey, value) {
         const entry = this.caveObjects.get(cave).get(survey);
         const show = this.options.scene.show;
-        entry.centerLines.visible = value && show.centerLines.segments;
+        entry.centerLines.visible = value && show.centerLine.segments;
         entry.centerLines.hidden = !value; // hidden is a custom attribute set by me, used in setObjectsVisibility
         entry.splays.visible = value && show.splay.segments;
         entry.splays.hidden = !value;
@@ -109,11 +109,18 @@ export class MyScene {
         this.renderScene();
     }
 
-    addSurvey(cave, survey, entry) {
-        if (!this.caveObjects.has(cave)) {
-            this.caveObjects.set(cave, new Map());
+    removeSurvey(caveName, surveyName) {
+        this.caveObjects.get(caveName).delete(surveyName);
+    }
+
+    addSurvey(caveName, surveyName, entry) {
+        if (!this.caveObjects.has(caveName)) {
+            this.caveObjects.set(caveName, new Map());
         }
-        this.caveObjects.get(cave).set(survey, entry);
+        if (this.caveObjects.get(caveName).has(surveyName)) {
+            throw new Error(`Survey ${caveName} / ${surveyName} objects have already been added to the scene`);
+        }
+        this.caveObjects.get(caveName).set(surveyName, entry);
 
     }
 

@@ -1,4 +1,5 @@
 import * as U from "./utils.js";
+import { Survey } from "./model.js";
 
 export class SurveyEditor {
 
@@ -20,11 +21,12 @@ export class SurveyEditor {
         this.panel.style.display = "block";
     }
 
-    #emitSurveyChanged() {
+    #emitSurveyChanged(attributes) {
         const event = new CustomEvent("surveyChanged", {
             detail: {
                 cave: this.caveName,
-                survey: this.surveyName
+                survey: this.surveyName,
+                attributes: attributes
             }
         });
         document.dispatchEvent(event);
@@ -35,36 +37,59 @@ export class SurveyEditor {
         const surveyName = e.detail.survey;
 
         if (this.table !== undefined && this.caveName === caveName && this.surveyName === surveyName) {
+            const stations = e.detail.stations;
             const shots = e.detail.shots;
             const attributes = e.detail.attributes;
             const orphanShotIds = e.detail.orphanShotIds;
-            const data = this.#getTableData(shots, orphanShotIds, attributes);
+            const data = this.#getTableData(surveyName, stations, shots, orphanShotIds, attributes);
             this.table.replaceData(data);
         }
     }
 
+    #getSurveyAttributesFromTable() {
+        return new Map(
+            this.table.getData()
+            .filter(r => r.attributes !== undefined && r.attributes.length > 0)
+            .map(r => [r.shot.to, r.attributes])
+        );
+    }
+
     requestRecalculation() {
         if (this.surveyModified) {
-            this.#emitSurveyChanged();
+            const attributes = this.#getSurveyAttributesFromTable();
+            this.#emitSurveyChanged(attributes);
+            this.surveyModified = false;
         }
     }
 
     closeEditor() {
+
+        if (this.surveyModified) {
+            const attributes = this.#getSurveyAttributesFromTable();
+            this.#emitSurveyChanged(attributes);
+            this.surveyModified = false;
+        }
+
         if (this.table !== undefined) {
             this.table.destroy();
             this.table = undefined;
         }
         this.panel.style.display = 'none';
-        if (this.surveyModified) {
-            this.#emitSurveyChanged();
-        }
     }
 
-    #getTableData(shots, orphanShotIds, attributes) {
-        return shots.map(s => {
-            s.isOrphan = orphanShotIds.has(s.id);
-            s.attributes = attributes.has(s.to) ? attributes.get(s.to) : undefined;
-            return s;
+    #getTableData(surveyName, stations, shots, orphanShotIds, attributes) {
+        return shots.map(sh => {
+            const rowToBe = {
+                shot: sh,
+                isOrphan: orphanShotIds.has(sh.id),
+                attributes: attributes.get(sh.to)
+            }
+            const fromStation = stations.get(sh.from);
+            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+            const toStation = stations.get(toStationName);
+            rowToBe.from = fromStation;
+            rowToBe.to = toStation;
+            return rowToBe;
         });
     }
 
@@ -127,9 +152,9 @@ export class SurveyEditor {
     }
 
 
-    setupTable(caveName, surveyName, shots, orphanShotIds, attributes) {
+    setupTable(caveName, survey,) {
         this.caveName = caveName;
-        this.surveyName = surveyName;
+        this.surveyName = survey.name;
 
         const floatPattern = /^[+-]?\d+([.,]\d+)?$/
         var isFloatNumber = function (cell, value, parameters) {
@@ -172,9 +197,13 @@ export class SurveyEditor {
             }
         }
 
+        const decimal2Formatter = (field) => (cell, formatterParams, onRendered) => {
+            return cell.getData()[field].toFixed(2);
+        }
+
         this.table = new Tabulator("#surveydata", {
             height: 215,
-            data: this.#getTableData(shots, orphanShotIds, attributes),
+            data: this.#getTableData(survey.name, survey.stations, survey.shots, survey.orphanShotIds, survey.attributes),
             layout: "fitDataStretch",
             validationMode: "highlight",
             rowHeader: { formatter: "rownum", headerSort: false, hozAlign: "center", resizable: false, frozen: true },
@@ -188,12 +217,15 @@ export class SurveyEditor {
                 }
             },
             columns: [
-                { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
-                { title: "From", field: "from", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countOrphans },
-                { title: "To", field: "to", headerSort: false, editor: true, validator: ["required"], headerFilter: "input" },
-                { title: "Length", field: "length", headerSort: false, editor: true, validator: ["required", customValidator], bottomCalc: sumCenterLines },
-                { title: "Azimuth", field: "azimuth", headerSort: false, editor: true, validator: ["required", "min:-360", "max:360", customValidator] },
-                { title: "Clino", field: "clino", headerSort: false, editor: true, validator: ["required", customValidator] },
+               // { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
+                { title: "From", field: "shot.from", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countLines },
+                { title: "To", field: "shot.to", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countOrphans },
+                { title: "Length", field: "shot.length", headerSort: false, editor: true, validator: ["required", customValidator], bottomCalc: sumCenterLines },
+                { title: "Azimuth", field: "shot.azimuth", headerSort: false, editor: true, validator: ["required", "min:-360", "max:360", customValidator] },
+                { title: "Clino", field: "shot.clino", headerSort: false, editor: true, validator: ["required", customValidator] },
+                // { title: "X", field: "x", headerSort: false, editor: false, formatter: decimal2Formatter('x') },
+                // { title: "Y", field: "y", headerSort: false, editor: false, formatter: decimal2Formatter('y') },
+                // { title: "Z", field: "z", headerSort: false, editor: false, formatter: decimal2Formatter('z') },
                 { title: "Attributes", field: "attributes", formatter: atrributesFormatter, editor: (cell, onRendered, success, cancel, editorParams) => this.attributesEditor(cell, onRendered, success, cancel, editorParams), headerSort: false }
             ],
         });

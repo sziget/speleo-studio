@@ -17,6 +17,11 @@ export class Vector {
     mul(d) {
         return new Vector(this.x * d, this.y * d, this.z * d);
     }
+
+    distanceTo(v) {
+        const dx = this.x - v.x, dy = this.y - v.y, dz = this.z - v.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
 }
 
 export class Color {
@@ -59,7 +64,19 @@ export class Shot {
         this.processed = false;
     }
 }
+export class SurveyStartStation {
 
+    /**
+     * Represents the start point, the first station of whole survey
+     * 
+     * @param {string} name - The name of the starting point for this survey
+     * @param {SurveyStation} station - The start position and type of the starting point
+     */
+    constructor(name, station) {
+        this.name = name;
+        this.station = station;
+    }
+}
 export class SurveyStation {
 
     /**
@@ -79,14 +96,16 @@ export class Survey {
      * 
      * @param {string} name - The name of the Survey
      * @param {boolean} visible 
+     * @param {SurveyStartStation} - The start point of the whole survey that was explicitly specified for a survey
      * @param {Map<String, SurveyStation>} stations - A map of station names and stations (type, position)
      * @param {Array[Shot]} shots - An array of shots holding the measurements for this Survey
      * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
      * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
      */
-    constructor(name, visible, stations, shots, orphanShotIds, attributes) {
+    constructor(name, visible, start = undefined, stations, shots, orphanShotIds, attributes) {
         this.name = name;
         this.visible = visible;
+        this.start = start;
         this.stations = stations;
         this.shots = shots;
         this.orphanShotIds = orphanShotIds;
@@ -142,12 +161,14 @@ export class SurveyAlias {
 export class Cave {
     /**
      * 
-     * @param {*} name - The name of the cave
+     * @param {string} name - The name of the cave
+     * @param {Vector} startPosition - The start position of the cave that is defined by the first survey
      * @param {Survey[]} surveys - The surveys associated to a cave
      * @param {boolean} visible - The visibility property of a cave
      */
-    constructor(name, surveys, visible) {
+    constructor(name, startPosition, surveys, visible) {
         this.name = name;
+        this.startPosition = startPosition;
         this.surveys = surveys;
         this.visible = visible;
     }
