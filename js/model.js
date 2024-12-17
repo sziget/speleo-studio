@@ -1,4 +1,5 @@
 export class Vector {
+
     constructor(x, y, z) {
         this.x = x;
         this.y = y;
@@ -21,6 +22,14 @@ export class Vector {
     distanceTo(v) {
         const dx = this.x - v.x, dy = this.y - v.y, dz = this.z - v.z;
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    toExport() {
+        return {
+            x: this.x,
+            y: this.y,
+            z: this.z
+        }
     }
 }
 
@@ -53,6 +62,8 @@ export class Color {
 }
 
 export class Shot {
+    export_fields = ["id", "type", "from", "to", "length", "azimuth", "clino"]
+
     constructor(id, type, from, to, length, azimuth, clino) {
         this.id = id;
         this.type = type;
@@ -63,7 +74,16 @@ export class Shot {
         this.clino = clino;
         this.processed = false;
     }
+
+    toExport() {
+        let newShot = {};
+        this.export_fields.forEach(fName => {
+            newShot[fName] = this[fName];
+        });
+        return newShot;
+    }
 }
+
 export class SurveyStartStation {
 
     /**
@@ -76,17 +96,31 @@ export class SurveyStartStation {
         this.name = name;
         this.station = station;
     }
+
+    toExport() {
+        return {
+            name: this.name,
+            station: this.station.toExport()
+        }
+    }
 }
 export class SurveyStation {
 
     /**
      * 
      * @param {string} type - the type of the station, could be center and splay 
-     * @param {*} position - the 3D vector representing the position of the station
+     * @param {Vector} position - the 3D vector representing the position of the station
      */
     constructor(type, position) {
         this.type = type;
         this.position = position;
+    }
+
+    toExport() {
+        return {
+            type: this.type,
+            position: this.position.toExport()
+        }
     }
 }
 
@@ -130,8 +164,41 @@ export class Survey {
             const matchingAttrs = arrayOfAtrs.filter(a => a.name === name);
             if (matchingAttrs.length > 0) {
                 return [pos, matchingAttrs];
-            } 
+            }
         }).filter(x => x !== undefined); // TODO: replace with .reduce()
+    }
+
+    #attibuteToExport(attribute) {
+        const n = {
+            name: attribute.name
+        };
+        Object.keys(attribute.params).forEach(pName => {
+            n[pName] = attribute[pName];
+        })
+        return n;
+
+    }
+
+    toExport() {
+        const flattenedAttrs =
+            Array.from(
+                this.attributes
+                    .entries()
+                    .flatMap(([stationName, attrs]) => {
+                        return attrs.map(a => {
+                            return {
+                                name: stationName,
+                                attribute: this.#attibuteToExport(a)
+                            }
+                        })
+                    }));
+
+        return {
+            name: this.name,
+            start: this.start.toExport(),
+            attributes: flattenedAttrs,
+            shots: this.shots.map(s => s.toExport())
+        }
     }
 
 }
@@ -173,5 +240,12 @@ export class Cave {
         this.stations = stations;
         this.surveys = surveys;
         this.visible = visible;
+    }
+
+    toExport() {
+        return {
+            name: this.name,
+            surveys: this.surveys.map(s => s.toExport())
+        }
     }
 }

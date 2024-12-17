@@ -1,4 +1,5 @@
 import { MyScene } from "./scene.js";
+import { Exporter } from "./export.js";
 
 export class NavigationBar {
 
@@ -8,7 +9,8 @@ export class NavigationBar {
      * @param {Map<String, Map>} options - Global project options, like global visibility of an object
      * @param {MyScene} scene - The 3D scene
      */
-    constructor(domElement, options, scene) {
+    constructor(db, domElement, options, scene) {
+        this.db = db;
         this.options = options;
         this.scene = scene;
         this.#buildNavbar(domElement);
@@ -20,8 +22,10 @@ export class NavigationBar {
             {
                 "name": "File", elements: [
                     { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
-                    { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } }
+                    { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } },
+                    { "name": "Export caves", "click":  () => Exporter.exportCaves(this.db.caves) }
                 ]
+
             }
         ]
     }

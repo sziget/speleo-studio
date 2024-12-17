@@ -12,7 +12,9 @@ import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
 import { showWarningPanel } from "./popups.js";
 import { addGui } from "./gui.js";
+
 import { CAVES_MAX_DISTANCE } from "./constants.js";
+
 
 class Main {
 
@@ -32,7 +34,7 @@ class Main {
         }
         this.attributeDefs = new AttributesDefinitions(attributeDefintions);
         this.myscene = new MyScene(this.options, this.db, this.materials);
-        this.navbar = new NavigationBar(document.getElementById("navbarcontainer"), this.options, this.myscene);
+        this.navbar = new NavigationBar(this.db, document.getElementById("navbarcontainer"), this.options, this.myscene);
         this.footer = new Footer(document.getElementById('footer'));
         this.surveyeditor = new SurveyEditor(this.myscene, this.db, this.attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
         this.explorer = new ProjectExplorer(this.options, this.db, this.myscene, this.surveyeditor, document.querySelector('#tree-panel'));
