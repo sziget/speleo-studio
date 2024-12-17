@@ -54,12 +54,12 @@ export class ProjectManager {
     }
 
     recalculateCave(cave) {
-        let surveyStations = new Map();
+        let caveStations = new Map();
         cave.surveys.entries().forEach(([index, es]) => {
-            const ns = SurveyHelper.recalculateSurvey(index, es, surveyStations);
+            const ns = SurveyHelper.recalculateSurvey(index, es, caveStations);
             //ns === es
             this.#emitSurveyRecalculated(cave.name, es);
-            const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, es.stations, es.shots);
+            const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, caveStations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
             this.scene.removeSurvey(cave.name, es.name);
@@ -87,13 +87,16 @@ export class ProjectManager {
 
 export class ProjectExplorer {
 
-    constructor(options, db, scene, surveyeditor) {
+    constructor(options, db, scene, surveyeditor, treeNode) {
         this.options = options;
         this.db = db;
         this.scene = scene;
         this.trees = new Map();
         this.surveyeditor = surveyeditor;
+        this.treeNode = treeNode;
         this.itree = undefined;
+
+        window.addEventListener('resize', () => this.#setTreeHeight());
     }
 
     deleteSurvey(caveName, surveyName) {
@@ -114,8 +117,9 @@ export class ProjectExplorer {
     }
 
     initializeTree(data) {
+        this.#setTreeHeight();
         this.itree = new InfiniteTree({
-            el: document.querySelector('#tree-panel'),
+            el: this.treeNode,
             data: data,
             autoOpen: true,
             rowRenderer: this.treeRenderer,
@@ -157,7 +161,7 @@ export class ProjectExplorer {
         const data = this.transformCave(cave);
 
         if (this.itree === undefined) {
-            this.initializeTree(data)
+            this.initializeTree(data);
         } else {
             this.itree.appendChildNode(data);
         }
@@ -337,5 +341,11 @@ export class ProjectExplorer {
         }
 
         return tag('div', treeNodeAttributes, treeNode);
+    }
+
+    #setTreeHeight() {
+        const maxh = window.innerHeight - 150; // hacky way I know...
+        this.treeNode.style.maxHeight = `${maxh}px `;
+        this.treeNode.style.overflow = 'auto';
     }
 }

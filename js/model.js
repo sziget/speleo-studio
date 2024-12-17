@@ -163,12 +163,14 @@ export class Cave {
      * 
      * @param {string} name - The name of the cave
      * @param {Vector} startPosition - The start position of the cave that is defined by the first survey
+     * @param {Map<string, SurveyStation>} stations - The merged map of all survey stations
      * @param {Survey[]} surveys - The surveys associated to a cave
      * @param {boolean} visible - The visibility property of a cave
      */
-    constructor(name, startPosition, surveys, visible) {
+    constructor(name, startPosition, stations, surveys, visible) {
         this.name = name;
         this.startPosition = startPosition;
+        this.stations = stations;
         this.surveys = surveys;
         this.visible = visible;
     }

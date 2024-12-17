@@ -82,7 +82,7 @@ export function getCaveFromPolygonFile(wholeFileInText) {
             }
 
         } while (surveyName !== undefined)
-        const cave = new Cave(projectName, caveStartPosition, surveys, true);
+        const cave = new Cave(projectName, caveStartPosition, stationsGlobal, surveys, true);
         return cave;
     }
 }
@@ -92,7 +92,7 @@ export function getCaveFromCsvFile(fileName, csvData) {
     const surveyName = 'polygon'; 
     const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
     const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, new Map(), [], startPoint.name, startPoint.station.position);
-    return new Cave(fileName, startPoint.station.position, [new Survey(surveyName, true, startPoint, stations, shots, orphanShotIds, new Map())], true);
+    return new Cave(fileName, startPoint.station.position, stations, [new Survey(surveyName, true, startPoint, stations, shots, orphanShotIds, new Map())], true);
 }
 
 function getShotsFromCsv(csvData) {

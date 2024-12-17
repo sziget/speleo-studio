@@ -166,7 +166,7 @@ export class SurveyHelper {
             const sm = new Map();
             colorGradients.set(c.name, sm);
             c.surveys.forEach(s => {
-                sm.set(s.name, SurveyHelper.getColorGradients(s.name, s.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
+                sm.set(s.name, SurveyHelper.getColorGradients(s.name, c.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
             });
 
         });

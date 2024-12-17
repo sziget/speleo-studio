@@ -34,7 +34,7 @@ class Main {
         this.navbar = new NavigationBar(document.getElementById("navbarcontainer"), this.options, this.myscene);
         this.footer = new Footer(document.getElementById('footer'));
         this.surveyeditor = new SurveyEditor(this.myscene, this.db, this.attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
-        this.explorer = new ProjectExplorer(this.options, this.db, this.myscene, this.surveyeditor);
+        this.explorer = new ProjectExplorer(this.options, this.db, this.myscene, this.surveyeditor, document.querySelector('#tree-panel'));
         this.manager = new ProjectManager(this.db, this.myscene, this.explorer);
 
         this.gui = addGui(this.options, this.myscene, this.materials, document.getElementById('guicontrols'));
@@ -77,10 +77,13 @@ class Main {
             const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
             if (distanceBetweenCaves > 1000) {
                 acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
-                return acc;
-            }
+            } 
+            return acc;
         }, []);
-        if (cavesReallyFar.length > 0) {
+
+        if (this.db.caves.has(cave.name)) {
+            showErrorPanel('Import failed, cave has already been imported!', 20);
+        } else if (cavesReallyFar.length > 0) {
             const message = `Import failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(",")}`;
             showWarningPanel(message, 20);
         } else {
@@ -92,7 +95,7 @@ class Main {
                     s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
                     s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
                 }
-                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, s.stations, s.shots);
+                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, cave.stations, s.shots);
                 const _3dobjects =
                     this.myscene.addToScene(
                         s.stations,
