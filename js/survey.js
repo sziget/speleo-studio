@@ -179,9 +179,9 @@ export class SurveyHelper {
                 startStationName = (s.start !== undefined) ? s.start.name : s.shots[0].from;
             }
             s.shots.forEach(sh => {
-                const from = s.stations.get(sh.from);
+                const from = cave.stations.get(sh.from);
                 const toStationName = s.getToStationName(sh);
-                const to = s.stations.get(toStationName);
+                const to = cave.stations.get(toStationName);
                 if (from !== undefined && to !== undefined) {
                     g.addEdge(sh.from, toStationName, sh.length);
                 }
@@ -201,7 +201,6 @@ export class SurveyHelper {
             s.shots.forEach(sh => {
                 const fromDistance = distances.get(sh.from);
                 const toStationName = s.getToStationName(sh);
-
                 const toDistance = distances.get(toStationName);
 
                 if (fromDistance !== undefined && toDistance !== undefined) {

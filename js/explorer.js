@@ -66,6 +66,7 @@ export class ProjectManager {
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(
+                es.name,
                 es.stations,
                 clSegments,
                 splaySegments,

@@ -377,7 +377,7 @@ export class MyScene {
         sphereGroup.add(sphere);
     }
 
-    addToScene(stations, polygonSegments, splaySegments, visibility, colorGradients) {
+    addToScene(surveyName, stations, polygonSegments, splaySegments, visibility, colorGradients) {
         const show = this.options.scene.show;
 
         const geometryStations = new LineSegmentsGeometry();
@@ -390,6 +390,12 @@ export class MyScene {
             gradientMaterial.linewidth = this.materials.segments.centerLine.linewidth;
         }
         if (colorGradients !== undefined) {
+            if (colorGradients.center.length !== polygonSegments.length) {
+                throw new Error(`Color gradients length ${colorGradients.center.length} does not match polygon segments length ${polygonSegments.length} for survey ${surveyName}`);
+            }
+            if (colorGradients.splays.length !== splaySegments.length) {
+                throw new Error(`Color gradients length ${colorGradients.splays.length} does not match splay segments length ${splaySegments.length} for survey ${surveyName}`);
+            }
             geometryStations.setColors(colorGradients.center);
             splaysGeometry.setColors(colorGradients.splays);
             clLineMat = gradientMaterial;

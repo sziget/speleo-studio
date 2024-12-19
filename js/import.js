@@ -38,6 +38,7 @@ class Importer {
                 const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s, cave.stations);
                 const _3dobjects =
                     this.scene.addToScene(
+                        s.name,
                         s.stations,
                         centerLineSegments,
                         splaySegments,
