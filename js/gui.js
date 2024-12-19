@@ -1,5 +1,6 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
+import { Color } from "./model.js";
 
 export function addGui(options, scene, materials, element) {
     const show = options.scene.show;
@@ -7,6 +8,8 @@ export function addGui(options, scene, materials, element) {
     const centerLineParam = {
         'show center lines': show.centerLine.segments,
         'line color': materials.segments.centerLine.color.getHex(),
+        'gradient start color': options.scene.caveLines.color.start.hex,
+        'gradient end color': options.scene.caveLines.color.end.hex,
         'world units': false,
         'width': 20,
         'show station': show.centerLine.spheres,
@@ -39,6 +42,14 @@ export function addGui(options, scene, materials, element) {
     centerLineFolder.addColor(centerLineParam, 'line color').onChange(function (val) {
         materials.segments.centerLine.color = new THREE.Color(val);
         scene.renderScene();
+    });
+
+    centerLineFolder.addColor(centerLineParam, 'gradient start color').onChange(function (val) {
+        options.scene.caveLines.color.start = new Color(val);
+    });
+
+    centerLineFolder.addColor(centerLineParam, 'gradient end color').onChange(function (val) {
+        options.scene.caveLines.color.end = new Color(val);
     });
 
     centerLineFolder.add(centerLineParam, 'world units').onChange(function (val) {

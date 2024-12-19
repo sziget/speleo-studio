@@ -41,14 +41,15 @@ export class Color {
 
     constructor(r, g, b) {
         if (typeof r === 'number' && g === undefined && b === undefined) {
-            const hex = Math.floor(r);
-            this.r = (hex >> 16 & 255) / 255;
-            this.g = (hex >> 8 & 255) / 255;
-            this.b = (hex & 255) / 255;
+            this.hex = Math.floor(r);
+            this.r = (this.hex >> 16 & 255) / 255;
+            this.g = (this.hex >> 8 & 255) / 255;
+            this.b = (this.hex & 255) / 255;
         } else {
             this.r = r;
             this.g = g;
             this.b = b;
+            this.hex = ((1 << 24) + (r << 16) + (g << 8) + b);
         }
     }
 

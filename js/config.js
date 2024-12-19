@@ -20,7 +20,7 @@ export const OPTIONS = {
         zoomStep: 0.1,
         caveLines: {
             color: {
-                start: new Color(0xff0000),
+                start: new Color(0x00ff2a),
                 end: new Color(0x0000ff),
                 mode: {
                     value: 'gradientByDistance', 
