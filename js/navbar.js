@@ -23,6 +23,7 @@ export class NavigationBar {
                 "name": "File", elements: [
                     { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
                     { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } },
+                    { "name": "Open JSON file", "click": function () { document.getElementById('jsonInput').click(); } },
                     { "name": "Export caves", "click":  () => Exporter.exportCaves(this.db.caves) }
                 ]
 

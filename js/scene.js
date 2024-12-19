@@ -110,7 +110,7 @@ export class MyScene {
         this.renderScene();
     }
 
-    removeSurvey(caveName, surveyName) {
+    deleteSurvey(caveName, surveyName) {
         this.caveObjects.get(caveName).delete(surveyName);
     }
 
@@ -463,7 +463,11 @@ export class MyScene {
 
     disposeCave(caveName) {
         const cave = this.caveObjects.get(caveName);
-        cave.forEach(s => this.#disposeSurveyObjects(s));
+        cave.forEach(c => this.#disposeSurveyObjects(c));
+    }
+
+    deleteCave(caveName) {
+        this.caveObjects.set(caveName, new Map());
     }
 
 

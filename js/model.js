@@ -31,6 +31,10 @@ export class Vector {
             z: this.z
         }
     }
+
+    static fromPure(pure) {
+        return Object.assign(new Vector, pure);
+    }
 }
 
 export class Color {
@@ -103,6 +107,11 @@ export class SurveyStartStation {
             station: this.station.toExport()
         }
     }
+
+    static fromPure(pure) {
+        pure.station = SurveyStation.fromPure(pure.station);
+        return Object.assign(new SurveyStartStation, pure);
+    }
 }
 export class SurveyStation {
 
@@ -122,6 +131,11 @@ export class SurveyStation {
             position: this.position.toExport()
         }
     }
+
+    static fromPure(pure) {
+        pure.position = Vector.fromPure(pure.position);
+        return Object.assign(new SurveyStation, pure);
+    }
 }
 
 export class Survey {
@@ -136,7 +150,7 @@ export class Survey {
      * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
      * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
      */
-    constructor(name, visible, start = undefined, stations, shots, orphanShotIds, attributes) {
+    constructor(name, visible = true, start = undefined, stations = new Map(), shots = [], orphanShotIds = [], attributes = new Map()) {
         this.name = name;
         this.visible = visible;
         this.start = start;
@@ -176,8 +190,17 @@ export class Survey {
             n[pName] = attribute[pName];
         })
         return n;
-
     }
+
+    static attibuteWithIdandType(a, defs) {
+        const def = defs.getDefinition(a.name);
+        a.params = def.params;
+        a.id = def.id;
+        a.type = def.type;
+        return a;
+    }
+
+
 
     toExport() {
         const flattenedAttrs =
@@ -199,6 +222,26 @@ export class Survey {
             attributes: flattenedAttrs,
             shots: this.shots.map(s => s.toExport())
         }
+    }
+
+    static fromPure(pure, attributeDefs) {
+        if (pure.start !== undefined) {
+            pure.start = SurveyStartStation.fromPure(pure.start);
+        }
+        const attrs =
+            pure.attributes = pure
+                .attributes
+                .map(a => [a.name, attributeDefs.createFromPure(a.attribute)]);
+        const x = new Map();
+        attrs.forEach(([station, attr]) => {
+            if (!x.has(station)) {
+                x.set(station, []);
+            }
+            x.get(station).push(attr);
+        })
+        pure.attributes = x;
+        pure.shots = pure.shots.map(s => Object.assign(new Shot, s));
+        return Object.assign(new Survey, pure);
     }
 
 }
@@ -234,7 +277,7 @@ export class Cave {
      * @param {Survey[]} surveys - The surveys associated to a cave
      * @param {boolean} visible - The visibility property of a cave
      */
-    constructor(name, startPosition, stations, surveys, visible) {
+    constructor(name, startPosition, stations = new Map(), surveys = [], visible = true) {
         this.name = name;
         this.startPosition = startPosition;
         this.stations = stations;
@@ -245,7 +288,14 @@ export class Cave {
     toExport() {
         return {
             name: this.name,
+            startPosition: this.startPosition,
             surveys: this.surveys.map(s => s.toExport())
         }
+    }
+
+    static fromPure(pure, attributeDefs) {
+        pure.surveys = pure.surveys.map(s => Survey.fromPure(s, attributeDefs));
+        pure.startPosition = Vector.fromPure(pure.startPosition);
+        return Object.assign(new Cave, pure);
     }
 }

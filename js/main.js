@@ -1,19 +1,16 @@
-import * as I from "./import.js";
 import { ProjectExplorer, ProjectManager } from "./explorer.js";
 import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene.js";
+import { PolygonImporter, TopodroidImporter, JsonImporter } from "./import.js";
 import { SceneInteraction } from "./interactive.js";
-import { materials as MAT} from "./materials.js";
+import { materials as MAT } from "./materials.js";
 import { NavigationBar } from "./navbar.js";
 import { Footer } from "./footer.js";
-import { SurveyHelper } from "./survey.js";
 import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
-import { showWarningPanel } from "./popups.js";
 import { addGui } from "./gui.js";
 
-import { CAVES_MAX_DISTANCE } from "./constants.js";
 
 
 class Main {
@@ -43,94 +40,30 @@ class Main {
         this.gui = addGui(this.options, this.myscene, this.materials, document.getElementById('guicontrols'));
         this.interaction = new SceneInteraction(this.footer, this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
+        this.importers = {
+            topodroid: new TopodroidImporter(this.db, this.options, this.myscene, this.explorer),
+            polygon: new PolygonImporter(this.db, this.options, this.myscene, this.explorer),
+            json: new JsonImporter(this.db, this.options, this.myscene, this.explorer, this.attributeDefs)
+        }
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('cave')) {
             const caveNameUrl = urlParams.get('cave');
 
             if (caveNameUrl.includes('.cave')) {
-                fetch(caveNameUrl).then(data => data.blob()).then(res => this.imporPolygonFromFile(res)).catch(error => console.error(error));
+                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importers.polygon.importFile(res)).catch(error => console.error(error));
             } else if (caveNameUrl.includes('.csv')) {
-                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importCsvFile(res, caveNameUrl)).catch(error => console.error(error));
+                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importers.topodroid.importFile(res, caveNameUrl)).catch(error => console.error(error));
+            } else if (caveNameUrl.includes('.json')) {
+                fetch(caveNameUrl).then(data => data.blob()).then(res => this.importers.json.importFile(res)).catch(error => console.error(error));
             }
         } else {
             this.myscene.renderScene();
         }
 
-        document.getElementById('topodroidInput').addEventListener('change', (e) => this.importCsvFile(e.target.files[0]));
-        document.getElementById('polygonInput').addEventListener('change', (e) => this.imporPolygonFromFile(e.target.files[0]));
+        document.getElementById('topodroidInput').addEventListener('change', (e) => this.importers.topodroid.importFile(e.target.files[0]));
+        document.getElementById('polygonInput').addEventListener('change', (e) => this.importers.polygon.importFile(e.target.files[0]));
+        document.getElementById('jsonInput').addEventListener('change', (e) => this.importers.json.importFile(e.target.files[0]));
 
-    }
-
-    imporPolygonFromFile(file) {
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => this.importPolygon(event.target.result);
-            reader.readAsText(file, "iso_8859-2");
-        }
-    }
-
-    importPolygon(wholeFileInText) {
-        const cave = I.getCaveFromPolygonFile(wholeFileInText);
-        const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[cave.name, cave]]), this.options.scene.caveLines);
-        this.addCave(cave, colorGradients.get(cave.name));
-    }
-
-    addCave(cave, colorGradients) {
-        const cavesReallyFar = Array.from(this.db.caves.values()).reduce((acc, c) => {
-            const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
-            if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
-                acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
-            } 
-            return acc;
-        }, []);
-
-        if (this.db.caves.has(cave.name)) {
-            showErrorPanel('Import failed, cave has already been imported!', 20);
-        } else if (cavesReallyFar.length > 0) {
-            const message = `Import failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(",")}`;
-            showWarningPanel(message, 20);
-        } else {
-            this.db.caves.set(cave.name, cave);
-            cave.surveys.forEach(s => {
-                if (s.name === "Laci-zsomboly") {
-                    s.attributes.set('1', [this.attributeDefs.createByName("bedding")(90.0, 80, 10, 40)]);
-                } else if (s.name === "Fogadalom-ág") {
-                    s.attributes.set('Fo19', [this.attributeDefs.createByName("fault")(180.0, 0, 10, 40)]);
-                    s.attributes.set('Fo21', [this.attributeDefs.createByName("speleotheme")("a", "b")]);
-                }
-                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, cave.stations, s.shots);
-                const _3dobjects =
-                    this.myscene.addToScene(
-                        s.stations,
-                        centerLineSegments,
-                        splaySegments,
-                        true,
-                        colorGradients !== undefined ? colorGradients.get(s.name) : undefined
-                    );
-                this.myscene.addSurvey(cave.name, s.name, _3dobjects);
-            });
-            this.explorer.addCave(cave);
-            this.myscene.fitScene();
-        }
-    }
-
-    importCsvFile(file, fileName) {
-        if (file) {
-            Papa.parse(file, {
-                header: false,
-                comments: "#",
-                dynamicTyping: true,
-                complete: (results) => {
-                    const caveName = (fileName !== undefined) ? fileName : file.name;
-                    const cave = I.getCaveFromCsvFile(caveName, results.data);
-                    const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[caveName, cave]]), this.options.scene.caveLines);
-                    this.addCave(cave, colorGradients.get(cave.name));
-                },
-                error: function (error) {
-                    console.error('Error parsing CSV:', error);
-                }
-            });
-        }
     }
 }
 

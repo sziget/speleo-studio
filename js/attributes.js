@@ -34,7 +34,7 @@ export const attributeDefintions = {
                 },
                 "dip": {
                     "type": "float"
-                },                
+                },
                 "width": {
                     "type": "int"
                 },
@@ -53,7 +53,7 @@ export const attributeDefintions = {
                 },
                 "dip": {
                     "type": "float"
-                },                
+                },
                 "width": {
                     "type": "int"
                 },
@@ -61,7 +61,7 @@ export const attributeDefintions = {
                     "type": "int"
                 }
             }
-        }        
+        }
     ]
 }
 
@@ -70,14 +70,37 @@ export class AttributesDefinitions {
         this.defs = attributeDefintions;
     }
 
+    #cloneDefiniton(predicate) {
+        return Object.assign({}, this.#getDefiniton(predicate));
+    }
+
+    #getDefiniton(predicate) {
+        return this.defs.definitions.find(predicate);
+    }
     createById(id) {
-        const o = this.defs.definitions.find(d => d.id === id);
+        const o = this.#cloneDefiniton(x => x.id === id)
         return this.#attributeByDef(o);
     }
 
     createByName(name) {
-        const o = this.defs.definitions.find(d => d.name === name);
+        const o = this.#cloneDefiniton(d => d.name === name);
         return this.#attributeByDef(o);
+    }
+
+    createFromPure(attribute) {
+        const o = this.#cloneDefiniton(d => d.name === attribute.name);
+        const paramNames = Object.keys(o.params);
+        paramNames.forEach(pName => {
+            o[pName] = attribute[pName];
+        });
+        return o;
+    }
+
+    tranformPureAttributes(attributes) {
+        return attributes.map(a => {
+            this.createFromPure(a);
+        });
+
     }
 
     #attributeByDef(o) {
@@ -90,9 +113,9 @@ export class AttributesDefinitions {
                     case "float": o[pName] = parseFloat(value); break;
                     case "int": o[pName] = parseInt(value); break;
                     case "string": o[pName] = value; break;
-                    default : throw new Error($`Not supported data type ${dataType}`);
+                    default: throw new Error($`Not supported data type ${dataType}`);
                 }
-                
+
             });
             return o;
         }

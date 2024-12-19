@@ -39,3 +39,16 @@ export function get3DCoordsStr(vector) {
     const s = ['x', 'y', 'z'].map(n => vector[n].toFixed(2)).join(', ');
     return `(${s})`;
 }
+
+export function iterateUntil(iterator, condition) {
+    var it;
+    do {
+        it = iterator.next();
+    } while (!it.done && condition(it.value[1]));
+
+    if (it.done) {
+        return undefined;
+    } else {
+        return it.value[1];
+    }
+};

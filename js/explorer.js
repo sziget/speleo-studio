@@ -49,6 +49,7 @@ export class ProjectManager {
     onCaveDeleted(e) {
         const caveName = e.detail.cave;
         this.scene.disposeCave(caveName);
+        this.scene.deleteCave(caveName);
         this.scene.renderScene();
         this.explorer.deleteCave(caveName);
     }
@@ -62,7 +63,7 @@ export class ProjectManager {
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, caveStations, es.shots);
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
-            this.scene.removeSurvey(cave.name, es.name);
+            this.scene.deleteSurvey(cave.name, es.name);
             this.scene.addSurvey(cave.name, es.name, _3dObjects);
         });
         this.scene.updateVisiblePlanes();

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>Cave visualization</title>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/bootstrap.css">
 	<link rel="stylesheet" href="css/tree.css">
 	<link rel="stylesheet" href="css/navbar.css">
 	<link rel="stylesheet" href="css/tabulator_midnight.css">
@@ -140,13 +140,13 @@
 
 		}
 	</style>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+	<script src="js/external/papaparse.min.js"></script>
 	<script src="js/external/tree.js"></script>
 	<script type="importmap">
             {
 				"imports": {
-					"three": "https://cdn.jsdelivr.net/npm/three@v0.170.0/build/three.module.js",
-					"three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.170.0/examples/jsm/"
+					"three": "./js/external/three/three.module.js",
+					"three/addons/": "./js/external/three/addons/"
 				}
             }
     </script>
@@ -159,6 +159,7 @@
 	<div class="file-upload">
 		<input type="file" id="topodroidInput" accept=".csv" style="display:none" />
 		<input type="file" id="polygonInput" accept=".cave" style="display:none" />
+		<input type="file" id="jsonInput" accept=".json" style="display:none" />
 	</div>
 	<div id="contextmenu" style="position:absolute;display:none;background-color:red">
 		<span color="red">menu</span>
