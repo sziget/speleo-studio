@@ -120,14 +120,14 @@ export class SurveyStartStation {
 
 export class StationAttribute {
 
-    constructor(stationName, attribute) {
-        this.stationName = stationName;
+    constructor(name, attribute) {
+        this.name = name;
         this.attribute = attribute;
     }
 
     toExport() {
         return {
-            stationName: this.stationName,
+            name: this.name,
             attribute: this.attribute
         }
     }
@@ -200,7 +200,7 @@ export class Survey {
         return this.attributes
             .filter(sa => sa.attribute.name === name)
             .map(sa => {
-                const pos = this.stations.get(sa.stationName).position;
+                const pos = this.stations.get(sa.name).position;
                 return [pos, sa.attribute];
 
             });
@@ -227,23 +227,10 @@ export class Survey {
 
 
     toExport() {
-        const flattenedAttrs = undefined;
-        // Array.from(
-        //     this.attributes
-        //         .entries()
-        //         .flatMap(([stationName, attrs]) => {
-        //             return attrs.map(a => {
-        //                 return new StationAttribute{
-        //                     name: stationName,
-        //                     attribute: this.#attibuteToExport(a)
-        //                 }
-        //             })
-        //         }));
-
         return {
             name: this.name,
             start: this.start.toExport(),
-            attributes: flattenedAttrs,
+            attributes: this.attributes.map(sta => sta.toExport()),
             shots: this.shots.map(s => s.toExport())
         }
     }
