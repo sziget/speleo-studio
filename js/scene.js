@@ -219,6 +219,7 @@ export class MyScene {
 
         switch (config.value) {
             case 'gradientByZ':
+            case 'gradientByDistance':
                 const colors = SurveyHelper.getColorGradientsForCaves(this.db.caves, this.options.scene.caveLines);
                 this.caveObjects.forEach((surveyEntrires, caveName) => {
                     surveyEntrires.forEach((e, surveyName) => {

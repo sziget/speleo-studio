@@ -24,7 +24,7 @@ export const OPTIONS = {
                 end: new Color(0x0000ff),
                 mode: {
                     value: 'global', 
-                    choices: ['global', 'gradientByZ']
+                    choices: ['global', 'gradientByZ', 'gradientByDistance']
                 }
             }
         }

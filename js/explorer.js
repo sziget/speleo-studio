@@ -15,8 +15,9 @@ export class ProjectManager {
      * @param {MyScene} scene - The 3D scene
      * @param {ProjectExplorer} explorer - The project explorer that displays caves and surveys in a tree view
      */
-    constructor(db, scene, explorer) {
+    constructor(db, options, scene, explorer) {
         this.db = db;
+        this.options = options;
         this.scene = scene;
         this.explorer = explorer;
         document.addEventListener('surveyChanged', (e) => this.onSurveyChanged(e));
@@ -25,11 +26,10 @@ export class ProjectManager {
     }
 
     onSurveyChanged(e) {
-        const caveName = e.detail.cave;
-        const surveyName = e.detail.survey;
+        const cave = e.detail.cave;
+        const survey = e.detail.survey;
         const attributes = e.detail.attributes;
-        const cave = this.db.caves.get(caveName);
-        cave.surveys.find(s => s.name === surveyName).attributes = attributes;
+        cave.surveys.find(s => s.name === survey.name).attributes = attributes;
         this.recalculateCave(cave);
         this.scene.renderScene();
         this.explorer.updateCave(cave);
@@ -56,13 +56,22 @@ export class ProjectManager {
 
     recalculateCave(cave) {
         let caveStations = new Map();
+        const lOptions = this.options.scene.caveLines;
+        const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
+
         cave.surveys.entries().forEach(([index, es]) => {
             const ns = SurveyHelper.recalculateSurvey(index, es, caveStations);
             //ns === es
-            this.#emitSurveyRecalculated(cave.name, es);
-            const [clSegments, splaySegments] = SurveyHelper.getSegments(es.name, caveStations, es.shots);
+            this.#emitSurveyRecalculated(cave, es);
+            const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
             this.scene.disposeSurvey(cave.name, es.name);
-            const _3dObjects = this.scene.addToScene(es.stations, clSegments, splaySegments, cave.visible && es.visible);
+            const _3dObjects = this.scene.addToScene(
+                es.stations,
+                clSegments,
+                splaySegments,
+                cave.visible && es.visible,
+                colorGradients.get(es.name)
+            );
             this.scene.deleteSurvey(cave.name, es.name);
             this.scene.addSurvey(cave.name, es.name, _3dObjects);
         });
@@ -70,15 +79,11 @@ export class ProjectManager {
         this.scene.fitScene();
     }
 
-    #emitSurveyRecalculated(caveName, survey) {
+    #emitSurveyRecalculated(cave, survey) {
         const event = new CustomEvent("surveyRecalculated", {
             detail: {
-                cave: caveName,
-                survey: survey.name,
-                stations: survey.stations, 
-                shots: survey.shots,
-                orphanShotIds: survey.orphanShotIds,
-                attributes: survey.attributes
+                cave: cave,
+                survey: survey
             }
         });
         document.dispatchEvent(event);
@@ -194,7 +199,7 @@ export class ProjectExplorer {
             return;
         } else if (event.target.id === "edit") {
             this.surveyeditor.show();
-            this.surveyeditor.setupTable(state.cave.name, state.survey);
+            this.surveyeditor.setupTable(state.survey, state.cave);
         } else if (event.target.id === "delete") {
             if (state.nodeType === "survey") {
                 this.db.deleteSurvey(state.cave.name, state.survey.name);

@@ -8,8 +8,8 @@ export class SurveyEditor {
         this.db = db;
         this.attributeDefs = attributeDefs;
         this.panel = panel;
-        this.caveName = undefined;
-        this.surveyName = undefined;
+        this.cave = undefined;
+        this.survey = undefined;
         this.table = undefined;
         this.surveyModified = false;
         closeButton.addEventListener("click", () => this.closeEditor());
@@ -24,8 +24,8 @@ export class SurveyEditor {
     #emitSurveyChanged(attributes) {
         const event = new CustomEvent("surveyChanged", {
             detail: {
-                cave: this.caveName,
-                survey: this.surveyName,
+                cave: this.cave,
+                survey: this.survey,
                 attributes: attributes
             }
         });
@@ -33,15 +33,11 @@ export class SurveyEditor {
     }
 
     onSurveyRecalculated(e) {
-        const caveName = e.detail.cave;
-        const surveyName = e.detail.survey;
+        const cave = e.detail.cave;
+        const survey = e.detail.survey;
 
-        if (this.table !== undefined && this.caveName === caveName && this.surveyName === surveyName) {
-            const stations = e.detail.stations;
-            const shots = e.detail.shots;
-            const attributes = e.detail.attributes;
-            const orphanShotIds = e.detail.orphanShotIds;
-            const data = this.#getTableData(surveyName, stations, shots, orphanShotIds, attributes);
+        if (this.table !== undefined && this.cave.name === cave.name && this.survey.name === survey.name) {
+            const data = this.#getTableData(survey, cave.stations);
             this.table.replaceData(data);
         }
     }
@@ -75,19 +71,19 @@ export class SurveyEditor {
         this.panel.style.display = 'none';
     }
 
-    #getTableData(surveyName, stations, shots, orphanShotIds, attributes) {
-        return shots.map(sh => {
-            const stationAttributes = attributes
+    #getTableData(survey, stations) {
+        return survey.shots.map(sh => {
+            const stationAttributes = survey.attributes
                 .filter(a => a.stationName === sh.to)
                 .map(a => a.attribute);
 
             const rowToBe = {
                 shot: sh,
-                isOrphan: orphanShotIds.has(sh.id),
+                isOrphan: survey.orphanShotIds.has(sh.id),
                 attributes: stationAttributes
             }
             const fromStation = stations.get(sh.from);
-            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+            const toStationName = survey.getToStationName(sh);
             const toStation = stations.get(toStationName);
             rowToBe.from = fromStation;
             rowToBe.to = toStation;
@@ -154,9 +150,9 @@ export class SurveyEditor {
     }
 
 
-    setupTable(caveName, survey,) {
-        this.caveName = caveName;
-        this.surveyName = survey.name;
+    setupTable(survey, cave) {
+        this.cave = cave;
+        this.survey = survey;
 
         const floatPattern = /^[+-]?\d+([.,]\d+)?$/
         var isFloatNumber = function (cell, value, parameters) {
@@ -185,6 +181,11 @@ export class SurveyEditor {
             return sumLength.toFixed(2);
         }
 
+        var floatAccessor = function (value, data, type, params, column, row) {
+            return U.parseMyFloat(value);
+        }
+
+
 
         document.getElementById("hide-splays").addEventListener("click", () => this.table.setFilter("type", "=", "center"));
 
@@ -205,7 +206,7 @@ export class SurveyEditor {
 
         this.table = new Tabulator("#surveydata", {
             height: 215,
-            data: this.#getTableData(survey.name, survey.stations, survey.shots, survey.orphanShotIds, survey.attributes),
+            data: this.#getTableData(survey, cave.stations),
             layout: "fitDataStretch",
             validationMode: "highlight",
             rowHeader: { formatter: "rownum", headerSort: false, hozAlign: "center", resizable: false, frozen: true },
@@ -222,9 +223,9 @@ export class SurveyEditor {
                 // { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
                 { title: "From", field: "shot.from", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countLines },
                 { title: "To", field: "shot.to", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countOrphans },
-                { title: "Length", field: "shot.length", headerSort: false, editor: true, validator: ["required", customValidator], bottomCalc: sumCenterLines },
-                { title: "Azimuth", field: "shot.azimuth", headerSort: false, editor: true, validator: ["required", "min:-360", "max:360", customValidator] },
-                { title: "Clino", field: "shot.clino", headerSort: false, editor: true, validator: ["required", customValidator] },
+                { title: "Length", field: "shot.length", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", customValidator], bottomCalc: sumCenterLines },
+                { title: "Azimuth", field: "shot.azimuth", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", "min:-360", "max:360", customValidator] },
+                { title: "Clino", field: "shot.clino", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", customValidator] },
                 // { title: "X", field: "x", headerSort: false, editor: false, formatter: decimal2Formatter('x') },
                 // { title: "Y", field: "y", headerSort: false, editor: false, formatter: decimal2Formatter('y') },
                 // { title: "Z", field: "z", headerSort: false, editor: false, formatter: decimal2Formatter('z') },

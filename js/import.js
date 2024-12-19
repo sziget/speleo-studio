@@ -14,7 +14,7 @@ class Importer {
         this.explorer = explorer;
     }
 
-    addCave(cave, colorGradients) {
+    addCave(cave) {
         const cavesReallyFar = Array.from(this.db.caves.values()).reduce((acc, c) => {
             const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
             if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
@@ -30,15 +30,19 @@ class Importer {
             showWarningPanel(message, 20);
         } else {
             this.db.caves.set(cave.name, cave);
+            
+            const lOptions = this.options.scene.caveLines;
+            let colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
+            
             cave.surveys.forEach(s => {
-                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s.name, cave.stations, s.shots);
+                const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s, cave.stations);
                 const _3dobjects =
                     this.scene.addToScene(
                         s.stations,
                         centerLineSegments,
                         splaySegments,
                         true,
-                        colorGradients !== undefined ? colorGradients.get(s.name) : undefined
+                        colorGradients.get(s.name),
                     );
                 this.scene.addSurvey(cave.name, s.name, _3dobjects);
             });
@@ -112,11 +116,15 @@ export class PolygonImporter extends Importer {
                             throw new Error(`Invalid Polygon survey, fix point ${fixPoint} != first shot's from value (${shots[0].from})`);
                         }
                     }
-                    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, stationsGlobal, [], startName, startPosition);
+                    const survey = new Survey(surveyNameStr, true, startPoint, new Map(), shots);
+                    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, stationsGlobal, [], startName, startPosition);
+                    survey.stations = stations;
+                    survey.orphanShotIds = orphanShotIds;
+
                     for (const [stationName, station] of stations) {
                         stationsGlobal.set(stationName, station);
                     }
-                    surveys.push(new Survey(surveyNameStr, true, startPoint, stations, shots, orphanShotIds, new Map()));
+                    surveys.push(survey);
                     surveyIndex++;
                 }
     
@@ -136,8 +144,7 @@ export class PolygonImporter extends Importer {
 
     importText(wholeFileInText) {
         const cave = this.getCave(wholeFileInText);
-        const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[cave.name, cave]]), this.options.scene.caveLines);
-        this.addCave(cave, colorGradients.get(cave.name));
+        this.addCave(cave);
     }
     
 }
@@ -172,8 +179,11 @@ export class TopodroidImporter extends Importer {
         const shots = this.getShotsFromCsv(csvData);
         const surveyName = 'polygon';
         const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(surveyName, shots, new Map(), [], startPoint.name, startPoint.station.position);
-        return new Cave(fileName, startPoint.station.position, stations, [new Survey(surveyName, true, startPoint, stations, shots, orphanShotIds, new Map())]);
+        const survey = new Survey(surveyName, true, startPoint, new Map(), shots);
+        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, new Map(), [], startPoint.name, startPoint.station.position);
+        survey.stations = stations;
+        survey.orphanShotIds = orphanShotIds;
+        return new Cave(fileName, startPoint.station.position, stations, [survey]);
     }
 
     importFile(file, fileName) {
@@ -185,8 +195,7 @@ export class TopodroidImporter extends Importer {
                 complete: (results) => {
                     const caveName = (fileName !== undefined) ? fileName : file.name;
                     const cave = this.getCave(caveName, results.data);
-                    const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[caveName, cave]]), this.options.scene.caveLines);
-                    this.addCave(cave, colorGradients.get(cave.name));
+                    this.addCave(cave);
                 },
                 error: function (error) {
                     console.error('Error parsing CSV:', error);
@@ -215,7 +224,6 @@ export class JsonImporter extends Importer {
         const parsedCave = JSON.parse(json);
         const cave = Cave.fromPure(parsedCave, this.attributeDefs);
         cave.surveys.entries().forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations));
-        const colorGradients = SurveyHelper.getColorGradientsForCaves(new Map([[cave.name, cave]]), this.options.scene.caveLines);
-        this.addCave(cave, colorGradients.get(cave.name));
+        this.addCave(cave);
     }
 }

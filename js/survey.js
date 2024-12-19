@@ -1,6 +1,7 @@
 import * as U from "./utils.js";
 import { Vector, Survey } from "./model.js";
 import { SurveyStation as ST } from "./model.js";
+import { Graph } from "./utils/graph.js";
 
 export class SurveyHelper {
 
@@ -19,7 +20,7 @@ export class SurveyHelper {
             startPosition = (es.start !== undefined) ? es.start.station.position : new Vector(0, 0, 0);
         }
 
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es.name, es.shots, surveyStations, [], startName, startPosition);
+        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es, surveyStations, [], startName, startPosition);
         es.isolated = (stations.size === 0);
         es.stations = stations;
         es.orphanShotIds = orphanShotIds;
@@ -27,19 +28,19 @@ export class SurveyHelper {
         return es;
     }
 
-    static calculateSurveyStations(surveyName, shots, prevStations, aliases, startName, startPosition) {
+    static calculateSurveyStations(survey, prevStations, aliases, startName, startPosition) {
         const stations = new Map();
-        if (shots.length === 0) return stations;
+        if (survey.shots.length === 0) return stations;
 
-        const startStationName = startName !== undefined ? startName : shots[0].from;
+        const startStationName = startName !== undefined ? startName : survey.shots[0].from;
 
         if (startPosition !== undefined) {
             stations.set(startStationName, new ST('center', startPosition));
-        } else if (startPosition === undefined && prevStations.has(shots[0].from)) {
-            stations.set(startStationName, prevStations.get(shots[0].from));
+        } else if (startPosition === undefined && prevStations.has(survey.shots[0].from)) {
+            stations.set(startStationName, prevStations.get(survey.shots[0].from));
         }
 
-        shots.forEach(sh => {
+        survey.shots.forEach(sh => {
             sh.processed = false;
         });
 
@@ -47,7 +48,7 @@ export class SurveyHelper {
 
         while (repeat) {
             repeat = false;
-            shots.forEach((sh) => {
+            survey.shots.forEach((sh) => {
                 if (sh.processed) return; // think of it like a continue statement in a for loop
 
                 let fromStation = stations.get(sh.from);
@@ -66,7 +67,7 @@ export class SurveyHelper {
                         const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
                         const fp = fromStation.position;
                         const st = new Vector(fp.x, fp.y, fp.z).add(polarVector);
-                        const stationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+                        const stationName = survey.getToStationName(sh);
                         stations.set(stationName, new ST(sh.type, st));
                         repeat = true;
                     } else {
@@ -111,17 +112,16 @@ export class SurveyHelper {
             });
         }
 
-        const unprocessedShots = new Set(shots.filter((sh) => !sh.processed).map(sh => sh.id));
+        const unprocessedShots = new Set(survey.shots.filter((sh) => !sh.processed).map(sh => sh.id));
         return [stations, unprocessedShots];
     }
 
-    static getSegments(surveyName, stations, shots) {
+    static getSegments(survey, stations) {
         const splaySegments = [];
         const centerlineSegments = [];
-        shots.forEach(sh => {
+        survey.shots.forEach(sh => {
             const fromStation = stations.get(sh.from);
-            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
-            const toStation = stations.get(toStationName);
+            const toStation = stations.get(survey.getToStationName(sh));
 
             if (fromStation !== undefined && toStation !== undefined) {
                 const fromPos = fromStation.position;
@@ -144,11 +144,85 @@ export class SurveyHelper {
 
     }
 
+    static getColorGradientsForCaves(caves, lOptions) {
+        if (lOptions.color.mode.value === 'gradientByZ') {
+            return SurveyHelper.getColorGradientsByDepthForCaves(caves, lOptions);
+        } else if (lOptions.color.mode.value === 'gradientByDistance') {
+            const m = caves.entries().map(([caveName, cave]) => {
+                const colors = SurveyHelper.getColorGradientsByDistance(cave, lOptions);
+                return [caveName, colors];
+            });
+            return new Map(m);
+        } else {
+            return new Map();
+        }
+    }
 
+    static getColorGradients(cave, lOptions) {
+        if (lOptions.color.mode.value === 'gradientByZ') {
+            const colorGradientsCaves = SurveyHelper.getColorGradientsByDepthForCaves(this.db.caves, lOptions);
+            return colorGradientsCaves.get(cave.name);
+        } else if (lOptions.color.mode.value === 'gradientByDistance') {
+            return SurveyHelper.getColorGradientsByDistance(cave, lOptions);
+        } else {
+            return new Map();
+        }
+    }
 
-    static getColorGradientsForCaves(caves, clOptions) {
+    static getColorGradientsByDistance(cave, clOptions) {
+
+        const g = new Graph();
+        cave.stations.keys().forEach(k => g.addVertex(k));
+        let startStationName;
+        cave.surveys.entries().forEach(([index, s]) => {
+            if (index === 0) {
+                startStationName = (s.start !== undefined) ? s.start.name : s.shots[0].from;
+            }
+            s.shots.forEach(sh => {
+                const from = s.stations.get(sh.from);
+                const toStationName = s.getToStationName(sh);
+                const to = s.stations.get(toStationName);
+                if (from !== undefined && to !== undefined) {
+                    g.addEdge(sh.from, toStationName, sh.length);
+                }
+            });
+        });
+
+        const distances = g.traverse(startStationName);
+        const maxDistance = Math.max(...Array.from(distances.values()));
+        const startColor = clOptions.color.start;
+        const endColor =  clOptions.color.end;
+        const colorDiff = endColor.sub(startColor);
+        const result = new Map();
+        cave.surveys.forEach(s => {
+            const centerColors = [];
+            const splayColors = [];
+
+            s.shots.forEach(sh => {
+                const fromDistance = distances.get(sh.from);
+                const toStationName = s.getToStationName(sh);
+
+                const toDistance = distances.get(toStationName);
+
+                if (fromDistance !== undefined && toDistance !== undefined) {
+                    const fc = startColor.add(colorDiff.mul(fromDistance / maxDistance));
+                    const tc = startColor.add(colorDiff.mul(toDistance / maxDistance));
+                    if (sh.type === 'center') {
+                        centerColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+                    } else if (sh.type === 'splay') {
+                        splayColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
+                    }
+                }
+            });
+            result.set(s.name, { center: centerColors, splays: splayColors });
+        });
+
+        return result;
+    }
+
+    static getColorGradientsByDepthForCaves(caves, clOptions) {
         const colorGradients = new Map();
-        if (clOptions.color.mode.value !== 'gradientByZ') return colorGradients;
+
         const zCoords = Array.from(caves.values().flatMap(c => {
             if (c.visible) {
                 return Array.from(c.surveys.flatMap(s => {
@@ -166,20 +240,20 @@ export class SurveyHelper {
             const sm = new Map();
             colorGradients.set(c.name, sm);
             c.surveys.forEach(s => {
-                sm.set(s.name, SurveyHelper.getColorGradients(s.name, c.stations, s.shots, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
+                sm.set(s.name, SurveyHelper.getColorGradientsByDepth(s, c.stations, diffZ, maxZ, clOptions.color.start, clOptions.color.end));
             });
 
         });
         return colorGradients;
     }
 
-    static getColorGradients(surveyName, stations, shots, diffZ, maxZ, startColor, endColor) {
+    static getColorGradientsByDepth(survey, stations, diffZ, maxZ, startColor, endColor) {
         const centerColors = [];
         const splayColors = [];
         const colorDiff = endColor.sub(startColor);
-        shots.forEach(sh => {
+        survey.shots.forEach(sh => {
             const fromStation = stations.get(sh.from);
-            const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
+            const toStationName = survey.getToStationName(sh);
             const toStation = stations.get(toStationName);
             if (fromStation !== undefined && toStation !== undefined) {
                 const fromD = maxZ - fromStation.position.z;

@@ -79,6 +79,10 @@ export class Shot {
         this.processed = false;
     }
 
+    isSplay() {
+        return (this.type === 'splay');
+    }
+
     toExport() {
         let newShot = {};
         this.export_fields.forEach(fName => {
@@ -166,7 +170,7 @@ export class Survey {
      * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
      * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
      */
-    constructor(name, visible = true, start = undefined, stations = new Map(), shots = [], orphanShotIds = [], attributes = new Map()) {
+    constructor(name, visible = true, start = undefined, stations = new Map(), shots = [], orphanShotIds = new Set(), attributes = []) {
         this.name = name;
         this.visible = visible;
         this.start = start;
@@ -177,8 +181,12 @@ export class Survey {
         this.isolated = false;
     }
 
-    static getSplayStationName(surveyName, id) {
-        return `splay-${id}@${surveyName}`
+    getSplayStationName(id) {
+        return `splay-${id}@${this.name}`
+    }
+
+    getToStationName(shot) {
+        return (shot.isSplay()) ? this.getSplayStationName(shot.id) : shot.to;
     }
 
     /**
@@ -190,12 +198,12 @@ export class Survey {
     getAttributesWithPositionsByName(name) {
         // [stationName, -> [ { id, params},  ]
         return this.attributes
-        .filter(sa => sa.attribute.name === name)
-        .map(sa => {
-            const pos = this.stations.get(sa.stationName).position;
-            return [pos, sa.attribute];
-            
-        });
+            .filter(sa => sa.attribute.name === name)
+            .map(sa => {
+                const pos = this.stations.get(sa.stationName).position;
+                return [pos, sa.attribute];
+
+            });
     }
 
     #attibuteToExport(attribute) {
@@ -220,17 +228,17 @@ export class Survey {
 
     toExport() {
         const flattenedAttrs = undefined;
-            // Array.from(
-            //     this.attributes
-            //         .entries()
-            //         .flatMap(([stationName, attrs]) => {
-            //             return attrs.map(a => {
-            //                 return new StationAttribute{
-            //                     name: stationName,
-            //                     attribute: this.#attibuteToExport(a)
-            //                 }
-            //             })
-            //         }));
+        // Array.from(
+        //     this.attributes
+        //         .entries()
+        //         .flatMap(([stationName, attrs]) => {
+        //             return attrs.map(a => {
+        //                 return new StationAttribute{
+        //                     name: stationName,
+        //                     attribute: this.#attibuteToExport(a)
+        //                 }
+        //             })
+        //         }));
 
         return {
             name: this.name,

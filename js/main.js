@@ -35,7 +35,7 @@ class Main {
         this.footer = new Footer(document.getElementById('footer'));
         this.surveyeditor = new SurveyEditor(this.myscene, this.db, this.attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
         this.explorer = new ProjectExplorer(this.options, this.db, this.myscene, this.surveyeditor, document.querySelector('#tree-panel'));
-        this.manager = new ProjectManager(this.db, this.myscene, this.explorer);
+        this.manager = new ProjectManager(this.db, this.options, this.myscene, this.explorer);
 
         this.gui = addGui(this.options, this.myscene, this.materials, document.getElementById('guicontrols'));
         this.interaction = new SceneInteraction(this.footer, this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
