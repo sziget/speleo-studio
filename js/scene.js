@@ -188,18 +188,19 @@ export class MyScene {
     showPlaneFor(attributeName) {
         const planes = [];
         this.db.getAllSurveys().forEach(s => {
-            s.getSurveyAttributesByName(attributeName).forEach(([position, attributes]) => {
-                const firstAttribute = attributes[0];
-                const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
-                const plane = new THREE.Mesh(geometry, this.materials.planes.get(attributeName));
-                plane.position.set(0, 0, 0);
-                const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip));
-                plane.lookAt(dir.x, dir.y, dir.z);
-                const v = new THREE.Vector3(position.x, position.y, position.z);
-                plane.position.copy(v);
-                planes.push(plane);
-                this.threejsScene.add(plane);
-            })
+            const matchingAttributes = s.getAttributesWithPositionsByName(attributeName);
+            if (matchingAttributes.length === 0) return;
+            const [position, firstAttribute] = matchingAttributes[0];
+            const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
+            const plane = new THREE.Mesh(geometry, this.materials.planes.get(attributeName));
+            plane.position.set(0, 0, 0);
+            const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip));
+            plane.lookAt(dir.x, dir.y, dir.z);
+            const v = new THREE.Vector3(position.x, position.y, position.z);
+            plane.position.copy(v);
+            planes.push(plane);
+            this.threejsScene.add(plane);
+
         });
 
         this.planeMeshes.set(attributeName, planes); // even set if planes is emptry
@@ -410,7 +411,7 @@ export class MyScene {
         const stationNamesGroup = new THREE.Group();
         const clStationSpheresGroup = new THREE.Group();
         const splayStationSpheresGroup = new THREE.Group();
-        
+
         const clSphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 5, 5);
         const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.splay / 10.0, 5, 5);
 

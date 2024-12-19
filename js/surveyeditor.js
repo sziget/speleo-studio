@@ -1,5 +1,5 @@
 import * as U from "./utils.js";
-import { Survey } from "./model.js";
+import { StationAttribute, Survey } from "./model.js";
 
 export class SurveyEditor {
 
@@ -47,11 +47,9 @@ export class SurveyEditor {
     }
 
     #getSurveyAttributesFromTable() {
-        return new Map(
-            this.table.getData()
+        return this.table.getData()
             .filter(r => r.attributes !== undefined && r.attributes.length > 0)
-            .map(r => [r.shot.to, r.attributes])
-        );
+            .flatMap(row => row.attributes.map(a => new StationAttribute(row.shot.to, a)));
     }
 
     requestRecalculation() {
@@ -79,10 +77,14 @@ export class SurveyEditor {
 
     #getTableData(surveyName, stations, shots, orphanShotIds, attributes) {
         return shots.map(sh => {
+            const stationAttributes = attributes
+                .filter(a => a.stationName === sh.to)
+                .map(a => a.attribute);
+
             const rowToBe = {
                 shot: sh,
                 isOrphan: orphanShotIds.has(sh.id),
-                attributes: attributes.get(sh.to)
+                attributes: stationAttributes
             }
             const fromStation = stations.get(sh.from);
             const toStationName = (sh.type === 'splay') ? Survey.getSplayStationName(surveyName, sh.id) : sh.to;
@@ -217,7 +219,7 @@ export class SurveyEditor {
                 }
             },
             columns: [
-               // { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
+                // { title: "Id", field: "id", headerSort: false, bottomCalc: countLines },
                 { title: "From", field: "shot.from", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countLines },
                 { title: "To", field: "shot.to", headerSort: false, editor: true, validator: ["required"], headerFilter: "input", bottomCalc: countOrphans },
                 { title: "Length", field: "shot.length", headerSort: false, editor: true, validator: ["required", customValidator], bottomCalc: sumCenterLines },

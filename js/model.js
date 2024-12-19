@@ -113,6 +113,22 @@ export class SurveyStartStation {
         return Object.assign(new SurveyStartStation, pure);
     }
 }
+
+export class StationAttribute {
+
+    constructor(stationName, attribute) {
+        this.stationName = stationName;
+        this.attribute = attribute;
+    }
+
+    toExport() {
+        return {
+            stationName: this.stationName,
+            attribute: this.attribute
+        }
+    }
+}
+
 export class SurveyStation {
 
     /**
@@ -171,15 +187,15 @@ export class Survey {
      * @param {string} name - The name an attribute, see attribute definitons for more information.
      * @returns {Array[Array[Vector, Object]]>} - Attribute params with 3D position
      */
-    getSurveyAttributesByName(name) {
-        //stationName -> [ { id, params},  ]
-        return this.attributes.entries().map(([station, arrayOfAtrs]) => {
-            const pos = this.stations.get(station).position;
-            const matchingAttrs = arrayOfAtrs.filter(a => a.name === name);
-            if (matchingAttrs.length > 0) {
-                return [pos, matchingAttrs];
-            }
-        }).filter(x => x !== undefined); // TODO: replace with .reduce()
+    getAttributesWithPositionsByName(name) {
+        // [stationName, -> [ { id, params},  ]
+        return this.attributes
+        .filter(sa => sa.attribute.name === name)
+        .map(sa => {
+            const pos = this.stations.get(sa.stationName).position;
+            return [pos, sa.attribute];
+            
+        });
     }
 
     #attibuteToExport(attribute) {
@@ -203,18 +219,18 @@ export class Survey {
 
 
     toExport() {
-        const flattenedAttrs =
-            Array.from(
-                this.attributes
-                    .entries()
-                    .flatMap(([stationName, attrs]) => {
-                        return attrs.map(a => {
-                            return {
-                                name: stationName,
-                                attribute: this.#attibuteToExport(a)
-                            }
-                        })
-                    }));
+        const flattenedAttrs = undefined;
+            // Array.from(
+            //     this.attributes
+            //         .entries()
+            //         .flatMap(([stationName, attrs]) => {
+            //             return attrs.map(a => {
+            //                 return new StationAttribute{
+            //                     name: stationName,
+            //                     attribute: this.#attibuteToExport(a)
+            //                 }
+            //             })
+            //         }));
 
         return {
             name: this.name,
@@ -228,18 +244,9 @@ export class Survey {
         if (pure.start !== undefined) {
             pure.start = SurveyStartStation.fromPure(pure.start);
         }
-        const attrs =
-            pure.attributes = pure
-                .attributes
-                .map(a => [a.name, attributeDefs.createFromPure(a.attribute)]);
-        const x = new Map();
-        attrs.forEach(([station, attr]) => {
-            if (!x.has(station)) {
-                x.set(station, []);
-            }
-            x.get(station).push(attr);
-        })
-        pure.attributes = x;
+        pure.attributes =
+            pure.attributes
+                .map(a => new StationAttribute(a.name, attributeDefs.createFromPure(a.attribute)));;
         pure.shots = pure.shots.map(s => Object.assign(new Shot, s));
         return Object.assign(new Survey, pure);
     }
@@ -266,7 +273,6 @@ export class SurveyAlias {
         }
     }
 }
-
 
 export class Cave {
     /**
