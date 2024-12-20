@@ -24,7 +24,8 @@ export class NavigationBar {
                     { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
                     { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } },
                     { "name": "Open JSON file", "click": function () { document.getElementById('jsonInput').click(); } },
-                    { "name": "Export caves", "click":  () => Exporter.exportCaves(this.db.caves) }
+                    { "name": "Export JSON", "click":  () => Exporter.exportCaves(this.db.caves) },
+                    { "name": "Export PNG", "click":  () => Exporter.exportPNG(this.scene) }
                 ]
 
             }
