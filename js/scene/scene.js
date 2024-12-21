@@ -8,7 +8,7 @@ import { SurveyHelper } from "../survey.js";
 import * as C from "../constants.js";
 import { Database } from "../db.js";
 import { Grid } from './grid.js';
-import * as U from "../utils.js";
+import * as U from "../utils/utils.js";
 import { Options } from '../config.js';
 
 export class MyScene {

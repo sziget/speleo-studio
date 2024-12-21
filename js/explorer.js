@@ -3,7 +3,7 @@ import { tag } from './external/html5-tag.js';
 import { escapeHtml } from "./external/escape-html.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene/scene.js";
-import * as U from "./utils.js";
+import * as U from "./utils/utils.js";
 import { SurveyHelper } from "./survey.js";
 
 

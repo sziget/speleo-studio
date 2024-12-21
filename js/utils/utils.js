@@ -1,4 +1,4 @@
-import { Vector } from "./model.js";
+import { Vector } from "../model.js";
 
 export function fromPolar(distance, azimuth, clino) {
     const h = Math.cos(clino) * distance;

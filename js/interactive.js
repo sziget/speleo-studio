@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { showErrorPanel } from './popups.js';
-import { get3DCoordsStr } from "./utils.js";
+import { get3DCoordsStr } from "./utils/utils.js";
 
 export class SceneInteraction {
 

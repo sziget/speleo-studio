@@ -1,4 +1,4 @@
-import * as U from "./utils.js";
+import * as U from "./utils/utils.js";
 import { Vector, Survey } from "./model.js";
 import { SurveyStation as ST } from "./model.js";
 import { Graph } from "./utils/graph.js";
@@ -76,11 +76,13 @@ export class SurveyHelper {
                     sh.processed = true;
                 } else if (toStation !== undefined) { // from = 0, to = 1
                     const tp = toStation.position;
+                    const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
                     const st = new Vector(tp.x, tp.y, tp.z).sub(polarVector);
                     stations.set(sh.from, new ST(sh.type, st));
                     sh.processed = true;
                     repeat = true;
                 } else { //from = 0, to = 0, look for aliases
+                    //console.log(`looking for aliases for ${sh.from} and ${sh.to}`, aliases);
                     let falias = aliases.find(a => a.contains(sh.from));
                     let talias = aliases.find(a => a.contains(sh.to));
                     if (falias === undefined && talias === undefined) return;  // think of it like a continue statement in a for loop

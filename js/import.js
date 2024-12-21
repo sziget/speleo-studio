@@ -1,9 +1,8 @@
-import * as U from "./utils.js";
+import * as U from "./utils/utils.js";
 import { SurveyHelper } from "./survey.js";
-import { iterateUntil } from "./utils.js";
 import { showErrorPanel, showWarningPanel } from "./popups.js";
 import { CAVES_MAX_DISTANCE } from "./constants.js";
-import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation } from "./model.js";
+import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias } from "./model.js";
 
 class Importer {
 
@@ -83,7 +82,7 @@ export class PolygonImporter extends Importer {
         if (wholeFileInText.startsWith("POLYGON Cave Surveying Software")) {
             const lines = wholeFileInText.split(/\r\n|\n/);
             const lineIterator = lines.entries();
-            iterateUntil(lineIterator, (v) => v !== "*** Project ***");
+            U.iterateUntil(lineIterator, (v) => v !== "*** Project ***");
             const caveNameResult = lineIterator.next();
     
             if (!caveNameResult.value[1].startsWith("Project name:")) {
@@ -98,16 +97,16 @@ export class PolygonImporter extends Importer {
             var surveyIndex = 0;
             let caveStartPosition;
             do {
-                surveyName = iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
+                surveyName = U.iterateUntil(lineIterator, (v) => !v.startsWith("Survey name"));
                 if (surveyName !== undefined) {
                     const surveyNameStr = surveyName.substring(13);
-                    let fixPoint = iterateUntil(lineIterator, (v) => !v.startsWith("Fix point")).substring(11);
+                    let fixPoint = U.iterateUntil(lineIterator, (v) => !v.startsWith("Fix point")).substring(11);
                     let posLine = lineIterator.next();
                     let parts = posLine.value[1].split(/\t|\s/);
                     let parsed = parts.toSpliced(3).map(x => U.parseMyFloat(x));
                     let startPosParsed = new Vector(...parsed);
                     let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed))
-                    iterateUntil(lineIterator, (v) => v !== "Survey data");
+                    U.iterateUntil(lineIterator, (v) => v !== "Survey data");
                     lineIterator.next(); //From To ...
                     const shots = this.getShotsFromPolygon(lineIterator);
                     let startName, startPosition;
@@ -183,7 +182,10 @@ export class TopodroidImporter extends Importer {
         const surveyName = 'polygon';
         const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
         const survey = new Survey(surveyName, true, startPoint, new Map(), shots);
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, new Map(), [], startPoint.name, startPoint.station.position);
+        const aliases = [
+            new SurveyAlias('18@Laci-zsomboly', '18@Laci_Fogadalom'),
+        ]
+        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, new Map(), aliases, startPoint.name, startPoint.station.position);
         survey.stations = stations;
         survey.orphanShotIds = orphanShotIds;
         return new Cave(fileName, startPoint.station.position, stations, [survey]);

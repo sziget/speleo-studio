@@ -1,4 +1,4 @@
-import * as U from "./utils.js";
+import * as U from "./utils/utils.js";
 import { StationAttribute, Survey } from "./model.js";
 
 export class SurveyEditor {
@@ -185,9 +185,24 @@ export class SurveyEditor {
             return U.parseMyFloat(value);
         }
 
+        function showCenter(data, filterParams){
+            return data.shot.type === "center";
+        }
+
+        function hideOrphans(data, filterParams){
+            return !data.isOrphan;
+        }
+
+        function showOrphans(data, filterParams){
+            return data.isOrphan;
+        }
 
 
-        document.getElementById("hide-splays").addEventListener("click", () => this.table.setFilter("type", "=", "center"));
+
+
+        document.getElementById("centerlines").addEventListener("click", () => this.table.addFilter(showCenter));
+        document.getElementById("showorphan").addEventListener("click", () => this.table.addFilter(showOrphans));
+        document.getElementById("hideorphan").addEventListener("click", () => this.table.addFilter(hideOrphans));
 
         document.getElementById("filter-clear").addEventListener("click", () => this.table.clearFilter());
 
