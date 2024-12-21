@@ -1,7 +1,7 @@
 import { ProjectExplorer, ProjectManager } from "./explorer.js";
 import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
-import { MyScene } from "./scene.js";
+import { MyScene } from "./scene/scene.js";
 import { PolygonImporter, TopodroidImporter, JsonImporter } from "./import.js";
 import { SceneInteraction } from "./interactive.js";
 import { materials as MAT } from "./materials.js";

@@ -1,4 +1,4 @@
-import { MyScene } from "./scene.js";
+import { MyScene } from "./scene/scene.js";
 import { Exporter } from "./export.js";
 
 export class NavigationBar {
@@ -59,8 +59,12 @@ export class NavigationBar {
                 "tooltip": "Show faults", "icon": "./icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
             },
             {
-                "tooltip": "Center and splay line color mode", "icon": "./icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
+                "tooltip": "Line color mode", "icon": "./icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
             },
+            {
+                "tooltip": "Grid position/visibility", "icon": "./icons/grid.svg", "click": () => this.scene.grid.roll()
+            },
+
         ]
     }
 

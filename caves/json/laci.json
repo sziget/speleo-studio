@@ -1,8 +1,8 @@
 {
   "name": "Laci-zsomboly",
   "startPosition": {
-    "x": 644741,
-    "y": 255551,
+    "x": 0,
+    "y": 0,
     "z": 0
   },
   "surveys": [
@@ -13,8 +13,8 @@
         "station": {
           "type": "center",
           "position": {
-            "x": 644741,
-            "y": 255551,
+            "x": 0,
+            "y": 0,
             "z": 0
           }
         }

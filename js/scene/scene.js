@@ -4,10 +4,12 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
-import { SurveyHelper } from "./survey.js";
-import * as C from "./constants.js";
-import { Database } from "./db.js";
-import * as U from "./utils.js";
+import { SurveyHelper } from "../survey.js";
+import * as C from "../constants.js";
+import { Database } from "../db.js";
+import { Grid } from './grid.js';
+import * as U from "../utils.js";
+import { Options } from '../config.js';
 
 export class MyScene {
 
@@ -35,7 +37,6 @@ export class MyScene {
 
         const aspect = window.innerWidth / window.innerHeight;
 
-        //this.cameraPersp = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
         this.cameraOrtho = new THREE.OrthographicCamera(- C.FRUSTRUM * aspect, C.FRUSTRUM * aspect, C.FRUSTRUM, - C.FRUSTRUM, -1000, 3000);
         this.currentCamera = this.cameraOrtho;
         this.orbitTarget = new THREE.Vector3(0, 0, 0);
@@ -46,10 +47,9 @@ export class MyScene {
         this.orbit.addEventListener('change', () => this.renderScene());
 
         this.threejsScene = new THREE.Scene();
-        const grid = new THREE.GridHelper(100, 10, 0x888888, 0x444444).rotateX(U.degreesToRads(90));
-        this.threejsScene.add(grid);
-        this.threejsScene.add(this.caveObject3DGroup);
+        this.grid = new Grid(this.options, this);
 
+        this.threejsScene.add(this.caveObject3DGroup);
         this.boundingBox = undefined;
         this.planeMeshes = new Map();
 
@@ -148,10 +148,6 @@ export class MyScene {
 
     onWindowResize() {
         const aspect = window.innerWidth / window.innerHeight;
-
-        //this.cameraPersp.aspect = aspect;
-        //this.cameraPersp.updateProjectionMatrix();
-
         this.cameraOrtho.left = this.cameraOrtho.bottom * aspect;
         this.cameraOrtho.right = this.cameraOrtho.top * aspect;
         this.cameraOrtho.updateProjectionMatrix();
@@ -161,26 +157,33 @@ export class MyScene {
 
     }
 
-    toogleBoundingBox() {
-        if (this.boundingBox === undefined) {
-            const bb = new THREE.Box3();
-            this.caveObjects.forEach((sMap, caveName) => {
-                sMap.forEach((e, surveyName) => {
-                    if (e.centerLines.visible) {
-                        bb.expandByObject(e.centerLines);
-                    }
-                    if (e.splays.visible) {
-                        bb.expandByObject(e.splays);
-                    }
-                });
+    computeBoundingBox() {
+        const bb = new THREE.Box3();
+        this.caveObjects.forEach((sMap, caveName) => {
+            sMap.forEach((e, surveyName) => {
+                if (e.centerLines.visible) {
+                    bb.expandByObject(e.centerLines);
+                }
+                if (e.splays.visible) {
+                    bb.expandByObject(e.splays);
+                }
             });
+        });
+        return bb;
+    }
+
+    toogleBoundingBox() {
+        this.options.boundingBox = !this.options.boundingBox;
+
+        if (this.options.boundingBox === true) {
+            const bb = this.computeBoundingBox();
             const boundingBoxHelper = new THREE.Box3Helper(bb, 0xffffff);
-            this.boundingBox = boundingBoxHelper;
+            this.boundingBoxHelper = boundingBoxHelper;
             this.threejsScene.add(boundingBoxHelper);
         } else {
-            this.threejsScene.remove(this.boundingBox);
-            this.boundingBox.dispose();
-            this.boundingBox = undefined;
+            this.threejsScene.remove(this.boundingBoxHelper);
+            this.boundingBoxHelper.dispose();
+            this.boundingBoxHelper = undefined;
         }
         this.renderScene();
     }
@@ -209,13 +212,7 @@ export class MyScene {
 
     rotateCenterLineColor() {
         const config = this.options.scene.caveLines.color.mode;
-        const index = config.choices.indexOf(config.value);
-
-        if (index >= 0 && index < config.choices.length - 1) {
-            config.value = config.choices[index + 1];
-        } else {
-            config.value = config.choices[0];
-        }
+        Options.rotateOptionChoice(config);
 
         switch (config.value) {
             case 'gradientByZ':
@@ -282,13 +279,11 @@ export class MyScene {
         }
     }
 
-    fitScene() {
-        this.fitObjectsToCamera(this.caveObject3DGroup);
+    fitScene(boundingBox) {
+        this.fitObjectsToCamera(boundingBox);
     }
 
-    fitObjectsToCamera(object3DGroup) {
-        const boundingBox = new THREE.Box3().setFromObject(object3DGroup);
-
+    fitObjectsToCamera(boundingBox) {
         const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
         const aspect = window.innerWidth / window.innerHeight;
         const rotation = new THREE.Matrix4().extractRotation(this.currentCamera.matrix);

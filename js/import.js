@@ -48,7 +48,9 @@ class Importer {
                 this.scene.addSurvey(cave.name, s.name, _3dobjects);
             });
             this.explorer.addCave(cave);
-            this.scene.fitScene();
+            const boundingBox = this.scene.computeBoundingBox();
+            this.scene.grid.adjust(boundingBox);
+            this.scene.fitScene(boundingBox);
         }
     }
 
