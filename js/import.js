@@ -38,7 +38,7 @@ class Importer {
                 const _3dobjects =
                     this.scene.addToScene(
                         s.name,
-                        s.stations,
+                        cave.stations,
                         centerLineSegments,
                         splaySegments,
                         true,
@@ -92,7 +92,7 @@ export class PolygonImporter extends Importer {
     
             const projectName = caveNameResult.value[1].substring(14);
             const surveys = []
-            const stationsGlobal = new Map();
+            const stations = new Map();
             var surveyName;
             var surveyIndex = 0;
             let caveStartPosition;
@@ -118,20 +118,14 @@ export class PolygonImporter extends Importer {
                             throw new Error(`Invalid Polygon survey, fix point ${fixPoint} != first shot's from value (${shots[0].from})`);
                         }
                     }
-                    const survey = new Survey(surveyNameStr, true, startPoint, new Map(), shots);
-                    const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, stationsGlobal, [], startName, startPosition);
-                    survey.stations = stations;
-                    survey.orphanShotIds = orphanShotIds;
-
-                    for (const [stationName, station] of stations) {
-                        stationsGlobal.set(stationName, station);
-                    }
+                    const survey = new Survey(surveyNameStr, true, startPoint, shots);
+                    SurveyHelper.calculateSurveyStations(survey, stations, [], startName, startPosition);
                     surveys.push(survey);
                     surveyIndex++;
                 }
     
             } while (surveyName !== undefined)
-            const cave = new Cave(projectName, caveStartPosition, stationsGlobal, surveys);
+            const cave = new Cave(projectName, caveStartPosition, stations, surveys);
             return cave;
         }
     }
@@ -179,15 +173,14 @@ export class TopodroidImporter extends Importer {
 
     getCave(fileName, csvData) {
         const shots = this.getShotsFromCsv(csvData);
+        const stations = new Map();
         const surveyName = 'polygon';
         const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
-        const survey = new Survey(surveyName, true, startPoint, new Map(), shots);
+        const survey = new Survey(surveyName, true, startPoint, shots);
         const aliases = [
             new SurveyAlias('18@Laci-zsomboly', '18@Laci_Fogadalom'),
         ]
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(survey, new Map(), aliases, startPoint.name, startPoint.station.position);
-        survey.stations = stations;
-        survey.orphanShotIds = orphanShotIds;
+        SurveyHelper.calculateSurveyStations(survey, stations, aliases, startPoint.name, startPoint.station.position);
         return new Cave(fileName, startPoint.station.position, stations, [survey]);
     }
 

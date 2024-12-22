@@ -210,7 +210,7 @@ export class MyScene {
         this.renderScene();
     }
 
-    rotateCenterLineColor() {
+    rollCenterLineColor() {
         const config = this.options.scene.caveLines.color.mode;
         Options.rotateOptionChoice(config);
 
@@ -345,9 +345,8 @@ export class MyScene {
         this.threejsScene.remove(object);
     }
 
-    addStationName(stationName, position, fontGroup) {
-        const shortName = stationName.split("@")[0]
-        const textShape = this.stationFont.generateShapes(shortName, 0.7);
+    addStationLabel(label, position, fontGroup) {
+        const textShape = this.stationFont.generateShapes(label, 0.7);
         const textGeometry = new THREE.ShapeGeometry(textShape);
         textGeometry.computeBoundingBox();
 
@@ -414,12 +413,12 @@ export class MyScene {
         const clStationSpheresGroup = new THREE.Group();
         const splayStationSpheresGroup = new THREE.Group();
 
-        const clSphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 5, 5);
-        const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.splay / 10.0, 5, 5);
+        const clSphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 10, 10);
+        const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.splay / 10.0, 10, 10);
 
         for (const [stationName, station] of stations) {
+            if (station.survey.name !== surveyName) continue;
             if (station.type === 'center') {
-                this.addStationName(stationName, station.position, stationNamesGroup);
                 this.addStationSpheres(stationName, station.type, station.position, clStationSpheresGroup, clSphereGeo, this.materials.sphere.centerLine);
             } else if (station.type === 'splay') {
                 this.addStationSpheres(stationName, station.type, station.position, splayStationSpheresGroup, splaySphereGeo, this.materials.sphere.splay);

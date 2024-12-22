@@ -59,7 +59,7 @@ export class NavigationBar {
                 "tooltip": "Show faults", "icon": "./icons/fault.svg", "click": () => this.scene.tooglePlaneFor("fault")
             },
             {
-                "tooltip": "Line color mode", "icon": "./icons/cl_color.svg", "click": () => this.scene.rotateCenterLineColor()
+                "tooltip": "Line color mode", "icon": "./icons/cl_color.svg", "click": () => this.scene.rollCenterLineColor()
             },
             {
                 "tooltip": "Grid position/visibility", "icon": "./icons/grid.svg", "click": () => this.scene.grid.roll()

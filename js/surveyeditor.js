@@ -82,11 +82,11 @@ export class SurveyEditor {
                 isOrphan: survey.orphanShotIds.has(sh.id),
                 attributes: stationAttributes
             }
-            const fromStation = stations.get(sh.from);
-            const toStationName = survey.getToStationName(sh);
-            const toStation = stations.get(toStationName);
-            rowToBe.from = fromStation;
-            rowToBe.to = toStation;
+            const fromStation = stations.get(survey.getFromStationName(sh));
+            const toStation = stations.get(survey.getToStationName(sh));
+
+            rowToBe.from = fromStation; // not shown in table
+            rowToBe.to = toStation; // not shown in table
             return rowToBe;
         });
     }

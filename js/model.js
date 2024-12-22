@@ -140,10 +140,12 @@ export class SurveyStation {
      * 
      * @param {string} type - the type of the station, could be center and splay 
      * @param {Vector} position - the 3D vector representing the position of the station
+     * @param {Survey} survey - the survey that this station belongs to
      */
-    constructor(type, position) {
+    constructor(type, position, survey) {
         this.type = type;
         this.position = position;
+        this.survey = survey;
     }
 
     toExport() {
@@ -166,16 +168,14 @@ export class Survey {
      * @param {string} name - The name of the Survey
      * @param {boolean} visible 
      * @param {SurveyStartStation} - The start point of the whole survey that was explicitly specified for a survey
-     * @param {Map<String, SurveyStation>} stations - A map of station names and stations (type, position)
      * @param {Array[Shot]} shots - An array of shots holding the measurements for this Survey
      * @param {Array[Number]} orphanShotIds - An array of orphan shots that are disconnected (from and/or to is unknown)
      * @param {Array[Object]} attributes - Extra attributes (e.g. tectonics information) associated to this Survey
      */
-    constructor(name, visible = true, start = undefined, stations = new Map(), shots = [], orphanShotIds = new Set(), attributes = []) {
+    constructor(name, visible = true, start = undefined, shots = [], orphanShotIds = new Set(), attributes = []) {
         this.name = name;
         this.visible = visible;
         this.start = start;
-        this.stations = stations;
         this.shots = shots;
         this.orphanShotIds = orphanShotIds;
         this.attributes = attributes;
@@ -186,8 +186,19 @@ export class Survey {
         return `splay-${id}@${this.name}`
     }
 
+    getFromStationName(shot) {
+        return (shot.fromAlias !== undefined) ? shot.fromAlias : shot.from;
+    }
+
+
     getToStationName(shot) {
-        return (shot.isSplay()) ? this.getSplayStationName(shot.id) : shot.to;
+        if (shot.isSplay()) {
+            return this.getSplayStationName(shot.id);
+        } else if (shot.toAlias !== undefined) {
+            return shot.toAlias;
+        } else {
+            return shot.to;
+        }
     }
 
     /**
@@ -205,16 +216,6 @@ export class Survey {
                 return [pos, sa.attribute];
 
             });
-    }
-
-    #attibuteToExport(attribute) {
-        const n = {
-            name: attribute.name
-        };
-        Object.keys(attribute.params).forEach(pName => {
-            n[pName] = attribute[pName];
-        })
-        return n;
     }
 
     static attibuteWithIdandType(a, defs) {

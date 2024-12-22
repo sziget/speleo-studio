@@ -13,54 +13,42 @@ export class SurveyHelper {
      * @returns The survey with updated properties
      */
     static recalculateSurvey(index, es, surveyStations) {
-        es.isolated = false;
         let startName, startPosition;
         if (index === 0) {
             startName = (es.start !== undefined) ? es.start.name : es.shots[0].from;
             startPosition = (es.start !== undefined) ? es.start.station.position : new Vector(0, 0, 0);
         }
 
-        const [stations, orphanShotIds] = SurveyHelper.calculateSurveyStations(es, surveyStations, [], startName, startPosition);
-        es.isolated = (stations.size === 0);
-        es.stations = stations;
-        es.orphanShotIds = orphanShotIds;
-        stations.forEach((v, k) => surveyStations.set(k, v)); //merge
+        SurveyHelper.calculateSurveyStations(es, surveyStations, [], startName, startPosition);
         return es;
     }
 
-    static calculateSurveyStations(survey, prevStations, aliases, startName, startPosition) {
-        const stations = new Map();
-        if (survey.shots.length === 0) return stations;
+    static calculateSurveyStations(survey, stations, aliases, startName, startPosition) {
+
+        if (survey.shots.length === 0) return [];
 
         const startStationName = startName !== undefined ? startName : survey.shots[0].from;
 
         if (startPosition !== undefined) {
-            stations.set(startStationName, new ST('center', startPosition));
-        } else if (startPosition === undefined && prevStations.has(survey.shots[0].from)) {
-            stations.set(startStationName, prevStations.get(survey.shots[0].from));
+            stations.set(startStationName, new ST('center', startPosition, survey));
         }
 
         survey.shots.forEach(sh => {
             sh.processed = false;
+            sh.fromAlias = undefined;
+            sh.toAlias = undefined;
         });
 
         var repeat = true;
 
+        // the basics of this algorithm come from Topodroid cave surveying software by Marco Corvi
         while (repeat) {
             repeat = false;
             survey.shots.forEach((sh) => {
-                if (sh.processed) return; // think of it like a continue statement in a for loop
+                if (sh.processed) return ; // think of it like a continue statement in a for loop
 
                 let fromStation = stations.get(sh.from);
                 let toStation = stations.get(sh.to);
-
-                if (fromStation === undefined && prevStations.has(sh.from)) {
-                    fromStation = prevStations.get(sh.from);
-                }
-
-                if (toStation === undefined && prevStations.has(sh.to)) {
-                    toStation = prevStations.get(sh.to);
-                }
 
                 if (fromStation !== undefined) {
                     if (toStation === undefined) {  // from = 1, to = 0
@@ -68,7 +56,7 @@ export class SurveyHelper {
                         const fp = fromStation.position;
                         const st = new Vector(fp.x, fp.y, fp.z).add(polarVector);
                         const stationName = survey.getToStationName(sh);
-                        stations.set(stationName, new ST(sh.type, st));
+                        stations.set(stationName, new ST(sh.type, st, survey));
                         repeat = true;
                     } else {
                         //from = 1, to = 1
@@ -78,7 +66,7 @@ export class SurveyHelper {
                     const tp = toStation.position;
                     const polarVector = U.fromPolar(sh.length, U.degreesToRads(sh.azimuth), U.degreesToRads(sh.clino));
                     const st = new Vector(tp.x, tp.y, tp.z).sub(polarVector);
-                    stations.set(sh.from, new ST(sh.type, st));
+                    stations.set(sh.from, new ST(sh.type, st, survey));
                     sh.processed = true;
                     repeat = true;
                 } else { //from = 0, to = 0, look for aliases
@@ -90,23 +78,27 @@ export class SurveyHelper {
 
                     if (falias !== undefined) {
                         const pairName = falias.getPair(sh.from);
-                        if (prevStations.has(pairName)) {
-                            const from = prevStations.get(pairName);
+                        if (stations.has(pairName)) {
+                            const from = stations.get(pairName);
                             const fp = from.position;
                             const to = new Vector(fp.x, fp.y, fp.z).add(polarVector);
-                            stations.set(sh.to, new ST(sh.type, to));
+                            stations.set(sh.to, new ST(sh.type, to, survey));
+                            sh.processed = true;
                             repeat = true;
+                            sh.fromAlias = pairName;
                         }
                     }
 
                     if (talias !== undefined) {
                         const pairName = talias.getPair(sh.to);
-                        if (prevStations.has(pairName)) {
-                            const to = prevStations.get(pairName);
+                        if (stations.has(pairName)) {
+                            const to = stations.get(pairName);
                             const tp = to.position;
                             const from = new Vector(tp.x, tp.y, tp.z).sub(polarVector);
-                            stations.set(sh.from, new ST(sh.type, from));
+                            stations.set(sh.from, new ST(sh.type, from, survey));
+                            sh.processed = true;
                             repeat = true;
+                            sh.toAlias = pairName;
                         }
                     }
                 }
@@ -115,14 +107,17 @@ export class SurveyHelper {
         }
 
         const unprocessedShots = new Set(survey.shots.filter((sh) => !sh.processed).map(sh => sh.id));
-        return [stations, unprocessedShots];
+        const processedCount = survey.shots.filter((sh) => sh.processed).length;
+        
+        survey.orphanShotIds = unprocessedShots;
+        survey.isolated = (processedCount === 0);
     }
 
     static getSegments(survey, stations) {
         const splaySegments = [];
         const centerlineSegments = [];
         survey.shots.forEach(sh => {
-            const fromStation = stations.get(sh.from);
+            const fromStation = stations.get(survey.getFromStationName(sh));
             const toStation = stations.get(survey.getToStationName(sh));
 
             if (fromStation !== undefined && toStation !== undefined) {
@@ -162,7 +157,7 @@ export class SurveyHelper {
 
     static getColorGradients(cave, lOptions) {
         if (lOptions.color.mode.value === 'gradientByZ') {
-            const colorGradientsCaves = SurveyHelper.getColorGradientsByDepthForCaves(this.db.caves, lOptions);
+            const colorGradientsCaves = SurveyHelper.getColorGradientsByDepthForCaves([cave], lOptions);
             return colorGradientsCaves.get(cave.name);
         } else if (lOptions.color.mode.value === 'gradientByDistance') {
             return SurveyHelper.getColorGradientsByDistance(cave, lOptions);
@@ -181,11 +176,12 @@ export class SurveyHelper {
                 startStationName = (s.start !== undefined) ? s.start.name : s.shots[0].from;
             }
             s.shots.forEach(sh => {
-                const from = cave.stations.get(sh.from);
+                const fromName = s.getFromStationName(sh);
+                const from = cave.stations.get(fromName);
                 const toStationName = s.getToStationName(sh);
                 const to = cave.stations.get(toStationName);
                 if (from !== undefined && to !== undefined) {
-                    g.addEdge(sh.from, toStationName, sh.length);
+                    g.addEdge(fromName, toStationName, sh.length);
                 }
             });
         });
@@ -201,9 +197,8 @@ export class SurveyHelper {
             const splayColors = [];
 
             s.shots.forEach(sh => {
-                const fromDistance = distances.get(sh.from);
-                const toStationName = s.getToStationName(sh);
-                const toDistance = distances.get(toStationName);
+                const fromDistance = distances.get(s.getFromStationName(sh));
+                const toDistance = distances.get(s.getToStationName(sh));
 
                 if (fromDistance !== undefined && toDistance !== undefined) {
                     const fc = startColor.add(colorDiff.mul(fromDistance / maxDistance));
@@ -212,8 +207,8 @@ export class SurveyHelper {
                         centerColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
                     } else if (sh.type === 'splay') {
                         splayColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
-                    }
-                }
+                    } 
+                } 
             });
             result.set(s.name, { center: centerColors, splays: splayColors });
         });
@@ -224,15 +219,13 @@ export class SurveyHelper {
     static getColorGradientsByDepthForCaves(caves, clOptions) {
         const colorGradients = new Map();
 
-        const zCoords = Array.from(caves.values().flatMap(c => {
-            if (c.visible) {
-                return Array.from(c.surveys.flatMap(s => {
-                    if (s.visible) {
-                        return Array.from(s.stations.values().map(x => x.position.z))
-                    } else return;
-                })).filter(x => x !== undefined);
-            } else return;
-        })).filter(x => x !== undefined); //TODO: should use reduce
+        const zCoords = Array.from(caves.values().flatMap(cave => {
+            if (cave.visible) {
+                return Array.from(cave.stations.values().map(x => x.position.z));
+            } else {
+                return[];
+            };
+        }));
 
         const maxZ = Math.max(...zCoords);
         const minZ = Math.min(...zCoords);
@@ -253,9 +246,9 @@ export class SurveyHelper {
         const splayColors = [];
         const colorDiff = endColor.sub(startColor);
         survey.shots.forEach(sh => {
-            const fromStation = stations.get(sh.from);
-            const toStationName = survey.getToStationName(sh);
-            const toStation = stations.get(toStationName);
+            const fromStation = stations.get(survey.getFromStationName(sh));
+            const toStation = stations.get(survey.getToStationName(sh));
+
             if (fromStation !== undefined && toStation !== undefined) {
                 const fromD = maxZ - fromStation.position.z;
                 const toD = maxZ - toStation.position.z;

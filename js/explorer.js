@@ -67,7 +67,7 @@ export class ProjectManager {
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(
                 es.name,
-                es.stations,
+                cave.stations,
                 clSegments,
                 splaySegments,
                 cave.visible && es.visible,
