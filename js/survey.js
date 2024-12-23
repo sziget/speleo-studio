@@ -10,16 +10,17 @@ export class SurveyHelper {
      * @param {number} index - The 0 based index of the survey withing the surveys array of a cave
      * @param {Survey} es - The survey that will be updated in place
      * @param {Map<string, SurveyStation> } surveyStations - Previously calculated survey stations
+     * @param {aliases} - The connection points between different surveys
      * @returns The survey with updated properties
      */
-    static recalculateSurvey(index, es, surveyStations) {
+    static recalculateSurvey(index, es, surveyStations, aliases) {
         let startName, startPosition;
         if (index === 0) {
             startName = (es.start !== undefined) ? es.start.name : es.shots[0].from;
             startPosition = (es.start !== undefined) ? es.start.station.position : new Vector(0, 0, 0);
         }
 
-        SurveyHelper.calculateSurveyStations(es, surveyStations, [], startName, startPosition);
+        SurveyHelper.calculateSurveyStations(es, surveyStations, aliases, startName, startPosition);
         return es;
     }
 
@@ -45,7 +46,7 @@ export class SurveyHelper {
         while (repeat) {
             repeat = false;
             survey.shots.forEach((sh) => {
-                if (sh.processed) return ; // think of it like a continue statement in a for loop
+                if (sh.processed) return; // think of it like a continue statement in a for loop
 
                 let fromStation = stations.get(sh.from);
                 let toStation = stations.get(sh.to);
@@ -70,7 +71,6 @@ export class SurveyHelper {
                     sh.processed = true;
                     repeat = true;
                 } else { //from = 0, to = 0, look for aliases
-                    //console.log(`looking for aliases for ${sh.from} and ${sh.to}`, aliases);
                     let falias = aliases.find(a => a.contains(sh.from));
                     let talias = aliases.find(a => a.contains(sh.to));
                     if (falias === undefined && talias === undefined) return;  // think of it like a continue statement in a for loop
@@ -82,7 +82,8 @@ export class SurveyHelper {
                             const from = stations.get(pairName);
                             const fp = from.position;
                             const to = new Vector(fp.x, fp.y, fp.z).add(polarVector);
-                            stations.set(sh.to, new ST(sh.type, to, survey));
+                            const toStationName = survey.getToStationName(sh);
+                            stations.set(toStationName, new ST(sh.type, to, survey));
                             sh.processed = true;
                             repeat = true;
                             sh.fromAlias = pairName;
@@ -108,7 +109,7 @@ export class SurveyHelper {
 
         const unprocessedShots = new Set(survey.shots.filter((sh) => !sh.processed).map(sh => sh.id));
         const processedCount = survey.shots.filter((sh) => sh.processed).length;
-        
+
         survey.orphanShotIds = unprocessedShots;
         survey.isolated = (processedCount === 0);
     }
@@ -132,11 +133,10 @@ export class SurveyHelper {
                         break;
                     default:
                         throw new Error(`Undefined segment type ${sh.type}`);
-
                 }
-
-            }
+            } 
         });
+
         return [centerlineSegments, splaySegments];
 
     }
@@ -189,7 +189,7 @@ export class SurveyHelper {
         const distances = g.traverse(startStationName);
         const maxDistance = Math.max(...Array.from(distances.values()));
         const startColor = clOptions.color.start;
-        const endColor =  clOptions.color.end;
+        const endColor = clOptions.color.end;
         const colorDiff = endColor.sub(startColor);
         const result = new Map();
         cave.surveys.forEach(s => {
@@ -207,8 +207,8 @@ export class SurveyHelper {
                         centerColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
                     } else if (sh.type === 'splay') {
                         splayColors.push(fc.r, fc.g, fc.b, tc.r, tc.g, tc.b);
-                    } 
-                } 
+                    }
+                }
             });
             result.set(s.name, { center: centerColors, splays: splayColors });
         });
@@ -223,7 +223,7 @@ export class SurveyHelper {
             if (cave.visible) {
                 return Array.from(cave.stations.values().map(x => x.position.z));
             } else {
-                return[];
+                return [];
             };
         }));
 

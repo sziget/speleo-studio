@@ -269,6 +269,17 @@ export class SurveyAlias {
             return undefined;
         }
     }
+
+    toExport() {
+        return {
+            from: this.from,
+            to: this.to
+        }
+    }
+
+    static fromPure(pure) {
+        return Object.assign(new SurveyAlias, pure);
+    }
 }
 
 export class Cave {
@@ -278,13 +289,15 @@ export class Cave {
      * @param {Vector} startPosition - The start position of the cave that is defined by the first survey
      * @param {Map<string, SurveyStation>} stations - The merged map of all survey stations
      * @param {Survey[]} surveys - The surveys associated to a cave
+     * @param {SurveyAlias[]} - Mapping of connection point between surveys
      * @param {boolean} visible - The visibility property of a cave
      */
-    constructor(name, startPosition, stations = new Map(), surveys = [], visible = true) {
+    constructor(name, startPosition, stations = new Map(), surveys = [], aliases = [], visible = true) {
         this.name = name;
         this.startPosition = startPosition;
         this.stations = stations;
         this.surveys = surveys;
+        this.aliases = aliases;
         this.visible = visible;
     }
 
@@ -292,12 +305,14 @@ export class Cave {
         return {
             name: this.name,
             startPosition: this.startPosition,
+            aliases: this.aliases.map(a => a.toExport()),
             surveys: this.surveys.map(s => s.toExport())
         }
     }
 
     static fromPure(pure, attributeDefs) {
         pure.surveys = pure.surveys.map(s => Survey.fromPure(s, attributeDefs));
+        pure.aliases = pure.aliases.map(a => SurveyAlias.fromPure(a));
         pure.startPosition = Vector.fromPure(pure.startPosition);
         return Object.assign(new Cave, pure);
     }

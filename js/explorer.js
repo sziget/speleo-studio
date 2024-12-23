@@ -60,14 +60,14 @@ export class ProjectManager {
         const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
 
         cave.surveys.entries().forEach(([index, es]) => {
-            const ns = SurveyHelper.recalculateSurvey(index, es, caveStations);
+            const ns = SurveyHelper.recalculateSurvey(index, es, caveStations, cave.aliases);
             //ns === es
             this.#emitSurveyRecalculated(cave, es);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
             this.scene.disposeSurvey(cave.name, es.name);
             const _3dObjects = this.scene.addToScene(
                 es.name,
-                cave.stations,
+                caveStations,
                 clSegments,
                 splaySegments,
                 cave.visible && es.visible,

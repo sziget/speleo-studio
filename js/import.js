@@ -151,12 +151,21 @@ export class TopodroidImporter extends Importer {
         super(db, options, scene, explorer)
     }
 
-    getShotsFromCsv(csvData) {
+    getShotsAndAliasesFromCsv(csvData) {
+        const aliases = [];
         const shots = [];
     
         for (let i = 0; i < csvData.length; i++) {
             const row = csvData[i];
-            if (row === null || row.length != 8) {
+            if (row === null || row.length === 0) {
+                continue;
+            }
+            
+            if (row[0] === 'alias') {
+                aliases.push(new SurveyAlias(row[1], row[2]));
+            }
+
+            if (row.length != 8) {
                 continue;
             }
             const from = row[0];
@@ -168,20 +177,17 @@ export class TopodroidImporter extends Importer {
             const toName = (type === 'splay') ? undefined : to;
             shots.push(new Shot(i, type, from, toName, distance, azimuth, clino));
         }
-        return shots;
+        return [shots, aliases];
     }
 
     getCave(fileName, csvData) {
-        const shots = this.getShotsFromCsv(csvData);
+        const [shots, aliases] = this.getShotsAndAliasesFromCsv(csvData);
         const stations = new Map();
         const surveyName = 'polygon';
         const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
         const survey = new Survey(surveyName, true, startPoint, shots);
-        const aliases = [
-            new SurveyAlias('18@Laci-zsomboly', '18@Laci_Fogadalom'),
-        ]
         SurveyHelper.calculateSurveyStations(survey, stations, aliases, startPoint.name, startPoint.station.position);
-        return new Cave(fileName, startPoint.station.position, stations, [survey]);
+        return new Cave(fileName, startPoint.station.position, stations, [survey], aliases);
     }
 
     importFile(file, fileName) {
@@ -221,7 +227,7 @@ export class JsonImporter extends Importer {
     importJson(json) {  
         const parsedCave = JSON.parse(json);
         const cave = Cave.fromPure(parsedCave, this.attributeDefs);
-        cave.surveys.entries().forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations));
+        cave.surveys.entries().forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations, cave.aliases));
         this.addCave(cave);
     }
 }
