@@ -23,6 +23,7 @@ export const materials = {
     sphere: {
         centerLine: new THREE.MeshBasicMaterial({ color: 0xffff00 }),
         splay: new THREE.MeshBasicMaterial({ color: 0x0000ff }),
+        surface: new THREE.MeshBasicMaterial({ color: 0xa0a0ff }),
         selected: new THREE.MeshBasicMaterial({ color: 0xF00FFF }),
         selectedForContext: new THREE.MeshBasicMaterial({ color: 0x20ff3d }),
     },

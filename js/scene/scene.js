@@ -25,7 +25,9 @@ export class MyScene {
         this.db = db;
         this.materials = materials;
         this.caveObjects = new Map();
+        this.surfaceObjects = new Map();
         this.caveObject3DGroup = new THREE.Group();
+        this.surfaceObject3DGroup = new THREE.Group();
         this.stationFont = undefined;
         const loader = new FontLoader();
         loader.load('fonts/helvetiker_regular.typeface.json', (font) => this.setFont(font));
@@ -50,10 +52,16 @@ export class MyScene {
         this.grid = new Grid(this.options, this);
 
         this.threejsScene.add(this.caveObject3DGroup);
+        this.threejsScene.add(this.surfaceObject3DGroup);
         this.boundingBox = undefined;
         this.planeMeshes = new Map();
 
         this.raycaster = new THREE.Raycaster();
+
+        const sphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 10, 10);
+        this.surfaceSphere = this.addSphere('surface', 'surface', new THREE.Vector3(0, 0, 0), this.surfaceObject3DGroup, sphereGeo, this.materials.sphere.surface);
+        this.surfaceSphereContext = this.addSphere('surface', 'surface', new THREE.Vector3(0, 0, 0), this.surfaceObject3DGroup, sphereGeo, this.materials.sphere.surface);
+
 
         window.addEventListener('resize', () => this.onWindowResize());
     }
@@ -86,7 +94,7 @@ export class MyScene {
     }
 
     setObjectsVisibility(fieldName, val) {
-        const entries = this.#getObjectsFlattened();
+        const entries = this.#getCaveObjectsFlattened();
         entries.forEach(e => {
             e[fieldName].visible = !e.centerLines.hidden && val;
         });
@@ -119,19 +127,19 @@ export class MyScene {
             this.caveObjects.set(caveName, new Map());
         }
         if (this.caveObjects.get(caveName).has(surveyName)) {
-            throw new Error(`Survey ${caveName} / ${surveyName} objects have already been added to the scene`);
+            throw new Error(`Survey ${caveName} / ${surveyName} objects have already been added to the scene!`);
         }
         this.caveObjects.get(caveName).set(surveyName, entry);
 
     }
 
     getAllCenterLineStationSpheres() {
-        const entries = Array.from(this.#getObjectsFlattened());
+        const entries = Array.from(this.#getCaveObjectsFlattened());
         return entries.flatMap(e => e.centerLinesSpheres.children);
     }
 
     getAllSplaysStationSpheres() {
-        const entries = Array.from(this.#getObjectsFlattened());
+        const entries = Array.from(this.#getCaveObjectsFlattened());
         return entries.flatMap(e => e.splaysSpheres.children);
     }
 
@@ -139,12 +147,43 @@ export class MyScene {
         return this.domElement.getBoundingClientRect();
     }
 
-    getIntersectedStationSpheres(pointer) {
+    getAllSurfacePoints() {
+        return Array.from(this.surfaceObjects.values().map(s => s.cloud));
+    }
+
+    getIntersectedStationSphere(pointer) {
         const clSpheres = this.getAllCenterLineStationSpheres();
         const splaySpheres = this.getAllSplaysStationSpheres();
         this.raycaster.setFromCamera(pointer, this.currentCamera);
-        return this.raycaster.intersectObjects(clSpheres.concat(splaySpheres));
+        const intersectedSpheres = this.raycaster.intersectObjects(clSpheres.concat(splaySpheres));
+        if (intersectedSpheres.length) {
+            return intersectedSpheres[0].object;
+        } else {
+            return undefined;
+        }
+
     }
+
+    getIntersectedSurfacePoint(pointer, purpose) {
+        const clouds = this.getAllSurfacePoints();
+        this.raycaster.setFromCamera(pointer, this.currentCamera);
+        this.raycaster.params.Points.threshold = 0.1;
+        const intersectedPoints = this.raycaster.intersectObjects(clouds);
+        if (intersectedPoints.length) {
+            if (purpose === 'selected') {
+                this.surfaceSphere.position.copy(intersectedPoints[0].point);
+                this.surfaceSphere.visible = true;
+                return this.surfaceSphere;    
+            } else if (purpose === 'selectedForContext') {
+                this.surfaceSphereContext.position.copy(intersectedPoints[0].point);
+                this.surfaceSphereContext.visible = true;
+                return this.surfaceSphereContext;
+            }
+        } else {
+            return undefined;
+        }
+    }
+
 
     onWindowResize() {
         const aspect = window.innerWidth / window.innerHeight;
@@ -229,7 +268,7 @@ export class MyScene {
                 });
                 break;
             case 'global':
-                const entries = this.#getObjectsFlattened();
+                const entries = this.#getCaveObjectsFlattened();
                 entries.forEach(e => {
                     e['centerLines'].material = this.materials.segments.centerLine;
                     e['centerLines'].geometry.setColors([]);
@@ -333,7 +372,7 @@ export class MyScene {
         this.sceneRenderer.render(this.threejsScene, this.currentCamera);
     }
 
-    #getObjectsFlattened() {
+    #getCaveObjectsFlattened() {
         return this.caveObjects.values().flatMap(c => Array.from(c.values()));
     }
 
@@ -361,7 +400,7 @@ export class MyScene {
         fontGroup.add(textMesh);
     }
 
-    addStationSpheres(stationName, type, position, sphereGroup, geometry, material) {
+    addSphere(stationName, type, position, sphereGroup, geometry, material) {
         const sphere = new THREE.Mesh(geometry, material);
         sphere.position.x = position.x;
         sphere.position.y = position.y;
@@ -369,7 +408,9 @@ export class MyScene {
         sphere.name = stationName;
         sphere.type = type; // custom property
         sphereGroup.add(sphere);
+        return sphere;
     }
+
 
     addToScene(surveyName, stations, polygonSegments, splaySegments, visibility, colorGradients) {
         const show = this.options.scene.show;
@@ -419,9 +460,9 @@ export class MyScene {
         for (const [stationName, station] of stations) {
             if (station.survey.name !== surveyName) continue;
             if (station.type === 'center') {
-                this.addStationSpheres(stationName, station.type, station.position, clStationSpheresGroup, clSphereGeo, this.materials.sphere.centerLine);
+                this.addSphere(stationName, station.type, station.position, clStationSpheresGroup, clSphereGeo, this.materials.sphere.centerLine);
             } else if (station.type === 'splay') {
-                this.addStationSpheres(stationName, station.type, station.position, splayStationSpheresGroup, splaySphereGeo, this.materials.sphere.splay);
+                this.addSphere(stationName, station.type, station.position, splayStationSpheresGroup, splaySphereGeo, this.materials.sphere.splay);
             }
         }
         stationNamesGroup.visible = visibility && show.stationNames;
@@ -442,6 +483,33 @@ export class MyScene {
             stationNames: stationNamesGroup,
             group: group
         }
+    }
+
+    addSurfaceToScene(cloud) {
+        this.surfaceObject3DGroup.add(cloud);
+        this.renderScene();
+
+        return {
+            id: U.randomAlphaNumbericString(5),
+            cloud: cloud
+        }
+    }
+
+    addSurfaceSphere(position, sphereGroup, geometry, material) {
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.x = position.x;
+        sphere.position.y = position.y;
+        sphere.position.z = position.z;
+        sphere.name = 'surface';
+        sphere.type = 'surface'; // custom property
+        sphereGroup.add(sphere);
+    }
+
+    addSurface(surface, entry) {
+        if (this.surfaceObjects.has(surface.name)) {
+            throw new Error(`Surface ${surface.name} object has already been added to the scene!`);
+        }
+        this.surfaceObjects.set(surface.name, entry);
     }
 
     disposeSurvey(caveName, surveyName) {

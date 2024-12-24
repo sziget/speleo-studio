@@ -20,14 +20,17 @@ export class NavigationBar {
     #getMenus() {
         return [
             {
-                "name": "File", elements: [
+                name: "File", elements: [
                     { "name": "Open TopoDroid file", "click": function () { document.getElementById('topodroidInput').click(); } },
                     { "name": "Open Polygon file", "click": function () { document.getElementById('polygonInput').click(); } },
                     { "name": "Open JSON file", "click": function () { document.getElementById('jsonInput').click(); } },
                     { "name": "Export JSON", "click":  () => Exporter.exportCaves(this.db.caves) },
                     { "name": "Export PNG", "click":  () => Exporter.exportPNG(this.scene) }
                 ]
-
+            } , {
+                name: "Surface", elements: [
+                    { "name": "Open PLY file", "click": function () { document.getElementById('plyInput').click(); } },
+                ]
             }
         ]
     }
@@ -64,6 +67,9 @@ export class NavigationBar {
             {
                 "tooltip": "Grid position/visibility", "icon": "./icons/grid.svg", "click": () => this.scene.grid.roll()
             },
+            {
+                "tooltip": "Surface visibility", "icon": "./icons/surface.svg", "click": () => this.scene.surface.roll()
+            },            
 
         ]
     }
@@ -112,7 +118,7 @@ export class NavigationBar {
             return d;
         };
 
-        const createIcon = (tooltip, icon, glyphName, click) => {
+        const createIcon = (tooltip, icon, glyphName, click, width = 20, height = 20) => {
             const a = document.createElement('a');
             a.onclick = click;
 
@@ -123,8 +129,8 @@ export class NavigationBar {
             } else if (icon !== undefined) {
                 const img = document.createElement('img');
                 img.setAttribute("src", icon);
-                img.setAttribute("width", "20");
-                img.setAttribute("height", "20");
+                img.setAttribute("width", width);
+                img.setAttribute("height", height);
                 a.appendChild(img);
             }
 
@@ -139,7 +145,8 @@ export class NavigationBar {
 
         navbarHtmlElement.innerHTML = '';
         this.#getMenus().forEach((m) => navbarHtmlElement.appendChild(createMenu(m.name, m.elements)));
-        this.#getIcons().forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.icon, i.glyphName, i.click)) });
+        this.#getIcons()
+        .forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.icon, i.glyphName, i.click, i.width === undefined ? 20 : i.width, i.height === undefined ? 20 : i.height )) });
     }
 }
 

@@ -4,6 +4,7 @@ export class Database {
 
     constructor() {
         this.caves = new Map();
+        this.surfaces = new Map();
     }
 
     deleteSurvey(caveName, surveyName) {
@@ -32,8 +33,19 @@ export class Database {
         return this.caves.values().flatMap(c => c.surveys);
     }
 
-    addCavve(cave) {
+    addCave(cave) {
         this.caves.set(cave.name, cave);
+    }
+
+    getSurface(name) {
+        this.surfaces.get(name);
+    }
+
+    addSurface(surface) {
+        if (this.surfaces.has(surface.name)) {
+            throw new Error(`Surface ${surface.name} has already been added!`);
+        }
+        this.surfaces.set(surface.name, surface);
     }
 
     deleteCave(caveName) {

@@ -282,6 +282,24 @@ export class SurveyAlias {
     }
 }
 
+export class Surface {
+    /**
+     * 
+     * @param {string} name - The name of the surface
+     * @param {Array[Vector]} points - The points that define the surface
+     * @param {Vector} center - The center of the surface bounding box
+     * @param {boolean} visible - The visibility property of the surface
+     */
+    constructor(name, points = [], center, visible = true) {
+        this.name = name;
+        this.points = points;
+        this.center = center;
+        this.visible = visible;
+    }
+
+
+}
+
 export class Cave {
     /**
      * 

@@ -2,7 +2,9 @@ import * as U from "./utils/utils.js";
 import { SurveyHelper } from "./survey.js";
 import { showErrorPanel, showWarningPanel } from "./popups.js";
 import { CAVES_MAX_DISTANCE } from "./constants.js";
-import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias } from "./model.js";
+import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias, Surface } from "./model.js";
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+import * as THREE from 'three';
 
 class Importer {
 
@@ -29,10 +31,10 @@ class Importer {
             showWarningPanel(message, 20);
         } else {
             this.db.caves.set(cave.name, cave);
-            
+
             const lOptions = this.options.scene.caveLines;
             let colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
-            
+
             cave.surveys.forEach(s => {
                 const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s, cave.stations);
                 const _3dobjects =
@@ -61,10 +63,10 @@ export class PolygonImporter extends Importer {
         super(db, options, scene, explorer)
     }
 
-    getShotsFromPolygon = function(iterator) {
+    getShotsFromPolygon = function (iterator) {
         var it;
         var i = 0;
-    
+
         const shots = []
         do {
             it = iterator.next();
@@ -74,7 +76,7 @@ export class PolygonImporter extends Importer {
                 shots.push(new Shot(i++, 'center', parts[0], parts[1], U.parseMyFloat(parts[2]), U.parseMyFloat(parts[3]), U.parseMyFloat(parts[4])));
             }
         } while (!it.done && it.value[1] != '');
-    
+
         return shots;
     }
 
@@ -84,12 +86,12 @@ export class PolygonImporter extends Importer {
             const lineIterator = lines.entries();
             U.iterateUntil(lineIterator, (v) => v !== "*** Project ***");
             const caveNameResult = lineIterator.next();
-    
+
             if (!caveNameResult.value[1].startsWith("Project name:")) {
                 showError(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
                 return;
             }
-    
+
             const projectName = caveNameResult.value[1].substring(14);
             const surveys = []
             const stations = new Map();
@@ -123,7 +125,7 @@ export class PolygonImporter extends Importer {
                     surveys.push(survey);
                     surveyIndex++;
                 }
-    
+
             } while (surveyName !== undefined)
             const cave = new Cave(projectName, caveStartPosition, stations, surveys);
             return cave;
@@ -142,7 +144,7 @@ export class PolygonImporter extends Importer {
         const cave = this.getCave(wholeFileInText);
         this.addCave(cave);
     }
-    
+
 }
 
 export class TopodroidImporter extends Importer {
@@ -154,13 +156,13 @@ export class TopodroidImporter extends Importer {
     getShotsAndAliasesFromCsv(csvData) {
         const aliases = [];
         const shots = [];
-    
+
         for (let i = 0; i < csvData.length; i++) {
             const row = csvData[i];
             if (row === null || row.length === 0) {
                 continue;
             }
-            
+
             if (row[0] === 'alias') {
                 aliases.push(new SurveyAlias(row[1], row[2]));
             }
@@ -224,10 +226,72 @@ export class JsonImporter extends Importer {
         }
     }
 
-    importJson(json) {  
+    importJson(json) {
         const parsedCave = JSON.parse(json);
         const cave = Cave.fromPure(parsedCave, this.attributeDefs);
         cave.surveys.entries().forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations, cave.aliases));
         this.addCave(cave);
     }
+}
+
+export class PlySurfaceImporter {
+
+    constructor(db, scene) {
+        this.db = db;
+        this.scene = scene;
+    }
+
+    addSurface(surface, cloud) {
+        const cavesReallyFar = [];
+        if (this.db.getSurface(surface.name) !== undefined) {
+            showErrorPanel('Import failed, surface has already been imported!', 20);
+        } else if (cavesReallyFar.length > 0) {
+            const message = `Import failed, the surface is too far from previously imported caves: ${cavesReallyFar.join(",")}`;
+            showWarningPanel(message, 20);
+        } else {
+            this.db.addSurface(surface);
+            const _3dobjects = this.scene.addSurfaceToScene(cloud);
+            this.scene.addSurface(surface, _3dobjects);
+            this.scene.renderScene();
+            //let colorGradients = SurfaceHelper.getColorGradients(surface, lOptions);
+        }
+    }
+
+    importFile(file) {
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => this.importText(file.name, event.target.result);
+            reader.readAsText(file);
+        }
+
+    }
+    importText(fileName, text) {
+        const loader = new PLYLoader();
+        const geometry = loader.parse(text);
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox();
+        const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+        this.scene.orbitTarget.copy(center);
+        this.scene.orbit.target = this.scene.orbitTarget;
+        this.scene.orbit.update();
+        this.scene.setCameraPosition(center.x, center.y, center.z + 300);
+        this.scene.renderScene();
+        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 2, vertexColors: false });
+        const cloud = new THREE.Points(geometry, material);
+        const position = geometry.getAttribute('position');
+
+        const points = [];
+
+        for (let i = 0; i < position.count / position.itemSize; i++) {
+            const point = new Vector(
+                position.getX(i),
+                position.getY(i),
+                position.getZ(i)
+            );
+            points.push(point);
+        }
+        const surface = new Surface(fileName, points, new Vector(center.x, center.y, center.z));
+        this.addSurface(surface, cloud);
+    }
+
 }

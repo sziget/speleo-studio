@@ -10,7 +10,7 @@ import { Footer } from "./footer.js";
 import { SurveyEditor } from "./surveyeditor.js";
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
 import { addGui } from "./gui.js";
-
+import { PlySurfaceImporter } from "./import.js";
 
 
 class Main {
@@ -38,12 +38,13 @@ class Main {
         this.manager = new ProjectManager(this.db, this.options, this.myscene, this.explorer);
 
         this.gui = addGui(this.options, this.myscene, this.materials, document.getElementById('guicontrols'));
-        this.interaction = new SceneInteraction(this.footer, this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
+        this.interaction = new SceneInteraction(this.options, this.footer, this.myscene, this.materials, this.myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
 
         this.importers = {
             topodroid: new TopodroidImporter(this.db, this.options, this.myscene, this.explorer),
             polygon: new PolygonImporter(this.db, this.options, this.myscene, this.explorer),
-            json: new JsonImporter(this.db, this.options, this.myscene, this.explorer, this.attributeDefs)
+            json: new JsonImporter(this.db, this.options, this.myscene, this.explorer, this.attributeDefs),
+            ply: new PlySurfaceImporter(this.db, this.myscene)
         }
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('cave')) {
@@ -63,8 +64,8 @@ class Main {
         document.getElementById('topodroidInput').addEventListener('change', (e) => this.importers.topodroid.importFile(e.target.files[0]));
         document.getElementById('polygonInput').addEventListener('change', (e) => this.importers.polygon.importFile(e.target.files[0]));
         document.getElementById('jsonInput').addEventListener('change', (e) => this.importers.json.importFile(e.target.files[0]));
-
+        document.getElementById('plyInput').addEventListener('change', (e) => this.importers.ply.importFile(e.target.files[0]));
     }
 }
 
-new Main();
+new Main(); //TODO: do this somewhere in index.html
