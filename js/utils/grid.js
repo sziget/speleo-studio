@@ -50,5 +50,4 @@ class GridHelper extends THREE.LineSegments {
 
 }
 
-
 export { GridHelper };

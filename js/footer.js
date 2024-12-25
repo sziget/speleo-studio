@@ -1,5 +1,7 @@
-export class Footer {
+class Footer {
+    
     maxMessages = 3;
+
     constructor(element) {
         this.element = element;
         this.messages = [];
@@ -13,3 +15,5 @@ export class Footer {
         this.element.querySelector("#content").innerHTML = this.messages.join('<br>');
     }
 }
+
+export { Footer };

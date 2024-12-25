@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { showErrorPanel } from './popups.js';
 import { get3DCoordsStr } from "./utils/utils.js";
 
-export class SceneInteraction {
+class SceneInteraction {
 
     constructor(options, footer, scene, materials, sceneDOMElement, calcDistanceButton, contextMenu, infoPanel) {
         this.options = options;
@@ -206,3 +206,5 @@ export class SceneInteraction {
         `
     }
 }
+
+export { SceneInteraction };

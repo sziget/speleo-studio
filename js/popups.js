@@ -16,11 +16,11 @@ function showCautionPanel(message, seconds, errorOrWarning) {
         cautionPanel.style.display = "none";
     }, seconds * 1000);
 }
-
-export function showErrorPanel(message, seconds = 6) {
+function showErrorPanel(message, seconds = 6) {
     showCautionPanel(message, seconds, 'error');
 }
-
-export function showWarningPanel(message, seconds = 6) {
+function showWarningPanel(message, seconds = 6) {
     showCautionPanel(message, seconds, 'warning');
 }
+
+export { showErrorPanel, showWarningPanel }

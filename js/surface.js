@@ -26,4 +26,4 @@ class SurfaceHelper {
     }
 }
 
-export { SurfaceHelper }
+export { SurfaceHelper };

@@ -1,7 +1,7 @@
 import * as U from "./utils/utils.js";
 import { StationAttribute, Survey } from "./model.js";
 
-export class SurveyEditor {
+class SurveyEditor {
 
     constructor(scene, db, attributeDefs, panel, closeButton, updateButton) {
         this.scene = scene;
@@ -255,3 +255,5 @@ export class SurveyEditor {
 
     }
 }
+
+export { SurveyEditor };

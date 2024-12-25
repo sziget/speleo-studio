@@ -1,2 +1,4 @@
-export const FRUSTRUM = 100;
-export const CAVES_MAX_DISTANCE = 2000;
+const FRUSTRUM = 100;
+const CAVES_MAX_DISTANCE = 2000;
+
+export { FRUSTRUM, CAVES_MAX_DISTANCE };

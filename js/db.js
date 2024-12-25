@@ -1,6 +1,6 @@
 import { Survey } from "./model.js";
 
-export class Database {
+class Database {
 
     constructor() {
         this.caves = new Map();
@@ -61,3 +61,5 @@ export class Database {
     }
 
 }
+
+export { Database };

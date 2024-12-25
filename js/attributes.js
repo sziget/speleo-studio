@@ -1,4 +1,4 @@
-export const attributeDefintions = {
+const attributeDefintions = {
     "types": [
         {
             "id": 1,
@@ -65,7 +65,7 @@ export const attributeDefintions = {
     ]
 }
 
-export class AttributesDefinitions {
+class AttributesDefinitions {
     constructor(attributeDefintions) {
         this.defs = attributeDefintions;
     }
@@ -123,3 +123,5 @@ export class AttributesDefinitions {
         return o.create;
     }
 }
+
+export { attributeDefintions, AttributesDefinitions };

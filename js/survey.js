@@ -3,7 +3,7 @@ import { Vector, Survey } from "./model.js";
 import { SurveyStation as ST } from "./model.js";
 import { Graph } from "./utils/graph.js";
 
-export class SurveyHelper {
+class SurveyHelper {
 
     /**
      * Recalculates and updates survey's shots, station positions, orphan shots and isolatied property
@@ -264,3 +264,5 @@ export class SurveyHelper {
         return { center: centerColors, splays: splayColors };
     }
 }
+
+export { SurveyHelper };

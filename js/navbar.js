@@ -1,7 +1,7 @@
 import { MyScene } from "./scene/scene.js";
 import { Exporter } from "./export.js";
 
-export class NavigationBar {
+class NavigationBar {
 
     /**
      * 
@@ -152,5 +152,7 @@ export class NavigationBar {
         .forEach((i) => { navbarHtmlElement.appendChild(createIcon(i.tooltip, i.icon, i.glyphName, i.click, i.width === undefined ? 20 : i.width, i.height === undefined ? 20 : i.height )) });
     }
 }
+
+export { NavigationBar };
 
 

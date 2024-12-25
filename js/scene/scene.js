@@ -12,7 +12,7 @@ import { Grid } from './grid.js';
 import * as U from "../utils/utils.js";
 import { Options } from '../config.js';
 
-export class MyScene {
+class MyScene {
 
     /**
      * A class that creates the 3D scene that makes user interactions and scene modifications (camera position, add/remove 3D objects) possible
@@ -580,3 +580,5 @@ export class MyScene {
 
 
 }
+
+export { MyScene };

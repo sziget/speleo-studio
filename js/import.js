@@ -64,7 +64,7 @@ class CaveImporter {
 
 }
 
-export class PolygonImporter extends CaveImporter {
+class PolygonImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer) {
         super(db, options, scene, explorer)
@@ -154,7 +154,7 @@ export class PolygonImporter extends CaveImporter {
 
 }
 
-export class TopodroidImporter extends CaveImporter {
+class TopodroidImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer) {
         super(db, options, scene, explorer)
@@ -218,7 +218,7 @@ export class TopodroidImporter extends CaveImporter {
     }
 }
 
-export class JsonImporter extends CaveImporter {
+class JsonImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer, attributeDefs) {
         super(db, options, scene, explorer)
@@ -241,7 +241,7 @@ export class JsonImporter extends CaveImporter {
     }
 }
 
-export class PlySurfaceImporter {
+class PlySurfaceImporter {
 
     constructor(db, options, scene) {
         this.db = db;
@@ -299,3 +299,5 @@ export class PlySurfaceImporter {
     }
 
 }
+
+export { PolygonImporter, TopodroidImporter, JsonImporter, PlySurfaceImporter };

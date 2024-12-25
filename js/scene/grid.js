@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GridHelper } from '../utils/grid.js';
 import { Options } from '../config.js';
 
-export class Grid {
+class Grid {
 
     constructor(options, scene) {
         this.options = options;
@@ -59,3 +59,5 @@ export class Grid {
         this.scene.renderScene();
     }
 }
+
+export { Grid };

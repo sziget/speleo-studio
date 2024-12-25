@@ -1,4 +1,4 @@
-export class Exporter {
+class Exporter {
 
     static exportAsJson = (obj, filename) => {
         const blob = new Blob([JSON.stringify(obj, null, 2)], {
@@ -27,3 +27,5 @@ export class Exporter {
         a.click();
     }
 }
+
+export { Exporter };

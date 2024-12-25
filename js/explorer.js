@@ -6,8 +6,7 @@ import { MyScene } from "./scene/scene.js";
 import * as U from "./utils/utils.js";
 import { SurveyHelper } from "./survey.js";
 
-
-export class ProjectManager {
+class ProjectManager {
 
     /**
      * Creates a new project manager that is used on survey updates
@@ -92,7 +91,7 @@ export class ProjectManager {
 
 }
 
-export class ProjectExplorer {
+class ProjectExplorer {
 
     constructor(options, db, scene, surveyeditor, treeNode) {
         this.options = options;
@@ -356,3 +355,5 @@ export class ProjectExplorer {
         this.treeNode.style.overflow = 'auto';
     }
 }
+
+export { ProjectManager, ProjectExplorer };

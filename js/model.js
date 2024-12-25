@@ -1,4 +1,4 @@
-export class Vector {
+class Vector {
 
     constructor(x, y, z) {
         this.x = x;
@@ -37,7 +37,7 @@ export class Vector {
     }
 }
 
-export class Color {
+class Color {
 
     constructor(r, g, b) {
         if (typeof r === 'number' && g === undefined && b === undefined) {
@@ -66,7 +66,7 @@ export class Color {
     }
 }
 
-export class Shot {
+class Shot {
     export_fields = ["id", "type", "from", "to", "length", "azimuth", "clino"]
 
     constructor(id, type, from, to, length, azimuth, clino) {
@@ -93,7 +93,7 @@ export class Shot {
     }
 }
 
-export class SurveyStartStation {
+class SurveyStartStation {
 
     /**
      * Represents the start point, the first station of whole survey
@@ -119,7 +119,7 @@ export class SurveyStartStation {
     }
 }
 
-export class StationAttribute {
+class StationAttribute {
 
     constructor(name, attribute) {
         this.name = name;
@@ -134,7 +134,7 @@ export class StationAttribute {
     }
 }
 
-export class SurveyStation {
+class SurveyStation {
 
     /**
      * 
@@ -161,7 +161,7 @@ export class SurveyStation {
     }
 }
 
-export class Survey {
+class Survey {
 
     /**
      * 
@@ -239,7 +239,7 @@ export class Survey {
 
 }
 
-export class SurveyAlias {
+class SurveyAlias {
     constructor(from, to) {
         this.from = from;
         this.to = to;
@@ -271,7 +271,7 @@ export class SurveyAlias {
     }
 }
 
-export class Surface {
+class Surface {
     /**
      * 
      * @param {string} name - The name of the surface
@@ -289,7 +289,7 @@ export class Surface {
 
 }
 
-export class Cave {
+class Cave {
     /**
      * 
      * @param {string} name - The name of the cave
@@ -324,3 +324,5 @@ export class Cave {
         return Object.assign(new Cave, pure);
     }
 }
+
+export { Vector, Color, Shot, SurveyStartStation, StationAttribute, SurveyStation, Survey, SurveyAlias, Surface, Cave };
