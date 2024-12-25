@@ -4,6 +4,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
+import { SurfaceHelper } from '../surface.js';
 import { SurveyHelper } from "../survey.js";
 import * as C from "../constants.js";
 import { Database } from "../db.js";
@@ -173,7 +174,7 @@ export class MyScene {
             if (purpose === 'selected') {
                 this.surfaceSphere.position.copy(intersectedPoints[0].point);
                 this.surfaceSphere.visible = true;
-                return this.surfaceSphere;    
+                return this.surfaceSphere;
             } else if (purpose === 'selectedForContext') {
                 this.surfaceSphereContext.position.copy(intersectedPoints[0].point);
                 this.surfaceSphereContext.visible = true;
@@ -284,6 +285,28 @@ export class MyScene {
             default: throw new Error(`unknown configuration for cave line colors: ${config.value}`);
         }
         this.renderScene();
+    }
+
+    rollSurface() {
+        const config = this.options.scene.surface.color.mode;
+        Options.rotateOptionChoice(config);
+
+        switch (config.value) {
+            case 'gradientByZ':
+                // don't need to recalculate color gradients because surface is not editable
+                this.surfaceObjects.forEach(entry => {
+                    entry.cloud.visible = true;
+                });
+                break;
+            case 'hidden':
+                this.surfaceObjects.forEach(entry => {
+                    entry.cloud.visible = false;
+                });
+                break;
+            default: throw new Error(`unknown configuration for surface colors: ${config.value}`);
+        }
+        this.renderScene();
+
     }
 
 
@@ -491,7 +514,7 @@ export class MyScene {
     }
 
     addSurfaceToScene(cloud, colorGradients) {
-        cloud.geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colorGradients, 3 ) );
+        cloud.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colorGradients, 3));
         this.surfaceObject3DGroup.add(cloud);
         this.renderScene();
 

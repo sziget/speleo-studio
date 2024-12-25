@@ -68,7 +68,7 @@ export class NavigationBar {
                 "tooltip": "Grid position/visibility", "icon": "./icons/grid.svg", "click": () => this.scene.grid.roll()
             },
             {
-                "tooltip": "Surface visibility", "icon": "./icons/surface.svg", "click": () => this.scene.surface.roll()
+                "tooltip": "Surface visibility", "icon": "./icons/surface.svg", "click": () => this.scene.rollSurface()
             },            
 
         ]
