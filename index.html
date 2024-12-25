@@ -139,22 +139,22 @@
 			font-size: 12px;
 		}
 	</style>
-	<script src="js/external/papaparse.min.js"></script>
-	<script src="js/external/tree.js"></script>
+	<script src="dependencies/papaparse.min.js"></script>
+	<script src="dependencies/tree.js"></script>
 	<script type="importmap">
             {
 				"imports": {
-					"three": "./js/external/three/three.module.js",
-					"three/addons/": "./js/external/three/addons/"
+					"three": "./dependencies/three/three.module.js",
+					"three/addons/": "./dependencies/three/addons/"
 				}
             }
     </script>
-	<script src="js/external/tabulator.js"></script>
+	<script src="dependencies/tabulator.js"></script>
 </head>
 
 <body>
 	<div id="tree-panel"></div>
-	<script type="module" src="js/main.js"></script>
+	<script type="module" src="src/main.js"></script>
 	<div class="file-upload">
 		<input type="file" id="topodroidInput" accept=".csv" style="display:none" />
 		<input type="file" id="polygonInput" accept=".cave" style="display:none" />
@@ -190,7 +190,7 @@
 	<div id="guicontrols"></div>
 	<div id="footer" class="footer"><div id="content"></div></div>
 	<script type="module">
-		import { Main } from "./js/main.js";
+		import { Main } from "./src/main.js";
 		new Main();
 	</script>
 </body>
