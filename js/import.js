@@ -8,6 +8,18 @@ import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
 
 class Importer {
+    static getFarCaves(caves, position) {
+        return Array.from(caves.values()).reduce((acc, c) => {
+            const distanceBetweenCaves = c.startPosition.distanceTo(position);
+            if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
+                acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
+            }
+            return acc;
+        }, []);
+    }
+}
+
+class CaveImporter {
 
     constructor(db, options, scene, explorer) {
         this.db = db;
@@ -17,14 +29,8 @@ class Importer {
     }
 
     addCave(cave) {
-        const cavesReallyFar = Array.from(this.db.caves.values()).reduce((acc, c) => {
-            const distanceBetweenCaves = c.startPosition.distanceTo(cave.startPosition);
-            if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
-                acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
-            }
-            return acc;
-        }, []);
 
+        const cavesReallyFar = Importer.getFarCaves(this.db.caves, cave.startPosition)
         if (this.db.caves.has(cave.name)) {
             showErrorPanel('Import failed, cave has already been imported!', 20);
         } else if (cavesReallyFar.length > 0) {
@@ -58,7 +64,7 @@ class Importer {
 
 }
 
-export class PolygonImporter extends Importer {
+export class PolygonImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer) {
         super(db, options, scene, explorer)
@@ -148,7 +154,7 @@ export class PolygonImporter extends Importer {
 
 }
 
-export class TopodroidImporter extends Importer {
+export class TopodroidImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer) {
         super(db, options, scene, explorer)
@@ -212,7 +218,7 @@ export class TopodroidImporter extends Importer {
     }
 }
 
-export class JsonImporter extends Importer {
+export class JsonImporter extends CaveImporter {
 
     constructor(db, options, scene, explorer, attributeDefs) {
         super(db, options, scene, explorer)
@@ -244,7 +250,8 @@ export class PlySurfaceImporter {
     }
 
     addSurface(surface, cloud) {
-        const cavesReallyFar = [];
+        const cavesReallyFar = Importer.getFarCaves(this.db.caves, surface.center);
+        
         if (this.db.getSurface(surface.name) !== undefined) {
             showErrorPanel('Import failed, surface has already been imported!', 20);
         } else if (cavesReallyFar.length > 0) {
