@@ -1,5 +1,5 @@
-import { MyScene } from "./scene/scene.js";
-import { Exporter } from "./export.js";
+import { MyScene } from "../scene/scene.js";
+import { Exporter } from "../export.js";
 
 class NavigationBar {
 

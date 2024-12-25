@@ -1,16 +1,19 @@
-import { ProjectExplorer, ProjectManager } from "./explorer.js";
-import { OPTIONS } from "./config.js";
 import { Database } from "./db.js";
 import { MyScene } from "./scene/scene.js";
+import { PlySurfaceImporter } from "./import.js";
 import { PolygonImporter, TopodroidImporter, JsonImporter } from "./import.js";
 import { SceneInteraction } from "./interactive.js";
+
+import { OPTIONS } from "./config.js";
 import { materials as MAT } from "./materials.js";
-import { NavigationBar } from "./navbar.js";
-import { Footer } from "./footer.js";
-import { SurveyEditor } from "./surveyeditor.js";
+
+import { ProjectExplorer, ProjectManager } from "./ui/explorer.js";
+import { NavigationBar } from "./ui/navbar.js";
+import { Footer } from "./ui/footer.js";
+import { addGui } from "./ui/controls.js";
+import { SurveyEditor } from "./ui/surveyeditor.js";
+
 import { AttributesDefinitions, attributeDefintions } from "./attributes.js"
-import { addGui } from "./gui.js";
-import { PlySurfaceImporter } from "./import.js";
 
 
 class Main {

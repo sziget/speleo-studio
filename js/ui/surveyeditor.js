@@ -1,5 +1,5 @@
-import * as U from "./utils/utils.js";
-import { StationAttribute, Survey } from "./model.js";
+import * as U from "../utils/utils.js";
+import { StationAttribute } from "../model.js";
 
 class SurveyEditor {
 

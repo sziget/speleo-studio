@@ -1,6 +1,6 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
-import { Color } from "./model.js";
+import { Color } from "../model.js";
 
 export function addGui(options, scene, materials, element) {
     const show = options.scene.show;
