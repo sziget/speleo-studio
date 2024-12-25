@@ -1,9 +1,9 @@
-import * as U from "./utils/utils.js";
-import { SurveyHelper } from "./survey.js";
-import { SurfaceHelper } from "./surface.js";
-import { showErrorPanel, showWarningPanel } from "./popups.js";
-import { CAVES_MAX_DISTANCE } from "./constants.js";
-import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias, Surface } from "./model.js";
+import * as U from "../utils/utils.js";
+import { SurveyHelper } from "../survey.js";
+import { SurfaceHelper } from "../surface.js";
+import { showErrorPanel, showWarningPanel } from "../ui/popups.js";
+import { CAVES_MAX_DISTANCE } from "../constants.js";
+import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias, Surface } from "../model.js";
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
 

@@ -1,6 +1,6 @@
 import { Database } from "./db.js";
 import { MyScene } from "./scene/scene.js";
-import { PlySurfaceImporter, PolygonImporter, TopodroidImporter, JsonImporter } from "./import.js";
+import { PlySurfaceImporter, PolygonImporter, TopodroidImporter, JsonImporter } from "./io/import.js";
 import { SceneInteraction } from "./interactive.js";
 import { OPTIONS } from "./config.js";
 import { MATERIALS } from "./materials.js";
