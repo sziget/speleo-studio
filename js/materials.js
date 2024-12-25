@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
-export const materials = {
+export const MATERIALS = {
     segments: {
         centerLine: new LineMaterial({
             color: 0xff0000,
