@@ -1,6 +1,6 @@
-import { classNames } from '../external/classnames.js';
-import { tag } from '../external/html5-tag.js';
-import { escapeHtml } from "../external/escape-html.js";
+import { classNames } from '../../dependencies/classnames.js';
+import { tag } from '../../dependencies//html5-tag.js';
+import { escapeHtml } from "../../dependencies//escape-html.js";
 import { Database } from "../db.js";
 import { MyScene } from "../scene/scene.js";
 import * as U from "../utils/utils.js";
