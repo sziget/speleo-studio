@@ -53,6 +53,9 @@ export class NavigationBar {
                 "tooltip": "Profile", "icon": "./icons/profile.svg", "click": () => this.scene.lookAtProfile()
             },
             {
+                "tooltip": "3D", "icon": "./icons/3d.svg", "click": () => this.scene.lookAt3D()
+            },
+            {
                 "tooltip": "Bounding box", "icon": "./icons/bounding_box.svg", "click": () => this.scene.toogleBoundingBox()
             },
             {

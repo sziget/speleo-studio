@@ -381,12 +381,20 @@ export class MyScene {
 
     lookAtPlan() {
         this.setCameraPosition(this.orbitTarget.x, this.orbitTarget.y, this.orbitTarget.z + 100);
-        this.fitObjectsToCamera(this.caveObject3DGroup);
+        const boundingBox = this.computeBoundingBox();
+        this.fitObjectsToCamera(boundingBox);
+        this.orbit.enableRotate = false;
     }
 
     lookAtProfile() {
         this.setCameraPosition(this.orbitTarget.x, this.orbitTarget.y - 100, this.orbitTarget.z);
-        this.fitObjectsToCamera(this.caveObject3DGroup);
+        const boundingBox = this.computeBoundingBox();
+        this.fitObjectsToCamera(boundingBox);
+        this.orbit.enableRotate = false;
+    }
+
+    lookAt3D() {
+        this.orbit.enableRotate = true;
     }
 
     renderScene() {
