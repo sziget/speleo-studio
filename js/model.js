@@ -202,31 +202,20 @@ export class Survey {
     }
 
     /**
-     * Returns all the attributes with the given id for all stations
+     * Returns all the attributes with the given name for all stations
      * 
      * @param {string} name - The name an attribute, see attribute definitons for more information.
      * @returns {Array[Array[Vector, Object]]>} - Attribute params with 3D position
      */
-    getAttributesWithPositionsByName(name) {
-        // [stationName, -> [ { id, params},  ]
+    getAttributesWithPositionsByName(stations, name) {
         return this.attributes
             .filter(sa => sa.attribute.name === name)
             .map(sa => {
-                const pos = this.stations.get(sa.name).position;
+                const pos = stations.get(sa.name).position;
                 return [pos, sa.attribute];
 
             });
     }
-
-    static attibuteWithIdandType(a, defs) {
-        const def = defs.getDefinition(a.name);
-        a.params = def.params;
-        a.id = def.id;
-        a.type = def.type;
-        return a;
-    }
-
-
 
     toExport() {
         return {
@@ -330,7 +319,7 @@ export class Cave {
 
     static fromPure(pure, attributeDefs) {
         pure.surveys = pure.surveys.map(s => Survey.fromPure(s, attributeDefs));
-        pure.aliases = pure.aliases.map(a => SurveyAlias.fromPure(a));
+        pure.aliases = (pure.aliases) === undefined ? [] : pure.aliases.map(a => SurveyAlias.fromPure(a));
         pure.startPosition = Vector.fromPure(pure.startPosition);
         return Object.assign(new Cave, pure);
     }
