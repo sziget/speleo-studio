@@ -208,6 +208,11 @@ export class MyScene {
                 }
             });
         });
+        this.surfaceObjects.forEach((entry, surfaceName) => {
+            if (entry.cloud.visible) {
+                bb.expandByObject(entry.cloud);
+            }
+        });
         return bb;
     }
 
@@ -485,7 +490,8 @@ export class MyScene {
         }
     }
 
-    addSurfaceToScene(cloud) {
+    addSurfaceToScene(cloud, colorGradients) {
+        cloud.geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colorGradients, 3 ) );
         this.surfaceObject3DGroup.add(cloud);
         this.renderScene();
 

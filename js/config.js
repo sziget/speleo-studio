@@ -25,6 +25,17 @@ export const OPTIONS = {
                 choices: ['top', 'bottom', 'hidden']
             }
         },
+        surface: {
+            color: {
+                start: new Color(0x39b14d),
+                end: new Color(0x9f2d2d),
+                mode: {
+                    value: 'gradientByZ',
+                    choices: ['gradientByZ', 'hidden']
+                }
+
+            }
+        },
         caveLines: {
             color: {
                 start: new Color(0x00ff2a),
@@ -40,15 +51,15 @@ export const OPTIONS = {
 
 export class Options {
 
-   static rotateOptionChoice(config) {
-    const index = config.choices.indexOf(config.value);
+    static rotateOptionChoice(config) {
+        const index = config.choices.indexOf(config.value);
 
-    if (index >= 0 && index < config.choices.length - 1) {
-        config.value = config.choices[index + 1];
-    } else {
-        config.value = config.choices[0];
+        if (index >= 0 && index < config.choices.length - 1) {
+            config.value = config.choices[index + 1];
+        } else {
+            config.value = config.choices[0];
+        }
+
+
     }
-
-
-   }
 }

@@ -1,5 +1,6 @@
 import * as U from "./utils/utils.js";
 import { SurveyHelper } from "./survey.js";
+import { SurfaceHelper } from "./surface.js";
 import { showErrorPanel, showWarningPanel } from "./popups.js";
 import { CAVES_MAX_DISTANCE } from "./constants.js";
 import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias, Surface } from "./model.js";
@@ -236,8 +237,9 @@ export class JsonImporter extends Importer {
 
 export class PlySurfaceImporter {
 
-    constructor(db, scene) {
+    constructor(db, options, scene) {
         this.db = db;
+        this.options = options;
         this.scene = scene;
     }
 
@@ -250,10 +252,12 @@ export class PlySurfaceImporter {
             showWarningPanel(message, 20);
         } else {
             this.db.addSurface(surface);
-            const _3dobjects = this.scene.addSurfaceToScene(cloud);
+            const colorGradients = SurfaceHelper.getColorGradients(surface.points, this.options.scene.surface.color);
+            const _3dobjects = this.scene.addSurfaceToScene(cloud, colorGradients);
             this.scene.addSurface(surface, _3dobjects);
-            this.scene.renderScene();
-            //let colorGradients = SurfaceHelper.getColorGradients(surface, lOptions);
+            const boundingBox = this.scene.computeBoundingBox();
+            this.scene.grid.adjust(boundingBox);
+            this.scene.fitScene(boundingBox);
         }
     }
 
@@ -268,21 +272,14 @@ export class PlySurfaceImporter {
     importText(fileName, text) {
         const loader = new PLYLoader();
         const geometry = loader.parse(text);
-        geometry.computeVertexNormals();
         geometry.computeBoundingBox();
         const center = geometry.boundingBox.getCenter(new THREE.Vector3());
-        this.scene.orbitTarget.copy(center);
-        this.scene.orbit.target = this.scene.orbitTarget;
-        this.scene.orbit.update();
-        this.scene.setCameraPosition(center.x, center.y, center.z + 300);
-        this.scene.renderScene();
-        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 2, vertexColors: false });
+        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 2, vertexColors: true });
         const cloud = new THREE.Points(geometry, material);
         const position = geometry.getAttribute('position');
-
         const points = [];
 
-        for (let i = 0; i < position.count / position.itemSize; i++) {
+        for (let i = 0; i < position.count; i++) {
             const point = new Vector(
                 position.getX(i),
                 position.getY(i),

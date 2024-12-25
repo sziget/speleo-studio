@@ -44,7 +44,7 @@ class Main {
             topodroid: new TopodroidImporter(this.db, this.options, this.myscene, this.explorer),
             polygon: new PolygonImporter(this.db, this.options, this.myscene, this.explorer),
             json: new JsonImporter(this.db, this.options, this.myscene, this.explorer, this.attributeDefs),
-            ply: new PlySurfaceImporter(this.db, this.myscene)
+            ply: new PlySurfaceImporter(this.db, this.options, this.myscene)
         }
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('cave')) {
