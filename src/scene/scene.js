@@ -4,10 +4,8 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
-import { SurfaceHelper } from '../surface.js';
 import { SurveyHelper } from "../survey.js";
 import * as C from "../constants.js";
-import { Database } from "../db.js";
 import { Grid } from './grid.js';
 import * as U from "../utils/utils.js";
 import { Options } from '../config.js';
@@ -199,8 +197,10 @@ class MyScene {
 
     computeBoundingBox() {
         const bb = new THREE.Box3();
-        this.caveObjects.forEach((sMap, caveName) => {
-            sMap.forEach((e, surveyName) => {
+        // eslint-disable-next-line no-unused-vars
+        this.caveObjects.forEach((sMap, _caveName) => {
+            // eslint-disable-next-line no-unused-vars
+            sMap.forEach((e, _surveyName) => {
                 if (e.centerLines.visible) {
                     bb.expandByObject(e.centerLines);
                 }
@@ -209,6 +209,7 @@ class MyScene {
                 }
             });
         });
+        // eslint-disable-next-line no-unused-vars
         this.surfaceObjects.forEach((entry, surfaceName) => {
             if (entry.cloud.visible) {
                 bb.expandByObject(entry.cloud);
@@ -263,26 +264,30 @@ class MyScene {
         switch (config.value) {
             case 'gradientByZ':
             case 'gradientByDistance':
-                const colors = SurveyHelper.getColorGradientsForCaves(this.db.caves, this.options.scene.caveLines);
-                this.caveObjects.forEach((surveyEntrires, caveName) => {
-                    surveyEntrires.forEach((e, surveyName) => {
-                        e['centerLines'].material = this.materials.whiteLine;
-                        e['splays'].material = this.materials.whiteLine;
-                        const surveyColors = colors.get(caveName).get(surveyName);
-                        e['centerLines'].geometry.setColors(surveyColors.center);
-                        e['splays'].geometry.setColors(surveyColors.splays);
+                {
+                    const colors = SurveyHelper.getColorGradientsForCaves(this.db.caves, this.options.scene.caveLines);
+                    this.caveObjects.forEach((surveyEntrires, caveName) => {
+                        surveyEntrires.forEach((e, surveyName) => {
+                            e['centerLines'].material = this.materials.whiteLine;
+                            e['splays'].material = this.materials.whiteLine;
+                            const surveyColors = colors.get(caveName).get(surveyName);
+                            e['centerLines'].geometry.setColors(surveyColors.center);
+                            e['splays'].geometry.setColors(surveyColors.splays);
+                        });
                     });
-                });
-                break;
+                    break;
+                }
             case 'global':
-                const entries = this.#getCaveObjectsFlattened();
-                entries.forEach(e => {
-                    e['centerLines'].material = this.materials.segments.centerLine;
-                    e['centerLines'].geometry.setColors([]);
-                    e['splays'].material = this.materials.segments.splay;
-                    e['splays'].geometry.setColors([]);
-                });
-                break;
+                {
+                    const entries = this.#getCaveObjectsFlattened();
+                    entries.forEach(e => {
+                        e['centerLines'].material = this.materials.segments.centerLine;
+                        e['centerLines'].geometry.setColors([]);
+                        e['splays'].material = this.materials.segments.splay;
+                        e['splays'].geometry.setColors([]);
+                    });
+                    break;
+                }
             default: throw new Error(`unknown configuration for cave line colors: ${config.value}`);
         }
         this.renderScene();

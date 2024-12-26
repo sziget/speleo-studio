@@ -21,7 +21,7 @@ class Grid {
     }
 
     adjustSize(boundingBox) {
-        const [width, height, depth] = boundingBox.getSize(new THREE.Vector3());
+        const [width, height] = boundingBox.getSize(new THREE.Vector3());
         this.grid.geometry.dispose();
         this.grid.material.dispose();
         this.scene.threejsScene.remove(this.grid);

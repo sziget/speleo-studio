@@ -1,8 +1,6 @@
 import { classNames } from '../../dependencies/classnames.js';
 import { tag } from '../../dependencies//html5-tag.js';
 import { escapeHtml } from "../../dependencies//escape-html.js";
-import { Database } from "../db.js";
-import { MyScene } from "../scene/scene.js";
 import * as U from "../utils/utils.js";
 import { SurveyHelper } from "../survey.js";
 
@@ -59,8 +57,7 @@ class ProjectManager {
         const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
 
         cave.surveys.entries().forEach(([index, es]) => {
-            const ns = SurveyHelper.recalculateSurvey(index, es, caveStations, cave.aliases);
-            //ns === es
+            SurveyHelper.recalculateSurvey(index, es, caveStations, cave.aliases);
             this.#emitSurveyRecalculated(cave, es);
             const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
             this.scene.disposeSurvey(cave.name, es.name);

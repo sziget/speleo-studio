@@ -1,5 +1,5 @@
 import * as U from "./utils/utils.js";
-import { Vector, Survey } from "./model.js";
+import { Vector } from "./model.js";
 import { SurveyStation as ST } from "./model.js";
 import { Graph } from "./utils/graph.js";
 

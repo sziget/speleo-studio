@@ -18,19 +18,20 @@ class Main {
         const options = OPTIONS;
         const materials = MATERIALS;
         const attributeDefs = new AttributesDefinitions(attributeDefintions);
-        const myscene = new MyScene(options, db, materials);
-        const navbar = new NavigationBar(db, document.getElementById("navbarcontainer"), options, myscene);
+        const scene = new MyScene(options, db, materials);
+        new NavigationBar(db, document.getElementById("navbarcontainer"), options, scene);
         const footer = new Footer(document.getElementById('footer'));
-        const surveyeditor = new SurveyEditor(myscene, db, attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
-        const explorer = new ProjectExplorer(options, db, myscene, surveyeditor, document.querySelector('#tree-panel'));
-        const manager = new ProjectManager(db, options, myscene, explorer);
-        const gui = addGui(options, myscene, materials, document.getElementById('guicontrols'));
-        const int = new SceneInteraction(options, footer, myscene, materials, myscene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
+        const surveyeditor = new SurveyEditor(scene, db, attributeDefs, document.getElementById("surveydatapanel"), document.getElementById("surveydatapanel-close"), document.getElementById("surveydatapanel-update"));
+        const explorer = new ProjectExplorer(options, db, scene, surveyeditor, document.querySelector('#tree-panel'));
+        new ProjectManager(db, options, scene, explorer);
+        addGui(options, scene, materials, document.getElementById('guicontrols'));
+        new SceneInteraction(options, footer, scene, materials, scene.domElement, document.getElementById("getdistance"), document.getElementById("contextmenu"), document.getElementById("infopanel"));
+        this.scene = scene;
         this.importers = {
-            topodroid: new TopodroidImporter(db, options, myscene, explorer),
-            polygon: new PolygonImporter(db, options, myscene, explorer),
-            json: new JsonImporter(db, options, myscene, explorer, attributeDefs),
-            ply: new PlySurfaceImporter(db, options, myscene)
+            topodroid: new TopodroidImporter(db, options, scene, explorer),
+            polygon: new PolygonImporter(db, options, scene, explorer),
+            json: new JsonImporter(db, options, scene, explorer, attributeDefs),
+            ply: new PlySurfaceImporter(db, options, scene)
         };
 
         this.setupEventListeners();
@@ -57,7 +58,7 @@ class Main {
                 fetch(caveNameUrl).then(data => data.blob()).then(res => this.importers.json.importFile(res)).catch(error => console.error(error));
             }
         } else {
-            this.myscene.renderScene();
+            this.scene.renderScene();
         }
     }
 }

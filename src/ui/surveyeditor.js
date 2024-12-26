@@ -99,7 +99,7 @@ class SurveyEditor {
         }).join('|');
     }
 
-    attributesEditor(cell, onRendered, success, cancel, editorParams) {
+    attributesEditor(cell, onRendered, success) {
         //cell - the cell component for the editable cell
         //onRendered - function to call when the editor has been rendered
         //success - function to call to pass thesuccessfully updated value to Tabulator
@@ -155,7 +155,7 @@ class SurveyEditor {
         this.survey = survey;
 
         const floatPattern = /^[+-]?\d+([.,]\d+)?$/
-        var isFloatNumber = function (cell, value, parameters) {
+        var isFloatNumber = function (_cell, value) {
             return floatPattern.test(value);
         }
 
@@ -163,50 +163,47 @@ class SurveyEditor {
             type: isFloatNumber
         };
 
-        const countOrphans = function (values, data, calcParams) {
+        const countOrphans = function (_values, data) {
             const cnt = data.filter(v => v.isOrphan).length;
             return `o: ${cnt}`;
         }
 
-        const countLines = function (values, data, calcParams) {
+        const countLines = function (_values, data) {
             return data.length;
         }
 
-        const sumCenterLines = function (values, data, calcParams) {
+
+        const sumCenterLines = function (_values, data) {
             var sumLength = 0;
             data.forEach(function (value) {
-                sumLength += value.type === 'center' ? U.parseMyFloat(value.length) : 0;
+                sumLength += value.shot.type === 'center' ? U.parseMyFloat(value.shot.length) : 0;
             });
 
             return sumLength.toFixed(2);
         }
 
-        var floatAccessor = function (value, data, type, params, column, row) {
+        var floatAccessor = function (value) {
             return U.parseMyFloat(value);
         }
 
-        function showCenter(data, filterParams){
+        function showCenter(data){
             return data.shot.type === "center";
         }
 
-        function hideOrphans(data, filterParams){
+        function hideOrphans(data){
             return !data.isOrphan;
         }
 
-        function showOrphans(data, filterParams){
+        function showOrphans(data){
             return data.isOrphan;
         }
-
-
-
 
         document.getElementById("centerlines").addEventListener("click", () => this.table.addFilter(showCenter));
         document.getElementById("showorphan").addEventListener("click", () => this.table.addFilter(showOrphans));
         document.getElementById("hideorphan").addEventListener("click", () => this.table.addFilter(hideOrphans));
-
         document.getElementById("filter-clear").addEventListener("click", () => this.table.clearFilter());
 
-        const atrributesFormatter = (cell, formatterParams, onRendered) => {
+        const atrributesFormatter = (cell) => {
             const attrs = cell.getData().attributes;
             if (attrs !== undefined && attrs.length > 0) {
                 return this.getAttributesAsString(attrs);
@@ -215,9 +212,6 @@ class SurveyEditor {
             }
         }
 
-        const decimal2Formatter = (field) => (cell, formatterParams, onRendered) => {
-            return cell.getData()[field].toFixed(2);
-        }
 
         this.table = new Tabulator("#surveydata", {
             height: 215,
@@ -241,14 +235,11 @@ class SurveyEditor {
                 { title: "Length", field: "shot.length", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", customValidator], bottomCalc: sumCenterLines },
                 { title: "Azimuth", field: "shot.azimuth", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", "min:-360", "max:360", customValidator] },
                 { title: "Clino", field: "shot.clino", headerSort: false, editor: true, accessor: floatAccessor, validator: ["required", customValidator] },
-                // { title: "X", field: "x", headerSort: false, editor: false, formatter: decimal2Formatter('x') },
-                // { title: "Y", field: "y", headerSort: false, editor: false, formatter: decimal2Formatter('y') },
-                // { title: "Z", field: "z", headerSort: false, editor: false, formatter: decimal2Formatter('z') },
                 { title: "Attributes", field: "attributes", formatter: atrributesFormatter, editor: (cell, onRendered, success, cancel, editorParams) => this.attributesEditor(cell, onRendered, success, cancel, editorParams), headerSort: false }
             ],
         });
 
-        this.table.on("dataChanged", (data) => {
+        this.table.on("dataChanged", () => {
             console.log(' data changed ');
             this.surveyModified = true;
         });

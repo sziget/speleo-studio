@@ -17,7 +17,7 @@ class SceneInteraction {
         this.selectedStationForContext = undefined;
 
         document.addEventListener('pointermove', (event) => this.onPointerMove(event));
-        sceneDOMElement.addEventListener('click', (event) => this.onClick(event), false);
+        sceneDOMElement.addEventListener('click', () => this.onClick(), false);
         sceneDOMElement.addEventListener('mousedown', (event) => this.onMouseDown(event), false);
 
         calcDistanceButton.addEventListener("click", (event) => this.calcualteDistanceListener(event), false);
@@ -105,7 +105,7 @@ class SceneInteraction {
     }
 
 
-    onClick(event) {
+    onClick() {
         const intersectedStation = this.scene.getIntersectedStationSphere(this.pointer);
         const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.pointer, 'selected');
 
@@ -135,7 +135,7 @@ class SceneInteraction {
     onMouseDown(event) { // right click
         event.preventDefault();
         var rightclick;
-        if (!event) var event = window.event;
+        if (!event) event = window.event;
         if (event.which) rightclick = (event.which == 3);
         else if (event.button) rightclick = (event.button == 2);
         if (!rightclick) return;

@@ -1,5 +1,3 @@
-import { Survey } from "./model.js";
-
 class Database {
 
     constructor() {

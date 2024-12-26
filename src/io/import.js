@@ -95,7 +95,7 @@ class PolygonImporter extends CaveImporter {
             const caveNameResult = lineIterator.next();
 
             if (!caveNameResult.value[1].startsWith("Project name:")) {
-                showError(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
+                showErrorPanel(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
                 return;
             }
 

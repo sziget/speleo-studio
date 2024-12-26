@@ -113,7 +113,7 @@ class AttributesDefinitions {
                     case "float": o[pName] = parseFloat(value); break;
                     case "int": o[pName] = parseInt(value); break;
                     case "string": o[pName] = value; break;
-                    default: throw new Error($`Not supported data type ${dataType}`);
+                    default: throw new Error(`Not supported data type ${dataType}`);
                 }
 
             });
