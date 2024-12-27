@@ -31,7 +31,8 @@ class Main {
     );
     const explorer = new ProjectExplorer(options, db, scene, editor, document.querySelector('#tree-panel'));
     new ProjectManager(db, options, scene, explorer);
-    addGui(options, scene, materials, document.getElementById('guicontrols'));
+    const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
+    controls.close();
     new SceneInteraction(
       options,
       footer,

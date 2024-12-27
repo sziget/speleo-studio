@@ -1,6 +1,5 @@
 .infinite-tree-scroll {
   overflow: auto;
-  
 }
 .infinite-tree-table {
   width: 100%;
@@ -45,7 +44,11 @@
 .infinite-tree-content .infinite-tree-title {
   cursor: pointer;
   user-select: none;
+  bottom: 3px;
+  position: relative;
+  padding-left: 3px;
 }
+
 .infinite-tree-content .infinite-tree-edit {
   background-color: rgb(216, 223, 234);
   border-bottom-left-radius: 2px;
@@ -55,23 +58,23 @@
   box-sizing: border-box;
   color: rgb(59, 89, 152);
   cursor: default;
-  height: 18px;
-  line-height: 18px;
+  height: 20px;
+  width: 20px;
   padding-bottom: 0px;
   padding-left: 4px;
   padding-right: 4px;
   padding-top: 0px;
   position: absolute;
   right: 4px;
-  text-align: center
+  text-align: center;
+  background: white no-repeat center/80% url(../icons/edit_small.svg);
 }
 
 .infinite-tree-content .infinite-tree-edit:hover {
-  color: rgb(10, 12, 16);
+  background: white no-repeat center/80% url(../icons/edit_small_hover.svg);
 }
 
 .infinite-tree-content .infinite-tree-delete {
-  background-color: rgb(194, 145, 93);
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 2px;
   border-top-left-radius: 2px;
@@ -79,26 +82,75 @@
   box-sizing: border-box;
   color: rgb(38, 49, 73);
   cursor: default;
-  height: 18px;
-  line-height: 18px;
+  height: 20px;
+  width: 20px;
   padding-bottom: 0px;
   padding-left: 4px;
   padding-right: 4px;
   padding-top: 0px;
   position: absolute;
-  right: 38px;
-  text-align: center
-}
-
-.infinite-tree-isolated {
-  color: rgb(255, 89, 0);
+  right: 28px;
+  text-align: center;
+  background: rgb(194, 145, 93) no-repeat center/70% url(../icons/trash.svg);
 }
 
 .infinite-tree-content .infinite-tree-delete:hover {
-  color: rgb(184, 184, 184);
+  background: black no-repeat center/70% url(../icons/trash_hover.svg);
 }
+
+.infinite-tree-isolated {
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  position: relative;
+
+  padding-bottom: 0px;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 0px;
+
+  background: no-repeat center/70% url(../icons/error.svg);
+}
+
+.infinite-tree-content input[type='checkbox'] {
+  display: none;
+}
+
+.infinite-tree-content input[type='checkbox'] + label {
+  height: 20px;
+  width: 20px;
+  right: 51px;
+  position: absolute;
+  background: no-repeat center/90% url(../icons/invisible.svg);
+}
+
+.infinite-tree-content input[type='checkbox']:checked + label {
+  height: 20px;
+  width: 20px;
+  right: 51px;
+  position: absolute;
+  background: no-repeat center/90% url(../icons/visible.svg);
+}
+
+.infinite-tree-content .infinite-tree-down-arrow {
+  height: 15px;
+  width: 15px;
+  position: relative;
+  display: inline-block;
+  margin-right: 2px;
+  background: no-repeat center/80% url(../icons/down.svg);
+}
+
+.infinite-tree-content .infinite-tree-right-arrow {
+  height: 15px;
+  width: 15px;
+  position: relative;
+  display: inline-block;
+  margin-right: 2px;
+  background: no-repeat center/80% url(../icons/right.svg);
+}
+
 .infinite-tree-no-data {
   text-align: center;
   display: none;
 }
-

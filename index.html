@@ -1,198 +1,197 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cave visualization</title>
+    <link rel="stylesheet" href="css/tree.css" />
+    <link rel="stylesheet" href="css/navbar.css" />
+    <link rel="stylesheet" href="css/tabulator_midnight.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 14px;
+      }
 
-<head>
-	<meta charset="utf-8">
-	<title>Cave visualization</title>
-	<link rel="stylesheet" href="css/bootstrap.css">
-	<link rel="stylesheet" href="css/tree.css">
-	<link rel="stylesheet" href="css/navbar.css">
-	<link rel="stylesheet" href="css/tabulator_midnight.css">
-	<style>
-		body {
-			margin: 0;
-		}
+      #guicontrols {
+        color: red;
+        position: absolute;
+        top: 49px;
+        right: 0px;
+        max-height: calc(100% - 119px);
+        overflow: auto;
+        z-index: 100;
+      }
 
-		#guicontrols {
-			color: red;
-			position: absolute;
-			top: 49px;
-			right: 0px;
-			z-index: 100;
-		}
+      #close {
+        float: right;
+        display: inline-block;
+        padding: 2px 5px;
+        transition: 0.3s;
+      }
 
-		#close {
-			float: right;
-			display: inline-block;
-			padding: 2px 5px;
-			transition: 0.3s;
-		}
+      #close:hover {
+        float: right;
+        display: inline-block;
+        padding: 2px 5px;
+        background: #ccc;
+        color: black;
+      }
 
-		#close:hover {
-			float: right;
-			display: inline-block;
-			padding: 2px 5px;
-			background: #ccc;
-			color: black;
-		}
+      #infopanel {
+        padding: 10px;
+        position: absolute;
+        display: none;
+        color: azure;
+        width: 300px;
+        border-style: solid;
+        border-color: coral;
+        border-width: 1px;
+        background-color: rgb(63, 53, 53);
+      }
 
-		#infopanel {
-			padding: 10px;
-			position: absolute;
-			display: none;
-			color: azure;
-			width: 300px;
-			border-style: solid;
-			border-color: coral;
-			border-width: 1px;
-			background-color: rgb(63, 53, 53);
-		}
+      .cautionpanel {
+        position: absolute;
+        display: none;
+        left: 25%;
+        top: 50%;
+        width: 50%;
+        margin-top: -50px;
+        margin-left: -50px;
+        color: white;
+        padding: 10px;
+        border-style: solid;
+        border-color: white;
+        border-width: 3px;
+        border-radius: 20px;
+        font-size: 16px;
+        text-align: center;
+      }
 
-		.cautionpanel {
-			position: absolute;
-			display: none;
-			left: 25%;
-			top: 50%;
-			width: 50%;
-			margin-top: -50px;
-			margin-left: -50px;
-			color: white;
-			padding: 10px;
-			border-style: solid;
-			border-color: white;
-			border-width: 3px;
-			border-radius: 20px;
-			font-size: 16px;
-			text-align: center;
-		}
+      .cautionpanel-error {
+        background-color: #a93027;
+      }
 
-		.cautionpanel-error {
-			background-color: #a93027;
-		}
+      .cautionpanel-warning {
+        background-color: #251410;
+      }
 
-		.cautionpanel-warning {
-			background-color: #251410;
-		}
+      .file-upload {
+        position: absolute;
+        bottom: 10px;
+        text-align: center;
+        z-index: 100;
+        display: block;
+        color: azure;
+      }
 
-		.file-upload {
-			position: absolute;
-			bottom: 10px;
-			text-align: center;
-			z-index: 100;
-			display: block;
-			color: azure;
-		}
+      #tree-panel {
+        width: 300px;
+        position: absolute;
+        top: 80px;
+        left: 0px;
+        max-height: calc(100% - 150px);
+        overflow: auto;
+        text-align: left;
+        z-index: 100;
+        display: block;
+        color: azure;
+        background-color: white;
+        background: black;
+      }
 
-		#tree-panel {
-			width: 250px;
-			position: absolute;
-			top: 80px;
-			left: 0px;
-			max-height:50%;
-			overflow: auto;
-			text-align: left;
-			z-index: 100;
-			display: block;
-			color: azure;
-			background-color: white;
-			background: black;
-		}
+      #surveydatapanel {
+        width: 700px;
+        position: absolute;
+        top: 80px;
+        left: 250px;
+        text-align: left;
+        z-index: 100;
+        color: azure;
+        background-color: rgb(85, 130, 110);
+        background: rgb(85, 130, 110);
+        display: none;
+      }
 
-		#surveydatapanel {
-			width: 700px;
-			position: absolute;
-			top: 80px;
-			left: 250px;
-			text-align: left;
-			z-index: 100;
-			color: azure;
-			background-color: rgb(85, 130, 110);
-			background: rgb(85, 130, 110);
-			display: none;
-		}
+      .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 70px;
+        background-color: rgb(9, 9, 66);
+        color: white;
+        text-align: left;
+      }
 
-		.footer {
-			position: fixed;
-			left: 0;
-			bottom: 0;
-			width: 100%;
-			height: 70px;
-			background-color: rgb(9, 9, 66);
-			color: white;
-			text-align: left;
-		}
+      .footer #content {
+        margin-left: 10px;
+        margin-top: 5px;
+      }
 
-		.footer #content {
-			margin-left: 10px;
-			margin-top: 5px;
-		}
+      .surveydatapanel.b {
+        color: black;
+      }
 
-		.surveydatapanel.b {
-			color: black;
-		}
+      .tabulator .tabulator-footer {
+        color: white;
+      }
 
-		.tabulator .tabulator-footer {
-			color: white;
-		}
-
-		.tabulator {
-			font-size: 12px;
-		}
-	</style>
-	<script src="dependencies/papaparse.min.js"></script>
-	<script src="dependencies/tree.js"></script>
-	<script type="importmap">
-            {
-				"imports": {
-					"three": "./dependencies/three/three.module.js",
-					"three/addons/": "./dependencies/three/addons/"
-				}
-            }
+      .tabulator {
+        font-size: 12px;
+      }
+    </style>
+    <script src="dependencies/papaparse.min.js"></script>
+    <script src="dependencies/tree.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./dependencies/three/three.module.js",
+          "three/addons/": "./dependencies/three/addons/"
+        }
+      }
     </script>
-	<script src="dependencies/tabulator.js"></script>
-</head>
+    <script src="dependencies/tabulator.js"></script>
+  </head>
 
-<body>
-	<div id="tree-panel"></div>
-	<script type="module" src="src/main.js"></script>
-	<div class="file-upload">
-		<input type="file" id="topodroidInput" accept=".csv" style="display:none" />
-		<input type="file" id="polygonInput" accept=".cave" style="display:none" />
-		<input type="file" id="jsonInput" accept=".json" style="display:none" />
-		<input type="file" id="plyInput" accept=".ply" style="display:none" />
-	</div>
-	<div id="contextmenu" style="position:absolute;display:none;background-color:red">
-		<span color="red">menu</span>
-		<br>
-		<button id="getdistance">
-			get distance to here
-		</button>
-	</div>
-	<div id="infopanel">
-		<span id="close">x</span>
-		<p id="content"></p>
-	</div>
-	<div id="cautionpanel" class="cautionpanel">
-		<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
-		<p id="content"></p>
-	</div>
-	<div id="navbarcontainer" , class="topnavbar"></div>
-	<div id="surveydatapanel">
-		<button class="surveydatapanel b" id="centerlines">Hide splays</button>
-		<button class="surveydatapanel b" id="showorphan">Show orphans</button>
-		<button class="surveydatapanel b" id="hideorphan">Hide orphans</button>
-		<button class="surveydatapanel b" id="filter-clear">Clear Filter</button>
-		<button class="surveydatapanel b" id="surveydatapanel-update">Update</button>
-		<button class="surveydatapanel b" id="surveydatapanel-close">Close</button>
-		<br>
-		<div id="surveydata"></div>
-	</div>
-	<div id="guicontrols"></div>
-	<div id="footer" class="footer"><div id="content"></div></div>
-	<script type="module">
-		import { Main } from "./src/main.js";
-		new Main();
-	</script>
-</body>
-
+  <body>
+    <div id="tree-panel"></div>
+    <script type="module" src="src/main.js"></script>
+    <div class="file-upload">
+      <input type="file" id="topodroidInput" accept=".csv" style="display: none" />
+      <input type="file" id="polygonInput" accept=".cave" style="display: none" />
+      <input type="file" id="jsonInput" accept=".json" style="display: none" />
+      <input type="file" id="plyInput" accept=".ply" style="display: none" />
+    </div>
+    <div id="contextmenu" style="position: absolute; display: none; background-color: red">
+      <span color="red">menu</span>
+      <br />
+      <button id="getdistance"> get distance to here </button>
+    </div>
+    <div id="infopanel">
+      <span id="close">x</span>
+      <p id="content"></p>
+    </div>
+    <div id="cautionpanel" class="cautionpanel">
+      <span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
+      <p id="content"></p>
+    </div>
+    <div id="navbarcontainer" , class="topnavbar"></div>
+    <div id="surveydatapanel">
+      <button class="surveydatapanel b" id="centerlines">Hide splays</button>
+      <button class="surveydatapanel b" id="showorphan">Show orphans</button>
+      <button class="surveydatapanel b" id="hideorphan">Hide orphans</button>
+      <button class="surveydatapanel b" id="filter-clear">Clear Filter</button>
+      <button class="surveydatapanel b" id="surveydatapanel-update">Update</button>
+      <button class="surveydatapanel b" id="surveydatapanel-close">Close</button>
+      <br />
+      <div id="surveydata"></div>
+    </div>
+    <div id="guicontrols"></div>
+    <div id="footer" class="footer"><div id="content"></div></div>
+    <script type="module">
+      import { Main } from './src/main.js';
+      new Main();
+    </script>
+  </body>
 </html>
