@@ -1,137 +1,122 @@
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-import * as THREE from 'three';
 import { Color } from '../model.js';
+import * as THREE from 'three';
 
 export function addGui(options, scene, materials, element) {
-  const show = options.scene.show;
-  const gui = new GUI({ container: element, closeFolders: true });
+  const s = options.scene;
+  const gui = new GUI({ container: element });
   const centerLineParam = {
-    'show center lines'    : show.centerLine.segments,
-    'line color'           : materials.segments.centerLine.color.getHex(),
-    'gradient start color' : options.scene.caveLines.color.start.hex,
-    'gradient end color'   : options.scene.caveLines.color.end.hex,
-    'world units'          : false,
-    width                  : 20,
-    'show station'         : show.centerLine.spheres,
-    'station color'        : materials.sphere.centerLine.color.getHex(),
-    'station size'         : options.scene.stationSphereRadius.centerLine
+    'show center lines'    : s.centerLines.segments.show,
+    'line color'           : s.centerLines.segments.color.hex(),
+    'gradient start color' : s.caveLines.color.start.hex(),
+    'gradient end color'   : s.caveLines.color.end.hex(),
+    width                  : s.centerLines.segments.width,
+    'show station'         : s.centerLines.spheres.show,
+    'station color'        : s.centerLines.spheres.color.hex(),
+    'station size'         : s.centerLines.spheres.radius
   };
 
   const splayParam = {
-    'show splays'   : show.splay.segments,
-    'line color'    : materials.segments.splay.color.getHex(),
-    'world units'   : false,
-    width           : 10,
-    'show station'  : show.splay.spheres,
-    'station color' : materials.sphere.splay.color.getHex(),
-    'station size'  : options.scene.stationSphereRadius.splay
+    'show splays'   : s.splays.segments.show,
+    'line color'    : s.splays.segments.color.hex(),
+    width           : s.splays.segments.width,
+    'show station'  : s.splays.spheres.show,
+    'station color' : s.splays.spheres.color.hex(),
+    'station size'  : s.splays.spheres.radius
   };
 
   const stationNamesParam = {
-    'show station names' : show.stationNames,
-    'font color'         : materials.text.color.getHex()
+    'font color' : s.labels.color.hex()
   };
 
   const centerLineFolder = gui.addFolder('Center lines');
 
   centerLineFolder.add(centerLineParam, 'show center lines').onChange(function (val) {
-    show.centerLine.segments = val;
+    s.centerLines.segments.show = val;
     scene.setObjectsVisibility('centerLines', val);
   });
 
   centerLineFolder.addColor(centerLineParam, 'line color').onChange(function (val) {
+    s.centerLines.segments.color = new Color(val);
     materials.segments.centerLine.color = new THREE.Color(val);
     scene.renderScene();
   });
 
   centerLineFolder.addColor(centerLineParam, 'gradient start color').onChange(function (val) {
-    options.scene.caveLines.color.start = new Color(val);
+    s.caveLines.color.start = new Color(val);
   });
 
   centerLineFolder.addColor(centerLineParam, 'gradient end color').onChange(function (val) {
-    options.scene.caveLines.color.end = new Color(val);
+    s.caveLines.color.end = new Color(val);
   });
 
-  centerLineFolder.add(centerLineParam, 'world units').onChange(function (val) {
-    materials.segments.centerLine.worldUnits = val;
-    scene.renderScene();
-
-  });
-
-  centerLineFolder.add(centerLineParam, 'width', 1, 50).onChange(function (val) {
-    materials.segments.centerLine.linewidth = val / 10;
-    materials.whiteLine.linewidth = val / 10;
+  centerLineFolder.add(centerLineParam, 'width', 1, 5).onChange(function (val) {
+    s.centerLines.segments.width = val;
+    materials.segments.centerLine.linewidth = s.centerLines.segments.width;
+    materials.whiteLine.linewidth = s.centerLines.segments.width;
     scene.renderScene();
   });
 
   centerLineFolder.add(centerLineParam, 'show station').onChange(function (val) {
-    show.centerLine.spheres = val;
+    s.centerLines.spheres.show = val;
     scene.setObjectsVisibility('centerLinesSpheres', val);
   });
 
   centerLineFolder.addColor(centerLineParam, 'station color').onChange(function (val) {
-    materials.sphere.centerLine.color = new THREE.Color(val);
+    s.centerLines.spheres.color = new Color(val);
     scene.renderScene();
   });
 
   centerLineFolder
-    .add(centerLineParam, 'station size', 1, 50)
-    .step(1)
+    .add(centerLineParam, 'station size', 0.1, 5)
+    .step(0.1)
     .onChange(function (val) {
-      options.scene.stationSphereRadius.centerLine = val;
+      s.centerLines.spheres.radius = val;
       scene.changeStationSpheresRadius('centerLine');
     });
 
   const splaysFolder = gui.addFolder('Splays');
 
   splaysFolder.add(splayParam, 'show splays').onChange(function (val) {
-    show.splay.segments = val;
+    s.splays.segments.show = val;
     scene.setObjectsVisibility('splays', val);
   });
 
   splaysFolder.addColor(splayParam, 'line color').onChange(function (val) {
+    s.splays.segments.color = new Color(val);
     materials.segments.splay.color = new THREE.Color(val);
     scene.renderScene();
   });
 
-  splaysFolder.add(splayParam, 'world units').onChange(function (val) {
-    materials.segments.splay.worldUnits = val;
-    materials.segments.splay.needsUpdate = true;
-    scene.renderScene();
-
-  });
-
-  splaysFolder.add(splayParam, 'width', 1, 30).onChange(function (val) {
-    materials.segments.splay.linewidth = val / 10;
+  splaysFolder.add(splayParam, 'width', 1, 5).onChange(function (val) {
+    s.splays.segments.width = val;
+    materials.segments.splay.linewidth = s.splays.segments.width;
+    materials.whiteLine.linewidth = s.splays.segments.width;
     scene.renderScene();
   });
 
   splaysFolder.add(splayParam, 'show station').onChange(function (val) {
-    show.splay.spheres = val;
+    s.splays.spheres.show = val;
     scene.setObjectsVisibility('splaysSpheres', val);
   });
 
   splaysFolder.addColor(splayParam, 'station color').onChange(function (val) {
-    materials.sphere.splay.color = new THREE.Color(val);
+    s.splays.spheres.color = new Color(val);
     scene.renderScene();
   });
 
   splaysFolder
-    .add(splayParam, 'station size', 1, 50)
-    .step(1)
+    .add(splayParam, 'station size', 0.1, 5)
+    .step(0.1)
     .onChange(function (val) {
-      options.scene.stationSphereRadius.splay = val;
+      s.splays.spheres.radius = val;
       scene.changeStationSpheresRadius('splay');
     });
 
   const stationNamesFolder = gui.addFolder('Station names');
 
-  stationNamesFolder.add(stationNamesParam, 'show station names').onChange(function (val) {
-    show.stationNames = val;
-    scene.setObjectsVisibility('stationNames', val);
-  });
-
   stationNamesFolder.addColor(stationNamesParam, 'font color').onChange(function (val) {
+    s.labels.color = new Color(val);
     materials.text.color = new THREE.Color(val);
     scene.renderScene();
   });

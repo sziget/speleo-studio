@@ -65,7 +65,7 @@ class MyScene {
 
     this.raycaster = new THREE.Raycaster();
 
-    const sphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 10, 10);
+    const sphereGeo = new THREE.SphereGeometry(this.options.scene.centerLines.spheres.radius, 10, 10);
     this.surfaceSphere = this.addSphere(
       'surface',
       'surface',
@@ -98,16 +98,14 @@ class MyScene {
 
   setSurveyVisibility(cave, survey, value) {
     const entry = this.caveObjects.get(cave).get(survey);
-    const show = this.options.scene.show;
-    entry.centerLines.visible = value && show.centerLine.segments;
+    const s = this.options.scene;
+    entry.centerLines.visible = value && s.centerLines.segments.show;
     entry.centerLines.hidden = !value; // hidden is a custom attribute set by me, used in setObjectsVisibility
-    entry.splays.visible = value && show.splay.segments;
+    entry.splays.visible = value && s.splays.segments.show;
     entry.splays.hidden = !value;
-    entry.stationNames.visible = value && show.stationNames;
-    entry.stationNames.hidden = !value;
-    entry.centerLinesSpheres.visible = value && show.centerLine.spheres;
+    entry.centerLinesSpheres.visible = value && s.centerLines.spheres.show;
     entry.centerLinesSpheres.hidden = !value;
-    entry.splaysSpheres.visible = value && show.splay.spheres;
+    entry.splaysSpheres.visible = value && s.splays.spheres.show;
     entry.splaysSpheres.hidden = !value;
     this.renderScene();
   }
@@ -124,12 +122,12 @@ class MyScene {
     let spheres, radius;
     if (type === 'centerLine') {
       spheres = this.getAllCenterLineStationSpheres();
-      radius = this.options.scene.stationSphereRadius.centerLine;
+      radius = this.options.scene.centerLines.spheres.radius;
     } else if (type === 'splay') {
       spheres = this.getAllSplaysStationSpheres();
-      radius = this.options.scene.stationSphereRadius.splay;
+      radius = this.options.scene.splays.spheres.radius;
     }
-    const geometry = new THREE.SphereGeometry(radius / 10.0, 5, 5);
+    const geometry = new THREE.SphereGeometry(radius, 5, 5);
     spheres.forEach((s) => {
       s.geometry.dispose();
       s.geometry = geometry;
@@ -238,9 +236,9 @@ class MyScene {
   }
 
   toogleBoundingBox() {
-    this.options.boundingBox = !this.options.boundingBox;
+    this.options.scene.boundingBox.show = !this.options.scene.boundingBox.show;
 
-    if (this.options.boundingBox === true) {
+    if (this.options.scene.boundingBox.show === true) {
       const bb = this.computeBoundingBox();
       const boundingBoxHelper = new THREE.Box3Helper(bb, 0xffffff);
       this.boundingBoxHelper = boundingBoxHelper;
@@ -498,7 +496,6 @@ class MyScene {
   }
 
   addToScene(surveyName, stations, polygonSegments, splaySegments, visibility, colorGradients) {
-    const show = this.options.scene.show;
 
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
@@ -530,21 +527,20 @@ class MyScene {
     }
 
     const lineSegmentsPolygon = new LineSegments2(geometryStations, clLineMat);
-    lineSegmentsPolygon.visible = visibility && show.centerLine.segments;
+    lineSegmentsPolygon.visible = visibility && this.options.scene.centerLines.segments.show;
 
     const lineSegmentsSplays = new LineSegments2(splaysGeometry, splayLineMat);
-    lineSegmentsSplays.visible = visibility && show.splay.segments;
+    lineSegmentsSplays.visible = visibility && this.options.scene.splays.segments.show;
     const group = new THREE.Group();
 
     group.add(lineSegmentsPolygon);
     group.add(lineSegmentsSplays);
 
-    const stationNamesGroup = new THREE.Group();
     const clStationSpheresGroup = new THREE.Group();
     const splayStationSpheresGroup = new THREE.Group();
 
-    const clSphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.centerLine / 10.0, 10, 10);
-    const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.stationSphereRadius.splay / 10.0, 10, 10);
+    const clSphereGeo = new THREE.SphereGeometry(this.options.scene.centerLines.spheres.radius, 10, 10);
+    const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.splays.spheres.radius, 10, 10);
 
     for (const [stationName, station] of stations) {
       if (station.survey.name !== surveyName) continue;
@@ -568,11 +564,9 @@ class MyScene {
         );
       }
     }
-    stationNamesGroup.visible = visibility && show.stationNames;
-    clStationSpheresGroup.visible = visibility && show.centerLine.spheres;
-    splayStationSpheresGroup.visible = visibility && show.splay.spheres;
+    clStationSpheresGroup.visible = visibility && this.options.scene.centerLines.spheres.show;
+    splayStationSpheresGroup.visible = visibility && this.options.scene.splays.spheres.shows;
 
-    group.add(stationNamesGroup);
     group.add(clStationSpheresGroup);
     group.add(splayStationSpheresGroup);
     this.caveObject3DGroup.add(group);
@@ -583,7 +577,6 @@ class MyScene {
       centerLinesSpheres : clStationSpheresGroup,
       splays             : lineSegmentsSplays,
       splaysSpheres      : splayStationSpheresGroup,
-      stationNames       : stationNamesGroup,
       group              : group
     };
   }
@@ -640,7 +633,7 @@ class MyScene {
   }
 
   deleteCave(caveName) {
-    this.caveObjects.set(caveName, new Map());
+    this.caveObjects.delete(caveName);
   }
 
 }

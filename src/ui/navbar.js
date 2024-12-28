@@ -62,7 +62,7 @@ class NavigationBar {
       {
         tooltip : 'Zoom to fit',
         icon    : './icons/zoom_fit.svg',
-        click   : () => this.scene.fitScene()
+        click   : () => this.scene.fitScene(this.scene.computeBoundingBox())
       },
       {
         tooltip : 'Zoom in',

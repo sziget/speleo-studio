@@ -2,47 +2,35 @@ import { Color } from './model.js';
 
 export const OPTIONS = {
   scene : {
-    show : {
-      boudingBox   : false,
-      stationNames : false,
-      centerLine   : {
-        spheres  : true,
-        segments : true
-      },
-      splay : {
-        spheres  : true,
-        segments : true
-      }
-    },
-    stationSphereRadius : {
-      centerLine : 1,
-      splay      : 1
-    },
+
     zoomStep : 0.1,
 
     centerLines : {
       segments : {
         show  : true,
         color : new Color(0xff0000),
-        width : 1
+        width : 1.5
       },
       spheres : {
         show   : true,
         color  : new Color(0xffff00),
-        radius : 1
+        radius : 0.5
       }
     },
     splays : {
       segments : {
         show  : true,
         color : new Color(0x00ffff),
-        width : 1
+        width : 1.5
       },
       spheres : {
         show   : true,
         color  : new Color(0x0000ff),
-        radius : 1
+        radius : 0.5
       }
+    },
+    boundingBox : {
+      show : false
     },
     grid : {
       mode : {
@@ -66,10 +54,13 @@ export const OPTIONS = {
         start : new Color(0x00ff2a),
         end   : new Color(0x0000ff),
         mode  : {
-          value   : 'gradientByDistance',
+          value   : 'gradientByZ',
           choices : ['global', 'gradientByZ', 'gradientByDistance', 'percave', 'persurvey']
         }
       }
+    },
+    labels : {
+      color : new Color(0xffffff)
     }
   }
 };

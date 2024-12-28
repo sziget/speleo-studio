@@ -10,14 +10,14 @@ class Materials {
       segments : {
         centerLine : new LineMaterial({
           color           : this.config.centerLines.segments.color.hex(),
-          linewidth       : 1, // in world units with size attenuation, pixels otherwise
+          linewidth       : this.config.centerLines.segments.width,
           worldUnits      : false,
           vertexColors    : false,
           alphaToCoverage : false
         }),
         splay : new LineMaterial({
-          color           : 0x00ffff,
-          linewidth       : 1, // in world units with size attenuation, pixels otherwise
+          color           : this.config.splays.segments.color.hex(),
+          linewidth       : this.config.splays.segments.width,
           worldUnits      : false,
           vertexColors    : false,
           alphaToCoverage : false
@@ -25,8 +25,8 @@ class Materials {
       },
       text   : new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
       sphere : {
-        centerLine         : new THREE.MeshBasicMaterial({ color: 0xffff00 }),
-        splay              : new THREE.MeshBasicMaterial({ color: 0x0000ff }),
+        centerLine         : new THREE.MeshBasicMaterial({ color: this.config.centerLines.spheres.color.hex() }),
+        splay              : new THREE.MeshBasicMaterial({ color: this.config.splays.spheres.color.hex() }),
         surface            : new THREE.MeshBasicMaterial({ color: 0xa0a0ff }),
         selected           : new THREE.MeshBasicMaterial({ color: 0xf00fff }),
         selectedForContext : new THREE.MeshBasicMaterial({ color: 0x20ff3d })
