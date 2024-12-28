@@ -1,6 +1,6 @@
 import { classNames } from '../../dependencies/classnames.js';
-import { tag } from '../../dependencies//html5-tag.js';
-import { escapeHtml } from '../../dependencies//escape-html.js';
+import { tag } from '../../dependencies/html5-tag.js';
+import { escapeHtml } from '../../dependencies/escape-html.js';
 import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
 import { Color } from '../model.js';
