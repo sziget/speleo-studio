@@ -3,7 +3,7 @@ import { MyScene } from './scene/scene.js';
 import { PlySurfaceImporter, PolygonImporter, TopodroidImporter, JsonImporter } from './io/import.js';
 import { SceneInteraction } from './interactive.js';
 import { OPTIONS } from './config.js';
-import { MATERIALS } from './materials.js';
+import { Materials } from './materials.js';
 import { ProjectExplorer, ProjectManager } from './ui/explorer.js';
 import { NavigationBar } from './ui/navbar.js';
 import { Footer } from './ui/footer.js';
@@ -16,7 +16,7 @@ class Main {
   constructor() {
     const db = new Database();
     const options = OPTIONS;
-    const materials = MATERIALS;
+    const materials = new Materials(options).materials;
     const attributeDefs = new AttributesDefinitions(attributeDefintions);
     const scene = new MyScene(options, db, materials);
     new NavigationBar(db, document.getElementById('navbarcontainer'), options, scene);

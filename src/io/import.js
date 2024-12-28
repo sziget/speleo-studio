@@ -256,8 +256,7 @@ class JsonImporter extends CaveImporter {
   importJson(json) {
     const parsedCave = JSON.parse(json);
     const cave = Cave.fromPure(parsedCave, this.attributeDefs);
-    cave.surveys
-      .entries()
+    [...cave.surveys.entries()]
       .forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations, cave.aliases));
     this.addCave(cave);
   }

@@ -132,6 +132,22 @@
   background: no-repeat center/90% url(../icons/visible.svg);
 }
 
+.infinite-tree-content input[type='color'] {
+  display: none;
+}
+
+.infinite-tree-content .no-color {
+  background: no-repeat center/90% url(../icons/nocolor.svg);
+}
+
+.infinite-tree-content input[type='color'] + label {
+  height: 20px;
+  width: 20px;
+  right: 75px;
+  border-radius: 20px;
+  position: absolute;
+}
+
 .infinite-tree-content .infinite-tree-down-arrow {
   height: 15px;
   width: 15px;

@@ -3,6 +3,7 @@ import { tag } from '../../dependencies//html5-tag.js';
 import { escapeHtml } from '../../dependencies//escape-html.js';
 import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
+import { Color } from '../model.js';
 
 class ProjectManager {
 
@@ -123,7 +124,8 @@ class ProjectExplorer {
       data        : data,
       autoOpen    : true,
       rowRenderer : this.treeRenderer,
-      scene       : this.scene
+      scene       : this.scene,
+      options     : this.options
     });
     this.itree.on('click', this.click(this.itree));
   }
@@ -161,6 +163,7 @@ class ProjectExplorer {
 
   click = (tree) => (event) => {
     const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
+
     if (!currentNode) {
       return;
     }
@@ -192,6 +195,20 @@ class ProjectExplorer {
       } else if (state.nodeType === 'cave') {
         this.db.deleteCave(state.cave.name);
       }
+    } else if (event.target.id.startsWith('color-picker')) {
+      const updateColor = (surveyOrCave) => (event2) => {
+        surveyOrCave.color = new Color(event2.target.value);
+        this.updateCave(state.cave);
+      };
+      if (event.target.oninput === null) {
+        if (state.nodeType === 'survey') {
+          event.target.oninput = updateColor(state.survey);
+        } else if (state.nodeType === 'cave') {
+          event.target.oninput = updateColor(state.cave);
+        }
+      }
+      event.target.showPicker();
+      event.stopPropagation();
     }
   };
 
@@ -203,6 +220,13 @@ class ProjectExplorer {
     const more = node.hasChildren();
 
     const isolatedSurvey = state.nodeType === 'survey' && state.survey.isolated === true;
+    let color;
+
+    if (state.nodeType === 'survey' && state.survey.color !== undefined) {
+      color = state.survey.color.hexString();
+    } else if (state.nodeType === 'cave' && state.cave.color !== undefined) {
+      color = state.cave.color.hexString();
+    }
 
     if (filtered === false) {
       return;
@@ -270,14 +294,7 @@ class ProjectExplorer {
     const icon = tag(
       'i',
       {
-        class : classNames(
-          //   'infinite-tree-folder-icon',
-          //   { 'glyphicon-folder-open': more && open },
-          //   { 'glyphicon-folder-close': more && !open },
-          //   { 'glyphicon-file': !more && !isolatedSurvey },
-          //   { 'glyphicon-exclamation-sign': !more && isolatedSurvey },
-          { 'infinite-tree-isolated': isolatedSurvey }
-        )
+        class : classNames({ 'infinite-tree-isolated': isolatedSurvey })
       },
       ''
     );
@@ -295,10 +312,10 @@ class ProjectExplorer {
       checked        : checked,
       class          : classNames('checkbox'),
       'data-checked' : checked,
-      id             : 'checkboxi'
+      id             : `checkbox-${id}`
     });
 
-    const label = '<label for="checkboxi"></label>';
+    const label = `<label for="checkbox-${id}"></label>`;
 
     const deleteIcon = tag(
       'span',
@@ -308,6 +325,23 @@ class ProjectExplorer {
       },
       ''
     );
+
+    const colorIcon = tag(
+      'input',
+      {
+        type  : 'color',
+        id    : `color-picker-${id}`,
+        value : color,
+        class : classNames('infinite-tree-color')
+      },
+      ''
+    );
+    const colorLabel = tag('label', {
+      for   : `color-picker-${id}`,
+      class : classNames({ 'no-color': color === undefined }),
+      style : color !== undefined ? `background: ${color};` : ''
+    });
+    //      '<span class="infinite-tree-color-line"></span>'
 
     const editIcon = tag(
       'span',
@@ -324,7 +358,7 @@ class ProjectExplorer {
         class : 'infinite-tree-node',
         style : 'margin-left: ' + depth * 10 + 'px'
       },
-      toggler + icon + title + checkbox + label + deleteIcon + editIcon
+      toggler + icon + title + checkbox + label + deleteIcon + editIcon + colorIcon + colorLabel
     );
 
     let treeNodeAttributes = {
