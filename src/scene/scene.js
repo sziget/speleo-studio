@@ -168,6 +168,12 @@ class MyScene {
     return [...this.surfaceObjects.values()].map((s) => s.cloud);
   }
 
+  getStationSphere(name) {
+    const clSpheres = this.getAllCenterLineStationSpheres();
+    const splaySpheres = this.getAllSplaysStationSpheres();
+    return clSpheres.concat(splaySpheres).find((s) => s.name === name);
+  }
+
   getIntersectedStationSphere(pointer) {
     const clSpheres = this.getAllCenterLineStationSpheres();
     const splaySpheres = this.getAllSplaysStationSpheres();

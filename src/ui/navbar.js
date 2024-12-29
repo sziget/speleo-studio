@@ -8,10 +8,11 @@ class NavigationBar {
    * @param {Map<String, Map>} options - Global project options, like global visibility of an object
    * @param {MyScene} scene - The 3D scene
    */
-  constructor(db, domElement, options, scene) {
+  constructor(db, domElement, options, scene, interactive) {
     this.db = db;
     this.options = options;
     this.scene = scene;
+    this.interactive = interactive;
     this.#buildNavbar(domElement);
     this.#addNavbarClickListener();
   }
@@ -118,6 +119,11 @@ class NavigationBar {
         tooltip : 'Surface visibility',
         icon    : './icons/surface.svg',
         click   : () => this.scene.rollSurface()
+      },
+      {
+        tooltip : 'Locate point',
+        icon    : './icons/locate.svg',
+        click   : (event) => this.interactive.showLocatePanel(event.clientX)
       }
 
     ];

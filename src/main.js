@@ -19,7 +19,6 @@ class Main {
     const materials = new Materials(options).materials;
     const attributeDefs = new AttributesDefinitions(attributeDefintions);
     const scene = new MyScene(options, db, materials);
-    new NavigationBar(db, document.getElementById('navbarcontainer'), options, scene);
     const footer = new Footer(document.getElementById('footer'));
     const editor = new Editor(
       scene,
@@ -33,7 +32,7 @@ class Main {
     new ProjectManager(db, options, scene, explorer);
     const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
     controls.close();
-    new SceneInteraction(
+    const interaction = new SceneInteraction(
       options,
       footer,
       scene,
@@ -41,8 +40,11 @@ class Main {
       scene.domElement,
       document.getElementById('getdistance'),
       document.getElementById('contextmenu'),
-      document.getElementById('infopanel')
+      document.getElementById('infopanel'),
+      document.getElementById('locatepoint')
     );
+    new NavigationBar(db, document.getElementById('navbarcontainer'), options, scene, interaction);
+
     this.scene = scene;
     this.importers = {
       topodroid : new TopodroidImporter(db, options, scene, explorer),

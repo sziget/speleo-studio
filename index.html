@@ -113,6 +113,20 @@
         display: none;
       }
 
+      #locatepoint {
+        padding: 10px;
+        position: absolute;
+        display: block;
+        background: #333;
+        width: 250px;
+        border-style: solid;
+        border-color: coral;
+        border-width: 1px;
+        z-index: 100;
+        display: none;
+        top: 50px;
+      }
+
       .footer {
         position: fixed;
         left: 0;
@@ -176,6 +190,7 @@
       <p id="content"></p>
     </div>
     <div id="navbarcontainer" , class="topnavbar"></div>
+    <div id="locatepoint"><input type="text" id="pointtolocate" /><button id="locatebutton">Locate point</button> </div>
     <div id="surveydatapanel">
       <button class="surveydatapanel b" id="centerlines">Hide splays</button>
       <button class="surveydatapanel b" id="showorphan">Show orphans</button>
