@@ -61,6 +61,9 @@ export const OPTIONS = {
     },
     labels : {
       color : new Color(0xffffff)
+    },
+    background : {
+      color : new Color(0x000000)
     }
   }
 };

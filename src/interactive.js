@@ -220,6 +220,8 @@ class SceneInteraction {
   }
 
   showLocatePanel(clientX) {
+    const input = this.locatePanel.getElementsByTagName('input').item(0);
+    input.focus();
     this.locatePanel.style.left = `${clientX - 100}px`;
     this.locatePanel.style.display = 'block';
   }

@@ -56,6 +56,7 @@ class MyScene {
     this.orbit.addEventListener('change', () => this.renderScene());
 
     this.threejsScene = new THREE.Scene();
+    this.threejsScene.background = new THREE.Color(this.options.scene.background.color.hex());
     this.grid = new Grid(this.options, this);
 
     this.threejsScene.add(this.caveObject3DGroup);
@@ -94,6 +95,11 @@ class MyScene {
     this.currentCamera.position.set(x, y, z);
     this.currentCamera.lookAt(this.orbitTarget);
     this.currentCamera.updateMatrix();
+  }
+
+  setBackground(val) {
+    this.threejsScene.background = new THREE.Color(val);
+    this.renderScene();
   }
 
   setSurveyVisibility(cave, survey, value) {

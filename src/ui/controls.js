@@ -28,6 +28,9 @@ export function addGui(options, scene, materials, element) {
   const stationNamesParam = {
     'font color' : s.labels.color.hex()
   };
+  const sceneParam = {
+    'background color' : s.background.color.hex()
+  };
 
   const centerLineFolder = gui.addFolder('Center lines');
 
@@ -119,6 +122,13 @@ export function addGui(options, scene, materials, element) {
     s.labels.color = new Color(val);
     materials.text.color = new THREE.Color(val);
     scene.renderScene();
+  });
+
+  const sceneFolder = gui.addFolder('Scene');
+
+  sceneFolder.addColor(sceneParam, 'background color').onChange(function (val) {
+    s.background.color = new Color(val);
+    scene.setBackground(val);
   });
 
   return gui;
