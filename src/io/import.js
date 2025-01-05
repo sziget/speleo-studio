@@ -3,9 +3,20 @@ import { SurveyHelper } from '../survey.js';
 import { SurfaceHelper } from '../surface.js';
 import { showErrorPanel, showWarningPanel } from '../ui/popups.js';
 import { CAVES_MAX_DISTANCE } from '../constants.js';
-import { Shot, Survey, Cave, SurveyStartStation, Vector, SurveyStation, SurveyAlias, Surface } from '../model.js';
+import {
+  Shot,
+  Survey,
+  Cave,
+  SurveyStartStation,
+  Vector,
+  SurveyStation,
+  SurveyAlias,
+  Surface,
+  SectionAttribute
+} from '../model.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
+import { SectionHelper } from '../section.js';
 
 class Importer {
 
@@ -67,6 +78,14 @@ class CaveImporter {
           colorGradients.get(s.name)
         );
         this.scene.addSurvey(cave.name, s.name, _3dobjects);
+      });
+
+      cave.sectionAttributes.forEach((sa) => {
+        if (sa.visible) {
+          const segments = SectionHelper.getSegments(sa.section, cave.stations);
+          this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.color);
+        }
+
       });
       this.explorer.addCave(cave);
       const boundingBox = this.scene.computeBoundingBox();
@@ -157,8 +176,7 @@ class PolygonImporter extends CaveImporter {
           surveyIndex++;
         }
       } while (surveyName !== undefined);
-      const cave = new Cave(projectName, caveStartPosition, stations, surveys);
-      return cave;
+      return new Cave(projectName, caveStartPosition, stations, surveys);
     }
   }
 
@@ -256,8 +274,22 @@ class JsonImporter extends CaveImporter {
   importJson(json) {
     const parsedCave = JSON.parse(json);
     const cave = Cave.fromPure(parsedCave, this.attributeDefs);
+
     [...cave.surveys.entries()]
       .forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations, cave.aliases));
+
+    if (cave.sectionAttributes.length > 0) {
+      const g = SectionHelper.getGraph(cave);
+      cave.sectionAttributes.forEach((sa) => {
+        const cs = SectionHelper.getSection(g, sa.section.from, sa.section.to);
+        if (cs !== undefined) {
+          sa.section = cs;
+        } else {
+          //TODO: show error
+        }
+
+      });
+    }
     this.addCave(cave);
   }
 }

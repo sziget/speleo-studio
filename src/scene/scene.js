@@ -10,6 +10,7 @@ import * as C from '../constants.js';
 import { Grid } from './grid.js';
 import * as U from '../utils/utils.js';
 import { Options } from '../config.js';
+import { SECTION_LINE_MULTIPLIER } from '../constants.js';
 
 class MyScene {
 
@@ -26,8 +27,10 @@ class MyScene {
     this.materials = materials;
     this.caveObjects = new Map();
     this.surfaceObjects = new Map();
+    this.sectionAttributes = new Map();
     this.caveObject3DGroup = new THREE.Group();
     this.surfaceObject3DGroup = new THREE.Group();
+    this.sectionAttributes3DGroup = new THREE.Group();
     this.stationFont = undefined;
     const loader = new FontLoader();
     loader.load('fonts/helvetiker_regular.typeface.json', (font) => this.setFont(font));
@@ -61,6 +64,7 @@ class MyScene {
 
     this.threejsScene.add(this.caveObject3DGroup);
     this.threejsScene.add(this.surfaceObject3DGroup);
+    this.threejsScene.add(this.sectionAttributes3DGroup);
     this.boundingBox = undefined;
     this.planeMeshes = new Map();
 
@@ -263,6 +267,43 @@ class MyScene {
     this.renderScene();
   }
 
+  showSectionAttribute(id, segments, attribute, color) {
+    if (!this.sectionAttributes.has(id)) {
+      const geometry = new LineSegmentsGeometry();
+      geometry.setPositions(segments);
+      geometry.computeBoundingBox();
+      const material = new LineMaterial({
+        color        : color.hex(),
+        linewidth    : this.options.scene.centerLines.segments.width * SECTION_LINE_MULTIPLIER,
+        worldUnits   : false,
+        vertexColors : false
+      });
+      const lineSegments = new LineSegments2(geometry, material);
+      this.sectionAttributes3DGroup.add(lineSegments);
+      const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+      const textMesh = this.addLabel(attribute.name, center, this.options.scene.labels.size);
+      this.sectionAttributes3DGroup.add(textMesh);
+
+      this.sectionAttributes.set(id, { segments: lineSegments, text: textMesh, label: attribute.name, center: center });
+      this.renderScene();
+    }
+  }
+
+  disposeSectionAttribute(id) {
+    if (this.sectionAttributes.has(id)) {
+      const e = this.sectionAttributes.get(id);
+      const lineSegments = e.segments;
+      lineSegments.geometry.dispose();
+      lineSegments.material.dispose();
+      this.sectionAttributes3DGroup.remove(lineSegments);
+      const textMesh = e.text;
+      this.sectionAttributes3DGroup.remove(textMesh);
+      textMesh.geometry.dispose();
+      this.sectionAttributes.delete(id);
+      this.renderScene();
+    }
+  }
+
   showPlaneFor(attributeName) {
     const planes = [];
     this.db.caves.forEach((cave) => {
@@ -457,6 +498,24 @@ class MyScene {
     this.orbit.enableRotate = true;
   }
 
+  updateSegmentsWidth(width) {
+    this.sectionAttributes.forEach((e) => {
+      e.segments.material.linewidth = width * SECTION_LINE_MULTIPLIER;
+    });
+    this.renderScene();
+  }
+
+  updateLabelSize(size) {
+    this.sectionAttributes.forEach((e) => {
+      this.sectionAttributes3DGroup.remove(e.text);
+      e.text.geometry.dispose();
+      const newText = this.addLabel(e.label, e.center, size);
+      this.sectionAttributes3DGroup.add(newText);
+      e.text = newText;
+    });
+    this.renderScene();
+  }
+
   renderScene() {
     // if (cavesStationNamesGroup !== undefined && OPTIONS.scene.show.stationNames) {
     //     cavesStationNamesGroup.forEach(
@@ -465,6 +524,7 @@ class MyScene {
     //         )
     //     );
     // }
+    this.sectionAttributes.forEach((e) => e.text.lookAt(this.currentCamera.position));
     this.sceneRenderer.render(this.threejsScene, this.currentCamera);
   }
 
@@ -480,8 +540,8 @@ class MyScene {
     this.threejsScene.remove(object);
   }
 
-  addStationLabel(label, position, fontGroup) {
-    const textShape = this.stationFont.generateShapes(label, 0.7);
+  addLabel(label, position, size) {
+    const textShape = this.stationFont.generateShapes(label, size);
     const textGeometry = new THREE.ShapeGeometry(textShape);
     textGeometry.computeBoundingBox();
 
@@ -493,7 +553,7 @@ class MyScene {
     textMesh.position.x = position.x;
     textMesh.position.y = position.y;
     textMesh.position.z = position.z;
-    fontGroup.add(textMesh);
+    return textMesh;
   }
 
   addSphere(stationName, type, position, sphereGroup, geometry, material) {
@@ -582,7 +642,7 @@ class MyScene {
     group.add(clStationSpheresGroup);
     group.add(splayStationSpheresGroup);
     this.caveObject3DGroup.add(group);
-    this.renderScene();
+
     return {
       id                 : U.randomAlphaNumbericString(5),
       centerLines        : lineSegmentsPolygon,
@@ -629,8 +689,6 @@ class MyScene {
   #disposeSurveyObjects(e) {
     e.centerLines.geometry.dispose();
     e.splays.geometry.dispose();
-    e.stationNames.children.forEach((c) => c.geometry.dispose());
-    e.stationNames.clear();
     e.centerLinesSpheres.children.forEach((c) => c.geometry.dispose()); // all stations spheres use the same geometry
     e.centerLinesSpheres.clear();
     e.splaysSpheres.children.forEach((c) => c.geometry.dispose()); // all stations spheres use the same geometry

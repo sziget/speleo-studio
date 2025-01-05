@@ -8,7 +8,6 @@ import { ProjectExplorer, ProjectManager } from './ui/explorer.js';
 import { NavigationBar } from './ui/navbar.js';
 import { Footer } from './ui/footer.js';
 import { addGui } from './ui/controls.js';
-import { SurveyEditor as Editor } from './ui/surveyeditor.js';
 import { AttributesDefinitions, attributeDefintions } from './attributes.js';
 
 class Main {
@@ -20,15 +19,8 @@ class Main {
     const attributeDefs = new AttributesDefinitions(attributeDefintions);
     const scene = new MyScene(options, db, materials);
     const footer = new Footer(document.getElementById('footer'));
-    const editor = new Editor(
-      scene,
-      db,
-      attributeDefs,
-      document.getElementById('surveydatapanel'),
-      document.getElementById('surveydatapanel-close'),
-      document.getElementById('surveydatapanel-update')
-    );
-    const explorer = new ProjectExplorer(options, db, scene, editor, document.querySelector('#tree-panel'));
+
+    const explorer = new ProjectExplorer(options, db, scene, attributeDefs, document.querySelector('#tree-panel'));
     new ProjectManager(db, options, scene, explorer);
     const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
     controls.close();

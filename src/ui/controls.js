@@ -25,11 +25,16 @@ export function addGui(options, scene, materials, element) {
     'station size'  : s.splays.spheres.radius
   };
 
-  const stationNamesParam = {
-    'font color' : s.labels.color.hex()
+  const labelParam = {
+    'font color' : s.labels.color.hex(),
+    'font size'  : s.labels.size
   };
   const sceneParam = {
     'background color' : s.background.color.hex()
+  };
+
+  const sectionAttributeParam = {
+    color : s.sectionAttributes.color.hex()
   };
 
   const centerLineFolder = gui.addFolder('Center lines');
@@ -53,12 +58,16 @@ export function addGui(options, scene, materials, element) {
     s.caveLines.color.end = new Color(val);
   });
 
-  centerLineFolder.add(centerLineParam, 'width', 1, 5).onChange(function (val) {
-    s.centerLines.segments.width = val;
-    materials.segments.centerLine.linewidth = s.centerLines.segments.width;
-    materials.whiteLine.linewidth = s.centerLines.segments.width;
-    scene.renderScene();
-  });
+  centerLineFolder
+    .add(centerLineParam, 'width', 0.5, 8)
+    .step(0.1)
+    .onChange(function (val) {
+      s.centerLines.segments.width = val;
+      materials.segments.centerLine.linewidth = s.centerLines.segments.width;
+      materials.whiteLine.linewidth = s.centerLines.segments.width;
+      scene.updateSegmentsWidth(val);
+      scene.renderScene();
+    });
 
   centerLineFolder.add(centerLineParam, 'show station').onChange(function (val) {
     s.centerLines.spheres.show = val;
@@ -116,19 +125,33 @@ export function addGui(options, scene, materials, element) {
       scene.changeStationSpheresRadius('splay');
     });
 
-  const stationNamesFolder = gui.addFolder('Station names');
+  const labelsFolder = gui.addFolder('Text labels');
 
-  stationNamesFolder.addColor(stationNamesParam, 'font color').onChange(function (val) {
+  labelsFolder.addColor(labelParam, 'font color').onChange(function (val) {
     s.labels.color = new Color(val);
     materials.text.color = new THREE.Color(val);
     scene.renderScene();
   });
+
+  labelsFolder
+    .add(labelParam, 'font size', 0.1, 10)
+    .step(0.1)
+    .onChange(function (val) {
+      s.labels.size = val;
+      scene.updateLabelSize(val);
+    });
 
   const sceneFolder = gui.addFolder('Scene');
 
   sceneFolder.addColor(sceneParam, 'background color').onChange(function (val) {
     s.background.color = new Color(val);
     scene.setBackground(val);
+  });
+
+  const sectionAttrFolder = gui.addFolder('Section attrbiutes');
+
+  sectionAttrFolder.addColor(sectionAttributeParam, 'color').onChange(function (val) {
+    s.sectionAttributes.color = new Color(val);
   });
 
   return gui;

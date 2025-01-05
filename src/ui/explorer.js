@@ -4,6 +4,7 @@ import { escapeHtml } from '../../dependencies/escape-html.js';
 import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
 import { Color } from '../model.js';
+import { SurveyEditor, CaveEditor } from './editor.js';
 
 class ProjectManager {
 
@@ -74,7 +75,9 @@ class ProjectManager {
       this.scene.addSurvey(cave.name, es.name, _3dObjects);
     });
     this.scene.updateVisiblePlanes();
-    this.scene.fitScene();
+    const boundingBox = this.scene.computeBoundingBox();
+    this.scene.grid.adjust(boundingBox);
+    this.scene.fitScene(boundingBox);
   }
 
   #emitSurveyRecalculated(cave, survey) {
@@ -91,12 +94,12 @@ class ProjectManager {
 
 class ProjectExplorer {
 
-  constructor(options, db, scene, surveyeditor, treeNode) {
+  constructor(options, db, scene, attributeDefs, treeNode) {
     this.options = options;
     this.db = db;
     this.scene = scene;
+    this.attributeDefs = attributeDefs;
     this.trees = new Map();
-    this.surveyeditor = surveyeditor;
     this.treeNode = treeNode;
     this.itree = undefined;
   }
@@ -187,8 +190,39 @@ class ProjectExplorer {
       tree.checkNode(currentNode);
       return;
     } else if (event.target.id === 'edit') {
-      this.surveyeditor.show();
-      this.surveyeditor.setupTable(state.survey, state.cave);
+
+      if (this.caveeditor !== undefined && !this.caveeditor.closed) {
+        this.caveeditor.closeEditor();
+      }
+      if (this.surveyeditor !== undefined && !this.surveyeditor.closed) {
+        this.surveyeditor.closeEditor();
+      }
+
+      if (state.nodeType === 'survey') {
+        this.surveyeditor = new SurveyEditor(
+          state.cave,
+          state.survey,
+          this.scene,
+          this.attributeDefs,
+          document.getElementById('surveydatapanel'),
+          document.getElementById('surveydatapanel-close'),
+          document.getElementById('surveydatapanel-update')
+        );
+        this.surveyeditor.setupTable();
+        this.surveyeditor.show();
+      } else if (state.nodeType === 'cave') {
+
+        this.caveeditor = new CaveEditor(
+          this.options,
+          state.cave,
+          this.scene,
+          this.attributeDefs,
+          document.getElementById('caveeditor')
+        );
+        this.caveeditor.setupPanel();
+        this.caveeditor.show();
+      }
+
     } else if (event.target.id === 'delete') {
       if (state.nodeType === 'survey') {
         this.db.deleteSurvey(state.cave.name, state.survey.name);

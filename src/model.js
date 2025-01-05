@@ -133,6 +133,73 @@ class SurveyStartStation {
   }
 }
 
+class CaveSection {
+
+  constructor(from, to, path, distance) {
+    this.from = from;
+    this.to = to;
+    this.path = path;
+    this.distance = distance;
+  }
+
+  isComplete() {
+    return this.from !== undefined &&
+      this.to !== undefined &&
+      this.path !== undefined &&
+      this.path.length > 0 &&
+      this.path.distance !== undefined &&
+      this.path.distance !== Infinity;
+  }
+
+  toExport() {
+    return {
+      from : this.from,
+      to   : this.to
+    };
+  }
+
+  static fromPure(pure) {
+    return Object.assign(new CaveSection(), pure);
+  }
+
+}
+
+class SectionAttribute {
+
+  constructor(id, section, attribute, color, visible = false) {
+    this.id = id;
+    this.section = section;
+    this.attribute = attribute;
+    this.color = color;
+    this.visible = visible;
+  }
+
+  isComplete() {
+    return this.attribute !== undefined &&
+      typeof this.attribute === 'object' &&
+      this.section !== undefined &&
+      this.section instanceof CaveSection &&
+      this.section.isComplete;
+  }
+
+  toExport() {
+    return {
+      id        : this.id,
+      section   : this.section.toExport(),
+      attribute : this.attribute,
+      color     : this.color.hexString(),
+      visible   : this.visible
+    };
+  }
+
+  static fromPure(pure, attributeDefs) {
+    pure.attribute = attributeDefs.createFromPure(pure.attribute);
+    pure.color = new Color(pure.color);
+    pure.section = CaveSection.fromPure(pure.section);
+    return Object.assign(new SectionAttribute(), pure);
+  }
+}
+
 class StationAttribute {
 
   constructor(name, attribute) {
@@ -312,21 +379,31 @@ class Cave {
    * @param {SurveyAlias[]} - Mapping of connection point between surveys
    * @param {boolean} visible - The visibility property of a cave
    */
-  constructor(name, startPosition, stations = new Map(), surveys = [], aliases = [], visible = true) {
+  constructor(
+    name,
+    startPosition,
+    stations = new Map(),
+    surveys = [],
+    aliases = [],
+    sectionAttributes = [],
+    visible = true
+  ) {
     this.name = name;
     this.startPosition = startPosition;
     this.stations = stations;
     this.surveys = surveys;
     this.aliases = aliases;
+    this.sectionAttributes = sectionAttributes;
     this.visible = visible;
   }
 
   toExport() {
     return {
-      name          : this.name,
-      startPosition : this.startPosition,
-      aliases       : this.aliases.map((a) => a.toExport()),
-      surveys       : this.surveys.map((s) => s.toExport())
+      name              : this.name,
+      startPosition     : this.startPosition,
+      aliases           : this.aliases.map((a) => a.toExport()),
+      sectionAttributes : this.sectionAttributes.map((sa) => sa.toExport()),
+      surveys           : this.surveys.map((s) => s.toExport())
     };
   }
 
@@ -334,8 +411,25 @@ class Cave {
     pure.surveys = pure.surveys.map((s) => Survey.fromPure(s, attributeDefs));
     pure.aliases = pure.aliases === undefined ? [] : pure.aliases.map((a) => SurveyAlias.fromPure(a));
     pure.startPosition = Vector.fromPure(pure.startPosition);
+    pure.sectionAttributes =
+      pure.sectionAttributes === undefined
+        ? []
+        : pure.sectionAttributes.map((sa) => SectionAttribute.fromPure(sa, attributeDefs));
     return Object.assign(new Cave(), pure);
   }
 }
 
-export { Vector, Color, Shot, SurveyStartStation, StationAttribute, SurveyStation, Survey, SurveyAlias, Surface, Cave };
+export {
+  Vector,
+  Color,
+  Shot,
+  SurveyStartStation,
+  StationAttribute,
+  CaveSection,
+  SectionAttribute,
+  SurveyStation,
+  Survey,
+  SurveyAlias,
+  Surface,
+  Cave
+};

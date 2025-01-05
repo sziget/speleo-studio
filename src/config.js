@@ -14,7 +14,7 @@ export const OPTIONS = {
       spheres : {
         show   : true,
         color  : new Color(0xffff00),
-        radius : 0.5
+        radius : 0.3
       }
     },
     splays : {
@@ -26,7 +26,7 @@ export const OPTIONS = {
       spheres : {
         show   : true,
         color  : new Color(0x0000ff),
-        radius : 0.5
+        radius : 0.3
       }
     },
     boundingBox : {
@@ -59,8 +59,12 @@ export const OPTIONS = {
         }
       }
     },
+    sectionAttributes : {
+      color : new Color(0x00ff2a)
+    },
     labels : {
-      color : new Color(0xffffff)
+      color : new Color(0xffffff),
+      size  : 3
     },
     background : {
       color : new Color(0x000000)
