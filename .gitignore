@@ -1,6 +1,5 @@
 .vscode/*
 app.mjs
-css/bootstrap.css
 node_modules/
 package.json
 package-lock.json
