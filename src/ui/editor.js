@@ -4,6 +4,7 @@ import { AttributesDefinitions } from '../attributes.js';
 import { SectionAttribute } from '../model.js';
 import { SectionHelper } from '../section.js';
 import { randomAlphaNumbericString } from '../utils/utils.js';
+import { makeMoveableDraggable } from './popups.js';
 
 class Editor {
 
@@ -92,9 +93,14 @@ class CaveEditor extends Editor {
   }
 
   setupPanel() {
-
     this.panel.innerHTML = '';
-
+    makeMoveableDraggable(
+      this.panel,
+      `Cave sheet editor: ${this.cave.name}`,
+      () => this.closeEditor(),
+      (_newWidth, newHeight) => this.table.setHeight(newHeight - 100),
+      () => this.table.redraw()
+    );
     this.panel.appendChild(document.createTextNode('Name: '));
     const input = document.createElement('input');
     input.setAttribute('type', 'text');
@@ -135,7 +141,8 @@ class CaveEditor extends Editor {
           data.id,
           SectionHelper.getSegments(data.section, this.cave.stations),
           data.attribute,
-          data.color
+          data.color,
+          this.cave.name
         );
       } else {
         this.scene.disposeSectionAttribute(data.id);
@@ -164,7 +171,8 @@ class CaveEditor extends Editor {
               data.id,
               SectionHelper.getSegments(data.section, this.cave.stations),
               data.attribute,
-              data.color
+              data.color,
+              this.cave.name
             );
           }
         } else {
@@ -246,7 +254,8 @@ class CaveEditor extends Editor {
               data.id,
               SectionHelper.getSegments(data.section, this.cave.stations),
               data.attribute,
-              data.color
+              data.color,
+              this.cave.name
             );
           }
           const label = document.getElementById(e.target.id + '-label');
@@ -256,9 +265,10 @@ class CaveEditor extends Editor {
     };
 
     this.table = new Tabulator('#sectionattributes', {
-      height         : 215,
+      height         : this.panel.style.height - 140,
+      autoResize     : false,
       data           : this.cave.sectionAttributes,
-      layout         : 'fitDataStretch',
+      layout         : 'fitColumns',
       validationMode : 'highlight',
       rowHeader      : { formatter: 'rownum', headerSort: false, hozAlign: 'center', resizable: false, frozen: true },
       addRowPos      : 'bottom',
@@ -336,25 +346,17 @@ class CaveEditor extends Editor {
       ]
     });
 
-    const button = document.createElement('button');
-    button.appendChild(document.createTextNode('Save changes'));
-    button.onclick = () => {
-      this.closeEditor();
-    };
-    this.panel.appendChild(button);
   }
 
 }
 
 class SurveyEditor extends Editor {
 
-  constructor(cave, survey, scene, attributeDefs, panel, closeButton, updateButton) {
+  constructor(cave, survey, scene, attributeDefs, panel) {
     super(panel, scene, cave, attributeDefs);
     this.survey = survey;
     this.table = undefined;
     this.surveyModified = false;
-    closeButton.addEventListener('click', () => this.closeEditor());
-    updateButton.addEventListener('click', () => this.requestRecalculation());
     document.addEventListener('surveyRecalculated', (e) => this.onSurveyRecalculated(e));
   }
 
@@ -426,6 +428,28 @@ class SurveyEditor extends Editor {
 
   setupTable() {
 
+    this.panel.innerHTML = '';
+    makeMoveableDraggable(
+      this.panel,
+      `Survey editor: ${this.survey.name}`,
+      () => this.closeEditor(),
+      (_newWidth, newHeight) => this.table.setHeight(newHeight - 100),
+      () => this.table.redraw()
+    );
+
+    [
+      { id: 'centerlines', text: 'Hide splays', click: () => this.table.addFilter(showCenter) },
+      { id: 'sumCenterLines', text: 'Show orphans', click: () => this.table.addFilter(showOrphans) },
+      { id: 'hideorphan', text: 'Hide orphans', click: () => this.table.addFilter(hideOrphans) },
+      { id: 'clear-filter', text: 'Clear filters', click: () => this.table.clearFilter() },
+      { id: 'update-survey', text: 'Update', click: () => this.requestRecalculation() }
+    ].forEach((b) => {
+      const button = U.html`<button id="${b.id}">${b.text}</button>`;
+      button.onclick = b.click;
+      this.panel.appendChild(button);
+    });
+    this.panel.appendChild(U.html`<div id="surveydata"></div>`);
+
     const floatPattern = /^[+-]?\d+([.,]\d+)?$/;
     var isFloatNumber = function (_cell, value) {
       return floatPattern.test(value);
@@ -469,11 +493,6 @@ class SurveyEditor extends Editor {
       return data.isOrphan;
     }
 
-    document.getElementById('centerlines').addEventListener('click', () => this.table.addFilter(showCenter));
-    document.getElementById('showorphan').addEventListener('click', () => this.table.addFilter(showOrphans));
-    document.getElementById('hideorphan').addEventListener('click', () => this.table.addFilter(hideOrphans));
-    document.getElementById('filter-clear').addEventListener('click', () => this.table.clearFilter());
-
     const atrributesFormatter = (cell) => {
       const attrs = cell.getData().attributes;
       if (attrs !== undefined && attrs.length > 0) {
@@ -493,7 +512,7 @@ class SurveyEditor extends Editor {
     };
 
     this.table = new Tabulator('#surveydata', {
-      height         : 215,
+      height         : 300,
       data           : this.#getTableData(this.survey, this.cave.stations),
       layout         : 'fitDataStretch',
       validationMode : 'highlight',

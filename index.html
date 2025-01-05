@@ -108,12 +108,11 @@
         text-align: left;
         z-index: 100;
         color: azure;
-        background-color: rgb(85, 130, 110);
-        background: rgb(85, 130, 110);
+        background: rgb(40, 40, 40);
         display: none;
       }
 
-      #surveydatapanel {
+      #surveyeditor {
         width: 700px;
         position: absolute;
         top: 80px;
@@ -121,8 +120,7 @@
         text-align: left;
         z-index: 100;
         color: azure;
-        background-color: rgb(85, 130, 110);
-        background: rgb(85, 130, 110);
+        background: rgb(40, 40, 40);
         display: none;
       }
 
@@ -155,10 +153,6 @@
       .footer #content {
         margin-left: 10px;
         margin-top: 5px;
-      }
-
-      .surveydatapanel.b {
-        color: black;
       }
 
       .tabulator .tabulator-footer {
@@ -195,6 +189,85 @@
         border-radius: 20px;
         position: absolute;
         left: 10px;
+      }
+
+      .popup .close {
+        cursor: default;
+        right: 10px;
+        top: 8px;
+        height: 20px;
+        width: 20px;
+        padding-bottom: 0px;
+        padding-left: 0px;
+        padding-right: 0px;
+        padding-top: 0px;
+        position: absolute;
+        background: no-repeat center/100% url(../icons/close.svg);
+      }
+
+      .popup .close:hover {
+        background: no-repeat center/100% url(../icons/close_hover.svg);
+      }
+
+      .popup {
+        z-index: 100;
+        background-color: #f1f1f1;
+        border: 2px solid #d3d3d3;
+        border-radius: 11px;
+        text-align: center;
+        min-height: 150px;
+        min-width: 300px;
+        max-height: 500px;
+        max-width: 800px;
+      }
+
+      /*Drgable */
+
+      .popup {
+        position: absolute;
+        /*resize: both; !*enable this to css resize*! */
+        overflow: auto;
+      }
+
+      .popup-header {
+        padding: 10px;
+        cursor: move;
+        z-index: 10;
+        background-color: rgb(17, 17, 17);
+        color: #fff;
+      }
+
+      /*Resizeable*/
+
+      .popup .resizer-right {
+        width: 6px;
+        height: 100%;
+        background: transparent;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        cursor: e-resize;
+      }
+
+      .popup .resizer-bottom {
+        width: 100%;
+        height: 10px;
+        background: red;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        cursor: n-resize;
+      }
+
+      .popup .resizer-both {
+        width: 5px;
+        height: 5px;
+        background: transparent;
+        z-index: 10;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        cursor: nw-resize;
       }
     </style>
     <script src="dependencies/tree.js"></script>
@@ -236,19 +309,12 @@
       <input type="text" id="pointtolocate" /><button id="locatebutton">Locate point</button>
       <span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
     </div>
-    <div id="caveeditor"> </div>
-    <div id="surveydatapanel">
-      <button class="surveydatapanel b" id="centerlines">Hide splays</button>
-      <button class="surveydatapanel b" id="showorphan">Show orphans</button>
-      <button class="surveydatapanel b" id="hideorphan">Hide orphans</button>
-      <button class="surveydatapanel b" id="filter-clear">Clear Filter</button>
-      <button class="surveydatapanel b" id="surveydatapanel-update">Update</button>
-      <button class="surveydatapanel b" id="surveydatapanel-close">Close</button>
-      <br />
-      <div id="surveydata"></div>
-    </div>
+
+    <div id="caveeditor" class="popup"> </div>
+    <div id="surveyeditor" class="popup"></div>
     <div id="guicontrols"></div>
     <div id="footer" class="footer"><div id="content"></div></div>
+
     <script type="module">
       import { Main } from './src/main.js';
       new Main();

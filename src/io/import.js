@@ -83,7 +83,7 @@ class CaveImporter {
       cave.sectionAttributes.forEach((sa) => {
         if (sa.visible) {
           const segments = SectionHelper.getSegments(sa.section, cave.stations);
-          this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.color);
+          this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.color, cave.name);
         }
 
       });

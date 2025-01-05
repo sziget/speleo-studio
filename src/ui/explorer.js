@@ -51,6 +51,7 @@ class ProjectManager {
     this.scene.deleteCave(caveName);
     this.scene.renderScene();
     this.explorer.deleteCave(caveName);
+    this.explorer.closeEditors(caveName);
   }
 
   recalculateCave(cave) {
@@ -113,6 +114,16 @@ class ProjectExplorer {
   deleteCave(caveName) {
     const caveNode = this.itree.getChildNodes().find((n) => n.name === caveName);
     this.itree.removeNode(caveNode);
+  }
+
+  closeEditors(caveName) {
+    if (this.caveeditor !== undefined && !this.caveeditor.closed && this.caveeditor.cave.name === caveName) {
+      this.caveeditor.closeEditor();
+    }
+    if (this.surveyeditor !== undefined && !this.surveyeditor.closed && this.surveyeditor.cave.name === caveName) {
+      this.surveyeditor.closeEditor();
+    }
+
   }
 
   updateCave(cave) {
@@ -204,9 +215,7 @@ class ProjectExplorer {
           state.survey,
           this.scene,
           this.attributeDefs,
-          document.getElementById('surveydatapanel'),
-          document.getElementById('surveydatapanel-close'),
-          document.getElementById('surveydatapanel-update')
+          document.getElementById('surveyeditor')
         );
         this.surveyeditor.setupTable();
         this.surveyeditor.show();

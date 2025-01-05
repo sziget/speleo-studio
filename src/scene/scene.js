@@ -267,7 +267,7 @@ class MyScene {
     this.renderScene();
   }
 
-  showSectionAttribute(id, segments, attribute, color) {
+  showSectionAttribute(id, segments, attribute, color, caveName) {
     if (!this.sectionAttributes.has(id)) {
       const geometry = new LineSegmentsGeometry();
       geometry.setPositions(segments);
@@ -284,7 +284,13 @@ class MyScene {
       const textMesh = this.addLabel(attribute.name, center, this.options.scene.labels.size);
       this.sectionAttributes3DGroup.add(textMesh);
 
-      this.sectionAttributes.set(id, { segments: lineSegments, text: textMesh, label: attribute.name, center: center });
+      this.sectionAttributes.set(id, {
+        segments : lineSegments,
+        text     : textMesh,
+        label    : attribute.name,
+        center   : center,
+        caveName : caveName
+      });
       this.renderScene();
     }
   }
@@ -697,9 +703,20 @@ class MyScene {
     this.threejsScene.remove(e.group);
   }
 
+  #dipostSectionAttributes(caveName) {
+    const matchingIds = [];
+    for (const [id, entry] of this.sectionAttributes) {
+      if (entry.caveName === caveName) {
+        matchingIds.push(id);
+      }
+    }
+    matchingIds.forEach((id) => this.disposeSectionAttribute(id));
+  }
+
   disposeCave(caveName) {
-    const cave = this.caveObjects.get(caveName);
-    cave.forEach((c) => this.#disposeSurveyObjects(c));
+    const surveyObjectList = this.caveObjects.get(caveName);
+    surveyObjectList.forEach((c) => this.#disposeSurveyObjects(c));
+    this.#dipostSectionAttributes(caveName);
   }
 
   deleteCave(caveName) {
