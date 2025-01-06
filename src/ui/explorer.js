@@ -250,9 +250,15 @@ class ProjectExplorer {
 
     } else if (event.target.id === 'delete') {
       if (state.nodeType === 'survey') {
-        this.db.deleteSurvey(state.cave.name, state.survey.name);
+        const result = confirm(`Do you want to delete survey '${state.survey.name}'?`);
+        if (result) {
+          this.db.deleteSurvey(state.cave.name, state.survey.name);
+        }
       } else if (state.nodeType === 'cave') {
-        this.db.deleteCave(state.cave.name);
+        const result = confirm(`Do you want to delete cave '${state.cave.name}'?`);
+        if (result) {
+          this.db.deleteCave(state.cave.name);
+        }
       }
     } else if (event.target.id.startsWith('color-picker')) {
       const updateColor = (surveyOrCave) => (event2) => {
