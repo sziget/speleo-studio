@@ -61,6 +61,11 @@ class NavigationBar {
   #getIcons() {
     return [
       {
+        tooltip : 'Print',
+        icon    : './icons/print.svg',
+        click   : () => window.print()
+      },
+      {
         tooltip : 'Zoom to fit',
         icon    : './icons/zoom_fit.svg',
         click   : () => this.scene.fitScene(this.scene.computeBoundingBox())

@@ -13,6 +13,21 @@
         font-size: 14px;
       }
 
+      @media print {
+        #guicontrols {
+          display: none !important;
+        }
+        .footer {
+          display: none !important;
+        }
+        .topnavbar {
+          display: none !important;
+        }
+        #tree-panel {
+          display: none !important;
+        }
+      }
+
       #guicontrols {
         color: red;
         position: absolute;
@@ -352,7 +367,6 @@
 
   <body>
     <div id="tree-panel"></div>
-    <script type="module" src="src/main.js"></script>
     <div class="file-upload">
       <input type="file" id="topodroidInput" accept=".csv" style="display: none" />
       <input type="file" id="polygonInput" accept=".cave" style="display: none" />
@@ -383,6 +397,7 @@
     <div id="guicontrols"></div>
     <div id="footer" class="footer"><div id="content"></div></div>
 
+    <script type="module" src="src/main.js"></script>
     <script type="module">
       import { Main } from './src/main.js';
       new Main();
