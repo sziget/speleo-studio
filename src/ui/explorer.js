@@ -39,7 +39,7 @@ class ProjectManager {
     const caveName = e.detail.cave;
     const surveyName = e.detail.survey;
     this.scene.disposeSurvey(caveName, surveyName);
-    const cave = this.db.caves.get(caveName);
+    const cave = this.db.getCave(caveName);
     this.recalculateCave(cave);
     this.scene.renderScene();
     this.explorer.deleteSurvey(caveName, surveyName);
@@ -65,11 +65,18 @@ class ProjectManager {
   recalculateCave(cave) {
     let caveStations = new Map();
     const lOptions = this.options.scene.caveLines;
-    const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
 
     cave.surveys.entries().forEach(([index, es]) => {
       SurveyHelper.recalculateSurvey(index, es, caveStations, cave.aliases);
       this.#emitSurveyRecalculated(cave, es);
+    });
+    cave.stations = caveStations;
+    //TODO: should recalculate section attributes
+
+    // get color gradients after recalculation
+    const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
+
+    cave.surveys.forEach((es) => {
       const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
       this.scene.disposeSurvey(cave.name, es.name);
       const _3dObjects = this.scene.addToScene(
@@ -272,6 +279,7 @@ class ProjectExplorer {
     const more = node.hasChildren();
 
     const isolatedSurvey = state.nodeType === 'survey' && state.survey.isolated === true;
+    const orphanSurvey = state.nodeType === 'survey' && state.survey.orphanShotIds.size > 0;
     let color;
 
     if (state.nodeType === 'survey' && state.survey.color !== undefined) {
@@ -346,7 +354,10 @@ class ProjectExplorer {
     const icon = tag(
       'i',
       {
-        class : classNames({ 'infinite-tree-isolated': isolatedSurvey })
+        class : classNames(
+          { 'infinite-tree-isolated': isolatedSurvey },
+          { 'infinite-tree-orphan': orphanSurvey && !isolatedSurvey }
+        )
       },
       ''
     );
@@ -354,7 +365,7 @@ class ProjectExplorer {
     const title = tag(
       'span',
       {
-        class : classNames('infinite-tree-title', { 'infinite-tree-isolated': isolatedSurvey })
+        class : classNames('infinite-tree-title')
       },
       escapeHtml(name)
     );

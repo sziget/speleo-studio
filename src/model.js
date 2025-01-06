@@ -448,9 +448,11 @@ class Cave {
         isolated += 1;
       }
       survey.shots.forEach((shot) => {
-        length += shot.length;
+
         if (survey.orphanShotIds.has(shot.id)) {
           orphanLength += shot.length;
+        } else {
+          length += shot.length;
         }
       });
     });
