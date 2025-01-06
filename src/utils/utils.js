@@ -62,12 +62,37 @@ function iterateUntil(iterator, condition) {
 
 const parser = new DOMParser();
 
-const html = (strings, ...values) => {
+const node = (strings, ...values) => {
   const cookedStr = String.raw({ raw: strings }, ...values);
   const doc = parser.parseFromString(cookedStr, 'text/html');
   return doc.body.firstChild;
-
 };
+
+const nodes = (strings, ...values) => {
+  const cookedStr = String.raw({ raw: strings }, ...values);
+  const doc = parser.parseFromString(cookedStr, 'text/html');
+  return doc.body.childNodes;
+};
+
+function addDays(date, days) {
+  const newDate = new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+  return newDate;
+}
+
+function getPolygonDate(value) {
+  const epochStart = new Date(-2209161600000); //1899-12-30T00:00:00Z
+  const daysInt = Math.floor(value);
+  return addDays(epochStart, daysInt);
+}
+
+function formatDateISO(date) {
+  // Convert the date to ISO string
+  const isoString = date.toISOString();
+  // Split at the "T" character to get the date part
+  const formattedDate = isoString.split('T')[0];
+  return formattedDate;
+}
+
 export {
   fromPolar,
   normal,
@@ -76,5 +101,9 @@ export {
   parseMyFloat,
   get3DCoordsStr,
   iterateUntil,
-  html
+  node,
+  nodes,
+  addDays,
+  getPolygonDate,
+  formatDateISO
 };

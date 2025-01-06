@@ -47,6 +47,17 @@ class Database {
     return this.caves.get(caveName);
   }
 
+  renameCave(oldName, newName) {
+    if (this.caves.has(newName)) {
+      throw new Error(`Cave with ${newName} already exists!`);
+    }
+    const cave = this.caves.get(oldName);
+    cave.name = newName;
+    this.caves.delete(oldName);
+    this.caves.set(newName, cave);
+
+  }
+
   getSurface(name) {
     return this.surfaces.get(name);
   }

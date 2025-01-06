@@ -12,7 +12,7 @@ import {
   SurveyStation,
   SurveyAlias,
   Surface,
-  SectionAttribute
+  CaveMetadata
 } from '../model.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
@@ -133,14 +133,38 @@ class PolygonImporter extends CaveImporter {
       const lines = wholeFileInText.split(/\r\n|\n/);
       const lineIterator = lines.entries();
       U.iterateUntil(lineIterator, (v) => v !== '*** Project ***');
-      const caveNameResult = lineIterator.next();
 
+      const caveNameResult = lineIterator.next();
       if (!caveNameResult.value[1].startsWith('Project name:')) {
         showErrorPanel(`Invalid file, unable to read project name at line ${caveNameResult.value[0]}`);
         return;
       }
-
       const projectName = caveNameResult.value[1].substring(14);
+
+      const settlementResult = lineIterator.next();
+      if (!settlementResult.value[1].startsWith('Project place:')) {
+        showErrorPanel(`Invalid file, unable to read settlement at line ${settlementResult.value[0]}`);
+        return;
+      }
+      const settlement = settlementResult.value[1].substring(15);
+
+      const catasterCodeResult = lineIterator.next();
+      if (!catasterCodeResult.value[1].startsWith('Project code:')) {
+        showErrorPanel(`Invalid file, unable to read cataster code at line ${catasterCodeResult.value[0]}`);
+        return;
+      }
+      const catasterCode = catasterCodeResult.value[1].substring(14);
+
+      lineIterator.next(); // TODO: skip made by for now
+
+      const dateResult = lineIterator.next();
+      if (!dateResult.value[1].startsWith('Made date:')) {
+        showErrorPanel(`Invalid file, unable to read date at line ${dateResult.value[0]}`);
+        return;
+      }
+      const floatValue = U.parseMyFloat(dateResult.value[1].substring(11));
+      const date = U.getPolygonDate(floatValue);
+      const metaData = new CaveMetadata(settlement, catasterCode, date);
       const surveys = [];
       const stations = new Map();
       var surveyName;
@@ -176,7 +200,7 @@ class PolygonImporter extends CaveImporter {
           surveyIndex++;
         }
       } while (surveyName !== undefined);
-      return new Cave(projectName, caveStartPosition, stations, surveys);
+      return new Cave(projectName, metaData, caveStartPosition, stations, surveys);
     }
   }
 
@@ -240,7 +264,7 @@ class TopodroidImporter extends CaveImporter {
     const startPoint = new SurveyStartStation(shots[0].from, new SurveyStation('center', new Vector(0, 0, 0)));
     const survey = new Survey(surveyName, true, startPoint, shots);
     SurveyHelper.calculateSurveyStations(survey, stations, aliases, startPoint.name, startPoint.station.position);
-    return new Cave(fileName, startPoint.station.position, stations, [survey], aliases);
+    return new Cave(fileName, undefined, startPoint.station.position, stations, [survey], aliases);
   }
 
   importFile(file) {

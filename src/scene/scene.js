@@ -713,6 +713,16 @@ class MyScene {
     matchingIds.forEach((id) => this.disposeSectionAttribute(id));
   }
 
+  renameCave(oldName, newName) {
+    if (this.caveObjects.has(newName)) {
+      throw new Error(`Cave with ${newName} already exists!`);
+    }
+    const surveyObjects = this.caveObjects.get(oldName);
+    this.caveObjects.delete(oldName);
+    this.caveObjects.set(newName, surveyObjects);
+    this.sectionAttributes.forEach((sa) => (sa.caveName = newName));
+  }
+
   disposeCave(caveName) {
     const surveyObjectList = this.caveObjects.get(caveName);
     surveyObjectList.forEach((c) => this.#disposeSurveyObjects(c));

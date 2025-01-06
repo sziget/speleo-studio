@@ -1,5 +1,10 @@
 {
   "name": "Laci-zsomboly",
+  "metaData": {
+    "settlement": "Csobánka",
+    "catasterCode": "4820-41",
+    "date": 1643414400000
+  },
   "startPosition": {
     "x": 0,
     "y": 0,

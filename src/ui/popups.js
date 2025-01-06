@@ -1,4 +1,4 @@
-import { html } from '../utils/utils.js';
+import { node } from '../utils/utils.js';
 
 function showCautionPanel(message, seconds, errorOrWarning) {
   let cautionPanel = document.getElementById('cautionpanel');
@@ -99,12 +99,12 @@ function makeMoveableDraggable(panel, headerText, closeFn, doDragFn, stopDragFn)
     document.documentElement.removeEventListener('mouseup', stopDrag, false);
   };
 
-  const close = html`<div class="close"></div>`;
+  const close = node`<div class="close"></div>`;
   close.onclick = () => {
     closeFn();
   };
 
-  const header = html`<div class="popup-header">${headerText}</div>`;
+  const header = node`<div class="popup-header">${headerText}</div>`;
   header.appendChild(close);
   header.parentPopup = panel;
   header.onmousedown = dragMouseDown;

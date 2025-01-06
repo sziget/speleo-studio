@@ -1,10 +1,10 @@
 import * as U from '../utils/utils.js';
-import { Color, StationAttribute } from '../model.js';
+import { CaveMetadata, Color, StationAttribute } from '../model.js';
 import { AttributesDefinitions } from '../attributes.js';
 import { SectionAttribute } from '../model.js';
 import { SectionHelper } from '../section.js';
 import { randomAlphaNumbericString } from '../utils/utils.js';
-import { makeMoveableDraggable } from './popups.js';
+import { makeMoveableDraggable, showErrorPanel } from './popups.js';
 
 class Editor {
 
@@ -86,10 +86,21 @@ class Editor {
 
 class CaveEditor extends Editor {
 
-  constructor(options, cave, scene, attributeDefs, panel) {
+  constructor(db, options, cave, scene, attributeDefs, panel) {
     super(panel, scene, cave, attributeDefs);
+    this.db = db;
     this.options = options;
     this.graph = undefined; // sort of a lazy val
+  }
+
+  #emitCaveRenamed(oldName, cave) {
+    const event = new CustomEvent('caveRenamed', {
+      detail : {
+        oldName : oldName,
+        cave    : cave
+      }
+    });
+    document.dispatchEvent(event);
   }
 
   setupPanel() {
@@ -98,17 +109,113 @@ class CaveEditor extends Editor {
       this.panel,
       `Cave sheet editor: ${this.cave.name}`,
       () => this.closeEditor(),
-      (_newWidth, newHeight) => this.table.setHeight(newHeight - 100),
+      (_newWidth, newHeight) => this.table.setHeight(newHeight - 140),
       () => this.table.redraw()
     );
-    this.panel.appendChild(document.createTextNode('Name: '));
-    const input = document.createElement('input');
-    input.setAttribute('type', 'text');
-    input.setAttribute('value', this.cave.name);
-    this.panel.appendChild(input);
-    this.panel.appendChild(document.createElement('br'));
+    this.#setupEditor();
+    this.#setupStats();
+    this.#setupTable();
 
-    this.panel.appendChild(document.createTextNode('Section attributes: '));
+  }
+  #setupEditor() {
+    const editorFields = U.node`<div class="editor"></div>`;
+
+    [
+      { label: 'Name', id: 'name', field: 'name', type: 'text' },
+      { label: 'Settlement', id: 'settlement', fieldSource: 'metadata', field: 'settlement', type: 'text' },
+      { label: 'Cataster code', id: 'cataster-code', fieldSource: 'metadata', field: 'catasterCode', type: 'text' },
+      {
+        label       : 'Date',
+        id          : 'date',
+        fieldSource : 'metadata',
+        field       : 'date',
+        type        : 'date',
+        parser      : (value) => new Date(value),
+        formatter   : (value) => U.formatDateISO(value) // yyyy-mm-dd
+      }
+
+    ].forEach((i) => {
+      let value = '';
+      if (i.fieldSource !== undefined && i.fieldSource === 'metadata' && this.cave.metaData !== undefined) {
+        value = this.cave.metaData[i.field];
+        if (value !== undefined && i.formatter !== undefined) {
+          value = i.formatter(value);
+        }
+      } else if (i.id === 'name') {
+        value = this.cave[i.field];
+      }
+      const label = U.node`<label for="${i.id}">${i.label}: <input type="${i.type}" id="${i.id}" value="${value}"></label>`;
+      label.childNodes[1].onchange = (e) => {
+        const newValue = e.target.value;
+        if (i.fieldSource === 'metadata') {
+          const parser = i.parser === undefined ? (v) => v : i.parser;
+          if (this.cave.metaData === undefined) {
+            this.cave.metaData = new CaveMetadata();
+          }
+          this.cave.metaData[i.field] = parser(newValue);
+        }
+
+        if (i.id === 'name') {
+          if (this.db.getCave(newValue) !== undefined) {
+            showErrorPanel(`Cave with name ${newValue} alreay exists, cannot rename!`);
+            e.target.value = this.cave.name;
+          } else {
+            const oldName = this.cave.name;
+            this.db.renameCave(oldName, newValue);
+            this.#emitCaveRenamed(oldName, this.cave);
+          }
+        }
+
+      };
+      editorFields.appendChild(label);
+
+    });
+
+    this.panel.appendChild(editorFields);
+
+    this.panel.appendChild(U.node`<hr/>`);
+  }
+
+  #setupStats() {
+    const statFields = U.node`<div class="cave-stats"></div>`;
+    const stats = this.cave.getStats();
+
+    [
+      { id: 'stations', label: 'Stations', field: 'stations', formatter: (v) => v },
+      { id: 'surveys', label: 'Surveys', field: 'surveys', formatter: (v) => v },
+      { id: 'isolated', label: 'Isolated surveys', field: 'isolated', formatter: (v) => v },
+      { id: 'attributes', label: 'Station attributes', field: 'attributes', formatter: (v) => v },
+      { break: true },
+      { id: 'length', label: 'Length', field: 'length', formatter: (v) => v.toFixed(2) },
+      { id: 'orphanLength', label: 'Length (orphan)', field: 'orphanLength', formatter: (v) => v.toFixed(2) },
+      { break: true },
+      { id: 'depth', label: 'Depth', field: 'depth', formatter: (v) => v.toFixed(2) },
+      { id: 'height', label: 'Height', field: 'height', formatter: (v) => v.toFixed(2) },
+      { id: 'vertical', label: 'Vertical extent', field: 'vertical', formatter: (v) => v.toFixed(2) },
+      {
+        id        : 'vertiicalWithSplays',
+        label     : 'Vertical extent (splays)',
+        field     : 'vertiicalWithSplays',
+        formatter : (v) => v.toFixed(2)
+      }
+
+    ].forEach((s) => {
+      let node;
+      if (s.break) {
+        node = U.node`<br>`;
+      } else {
+        const value = s.formatter(stats[s.field]);
+        node = U.node`<span id="${s.id}">${s.label} : ${value}</span>"`;
+      }
+      statFields.appendChild(node);
+    });
+    this.panel.appendChild(statFields);
+
+    this.panel.appendChild(U.node`<hr/>`);
+  }
+
+  #setupTable() {
+
     const addRow = document.createElement('button');
     addRow.appendChild(document.createTextNode('Add row'));
     addRow.onclick = () => {
@@ -444,11 +551,11 @@ class SurveyEditor extends Editor {
       { id: 'clear-filter', text: 'Clear filters', click: () => this.table.clearFilter() },
       { id: 'update-survey', text: 'Update', click: () => this.requestRecalculation() }
     ].forEach((b) => {
-      const button = U.html`<button id="${b.id}">${b.text}</button>`;
+      const button = U.node`<button id="${b.id}">${b.text}</button>`;
       button.onclick = b.click;
       this.panel.appendChild(button);
     });
-    this.panel.appendChild(U.html`<div id="surveydata"></div>`);
+    this.panel.appendChild(U.node`<div id="surveydata"></div>`);
 
     const floatPattern = /^[+-]?\d+([.,]\d+)?$/;
     var isFloatNumber = function (_cell, value) {

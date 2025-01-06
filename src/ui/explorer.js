@@ -22,6 +22,7 @@ class ProjectManager {
     document.addEventListener('surveyChanged', (e) => this.onSurveyChanged(e));
     document.addEventListener('surveyDeleted', (e) => this.onSurveyDeleted(e));
     document.addEventListener('caveDeleted', (e) => this.onCaveDeleted(e));
+    document.addEventListener('caveRenamed', (e) => this.onCaveRenamed(e));
   }
 
   onSurveyChanged(e) {
@@ -31,7 +32,7 @@ class ProjectManager {
     cave.surveys.find((s) => s.name === survey.name).attributes = attributes;
     this.recalculateCave(cave);
     this.scene.renderScene();
-    this.explorer.updateCave(cave);
+    this.explorer.updateCave(cave, (n) => n.name === cave.name);
   }
 
   onSurveyDeleted(e) {
@@ -42,7 +43,14 @@ class ProjectManager {
     this.recalculateCave(cave);
     this.scene.renderScene();
     this.explorer.deleteSurvey(caveName, surveyName);
-    this.explorer.updateCave(cave);
+    this.explorer.updateCave(cave, (n) => n.name === cave.name);
+  }
+
+  onCaveRenamed(e) {
+    const oldName = e.detail.oldName;
+    const cave = e.detail.cave;
+    this.scene.renameCave(oldName, cave.name);
+    this.explorer.updateCave(cave, (n) => n.name === oldName);
   }
 
   onCaveDeleted(e) {
@@ -126,8 +134,8 @@ class ProjectExplorer {
 
   }
 
-  updateCave(cave) {
-    const caveNode = this.itree.getChildNodes().find((n) => n.name === cave.name);
+  updateCave(cave, predicate) {
+    const caveNode = this.itree.getChildNodes().find(predicate);
     const data = this.transformCave(cave);
     this.itree.updateNode(caveNode, data);
   }
@@ -222,6 +230,7 @@ class ProjectExplorer {
       } else if (state.nodeType === 'cave') {
 
         this.caveeditor = new CaveEditor(
+          this.db,
           this.options,
           state.cave,
           this.scene,
@@ -241,7 +250,7 @@ class ProjectExplorer {
     } else if (event.target.id.startsWith('color-picker')) {
       const updateColor = (surveyOrCave) => (event2) => {
         surveyOrCave.color = new Color(event2.target.value);
-        this.updateCave(state.cave);
+        this.updateCave(state.cave, (n) => n.name === state.cave.name);
       };
       if (event.target.oninput === null) {
         if (state.nodeType === 'survey') {

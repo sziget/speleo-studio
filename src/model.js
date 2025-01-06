@@ -98,6 +98,10 @@ class Shot {
     return this.type === 'splay';
   }
 
+  isCenter() {
+    return this.type === 'center';
+  }
+
   toExport() {
     let newShot = {};
     this.export_fields.forEach((fName) => {
@@ -227,6 +231,14 @@ class SurveyStation {
     this.type = type;
     this.position = position;
     this.survey = survey;
+  }
+
+  isCenter() {
+    return this.type === 'center';
+  }
+
+  isSplay() {
+    return this.type === 'splay';
   }
 
   toExport() {
@@ -368,11 +380,33 @@ class Surface {
   }
 
 }
+class CaveMetadata {
+
+  constructor(settlement, catasterCode, date) {
+    this.settlement = settlement;
+    this.catasterCode = catasterCode;
+    this.date = date;
+  }
+
+  toExport() {
+    return {
+      settlement   : this.settlement,
+      catasterCode : this.catasterCode,
+      date         : this.date.getTime()
+    };
+  }
+
+  static fromPure(pure) {
+    pure.date = new Date(pure.date); // unix epoch in millis
+    return Object.assign(new CaveMetadata(), pure);
+  }
+}
 
 class Cave {
   /**
    *
    * @param {string} name - The name of the cave
+   * @param {CaveMetadata} metaData - Additional information about the cave, like the settlement
    * @param {Vector} startPosition - The start position of the cave that is defined by the first survey
    * @param {Map<string, SurveyStation>} stations - The merged map of all survey stations
    * @param {Survey[]} surveys - The surveys associated to a cave
@@ -381,6 +415,7 @@ class Cave {
    */
   constructor(
     name,
+    metaData,
     startPosition,
     stations = new Map(),
     surveys = [],
@@ -389,6 +424,7 @@ class Cave {
     visible = true
   ) {
     this.name = name;
+    this.metaData = metaData;
     this.startPosition = startPosition;
     this.stations = stations;
     this.surveys = surveys;
@@ -397,9 +433,71 @@ class Cave {
     this.visible = visible;
   }
 
+  getStats() {
+    var length = 0;
+    var orphanLength = 0;
+    var isolated = 0;
+    var surveys = 0;
+    var attributes = 0;
+
+    this.surveys.forEach((survey) => {
+      surveys += 1;
+      attributes += survey.attributes.length;
+
+      if (survey.isolated === true) {
+        isolated += 1;
+      }
+      survey.shots.forEach((shot) => {
+        length += shot.length;
+        if (survey.orphanShotIds.has(shot.id)) {
+          orphanLength += shot.length;
+        }
+      });
+    });
+    const stations = [...this.stations.values()];
+    var minZ, maxZ, minZSplay, maxZSplay;
+
+    stations.forEach((ss) => {
+      const zCoord = ss.position.z;
+
+      if (ss.isCenter()) {
+        if (zCoord < minZ || minZ === undefined) {
+          minZ = zCoord;
+        }
+        if (zCoord > maxZ || maxZ === undefined) {
+          maxZ = zCoord;
+        }
+      } else if (ss.isSplay()) {
+        if (zCoord < minZSplay || minZSplay === undefined) {
+          minZSplay = zCoord;
+        }
+        if (zCoord > maxZSplay || maxZSplay === undefined) {
+          maxZSplay = zCoord;
+        }
+
+      }
+    });
+
+    const verticalSplays = maxZSplay - minZSplay;
+
+    return {
+      stations            : stations.filter((ss) => ss.isCenter()).length,
+      attributes          : attributes,
+      surveys             : surveys,
+      isolated            : isolated,
+      length              : length,
+      orphanLength        : orphanLength,
+      depth               : this.startPosition.z - minZ,
+      height              : maxZ - this.startPosition.z,
+      vertical            : maxZ - minZ,
+      vertiicalWithSplays : isNaN(verticalSplays) ? 0 : verticalSplays
+    };
+  }
+
   toExport() {
     return {
       name              : this.name,
+      metaData          : this.metaData.toExport(),
       startPosition     : this.startPosition,
       aliases           : this.aliases.map((a) => a.toExport()),
       sectionAttributes : this.sectionAttributes.map((sa) => sa.toExport()),
@@ -408,6 +506,9 @@ class Cave {
   }
 
   static fromPure(pure, attributeDefs) {
+    if (pure.metaData !== undefined) {
+      pure.metaData = CaveMetadata.fromPure(pure.metaData);
+    }
     pure.surveys = pure.surveys.map((s) => Survey.fromPure(s, attributeDefs));
     pure.aliases = pure.aliases === undefined ? [] : pure.aliases.map((a) => SurveyAlias.fromPure(a));
     pure.startPosition = Vector.fromPure(pure.startPosition);
@@ -431,5 +532,6 @@ export {
   Survey,
   SurveyAlias,
   Surface,
+  CaveMetadata,
   Cave
 };

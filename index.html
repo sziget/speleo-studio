@@ -105,7 +105,7 @@
         position: absolute;
         top: 80px;
         left: 300px;
-        text-align: left;
+        text-align: center;
         z-index: 100;
         color: azure;
         background: rgb(40, 40, 40);
@@ -189,6 +189,74 @@
         border-radius: 20px;
         position: absolute;
         left: 10px;
+      }
+
+      .cave-stats {
+        margin-top: 15px;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .cave-stats span {
+        margin-top: 5px;
+        margin-left: 10px;
+        white-space: nowrap;
+        display: inline-block;
+      }
+
+      .editor {
+        font-size: 12px;
+      }
+
+      .editor input {
+        outline: none;
+        color: azure;
+        background: rgb(40, 40, 40);
+        border-top-width: 0px;
+        border-right-width: 0px;
+        border-left-width: 0px;
+        display: inline-block;
+        float: right;
+      }
+
+      .editor input[type='text'] {
+        width: 50%;
+      }
+
+      .editor input[type='date'] {
+        width: 70%;
+      }
+
+      .editor label {
+        color: white;
+        margin-left: 30px;
+        margin-right: 5px;
+        margin-top: 10px;
+        white-space: nowrap;
+        width: 200px;
+        display: inline-block;
+      }
+
+      .popup button {
+        font-size: 12px;
+        border: 1px solid #328e3a;
+        background: linear-gradient(to bottom, #328e3a 0%, #5fc768 100%);
+        color: azure;
+        cursor: pointer;
+        padding: 5px 10px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        transition:
+          color 0.3s,
+          background 0.3s,
+          opacity,
+          0.3s;
+      }
+
+      .popup button:hover {
+        border: 1px solid #328e3a;
+        background: linear-gradient(to bottom, #5fc768 0%, #328e3a 100%);
+        color: #000;
       }
 
       .popup .close {
