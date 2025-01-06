@@ -101,6 +101,21 @@ class MyScene {
     this.currentCamera.updateMatrix();
   }
 
+  setOrbitTarget(x, y, z) {
+    this.orbitTarget.set(x, y, z);
+  }
+
+  zoomOnStationSphere(stationSphere) {
+    const pos = stationSphere.position.clone();
+    const dir = this.currentCamera.position.clone().sub(this.orbitTarget);
+    const camPos = pos.clone().add(dir);
+    this.setOrbitTarget(pos.x, pos.y, pos.z);
+    this.setCameraPosition(camPos.x, camPos.y, camPos.z);
+    this.currentCamera.zoom = 4;
+    this.currentCamera.updateProjectionMatrix();
+    this.renderScene();
+  }
+
   setBackground(val) {
     this.threejsScene.background = new THREE.Color(val);
     this.renderScene();

@@ -31,6 +31,11 @@ class Database {
     return this.caves.values().flatMap((c) => c.surveys);
   }
 
+  getAllStationNames() {
+    const stNames = [...this.caves.values().flatMap((c) => [...c.stations.keys()])];
+    return stNames.sort();
+  }
+
   getSurvey(caveName, surveyName) {
     if (this.caves.has(caveName)) {
       return this.caves.get(caveName).surveys.find((s) => s.name === surveyName);

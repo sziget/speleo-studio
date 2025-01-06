@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { showErrorPanel } from './ui/popups.js';
-import { get3DCoordsStr } from './utils/utils.js';
+import { get3DCoordsStr, node } from './utils/utils.js';
 
 class SceneInteraction {
 
   constructor(
+    db,
     options,
     footer,
     scene,
@@ -15,6 +16,7 @@ class SceneInteraction {
     infoPanel,
     locatePanel
   ) {
+    this.db = db;
     this.options = options;
     this.footer = footer;
     this.scene = scene;
@@ -23,7 +25,6 @@ class SceneInteraction {
     this.contextMenu = contextMenu;
     this.infoPanel = infoPanel;
     this.locatePanel = locatePanel;
-    this.setupLocatePanel();
     this.selectedStation = undefined;
     this.selectedPosition = undefined;
     this.selectedStationForContext = undefined;
@@ -201,26 +202,39 @@ class SceneInteraction {
     }
   }
 
-  setupLocatePanel() {
-    const button = this.locatePanel.getElementsByTagName('button').item(0);
+  showLocatePanel(clientX) {
+    this.locatePanel.innerHTML = '';
+    const input = node`<input type="search" list="stations" id="pointtolocate" />`;
+    const stNames = this.db.getAllStationNames();
+    const options = stNames.map((n) => `<option value="${n}">`).join('');
+    const datalist = node`<datalist id="stations">${options}</datalist>`;
+    const forContext = node`<div><label for="forContext">for context<input type="checkbox" id="forContext" /></label></div>`;
+    const button = node`<button id="locatebutton">Locate point</button>`;
     button.onclick = () => {
-      const input = this.locatePanel.getElementsByTagName('input').item(0);
-
       const stationSphere = this.scene.getStationSphere(input.value);
       if (stationSphere !== undefined) {
         if (this.selectedStation !== undefined) {
           this.#clearSelected();
         }
-        this.#setSelected(stationSphere);
-        this.scene.renderScene();
+        if (forContext.getElementsByTagName('input')[0].checked) {
+          this.#setSelectedForContext(stationSphere);
+        } else {
+          this.#setSelected(stationSphere);
+        }
+
+        this.scene.zoomOnStationSphere(stationSphere);
         this.hideLocatePanel();
         input.value = '';
       }
-    };
-  }
 
-  showLocatePanel(clientX) {
-    const input = this.locatePanel.getElementsByTagName('input').item(0);
+    };
+    const close = node`<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>`;
+
+    this.locatePanel.appendChild(input);
+    this.locatePanel.appendChild(datalist);
+    this.locatePanel.appendChild(button);
+    this.locatePanel.appendChild(forContext);
+    this.locatePanel.appendChild(close);
     input.focus();
     this.locatePanel.style.left = `${clientX - 100}px`;
     this.locatePanel.style.display = 'block';

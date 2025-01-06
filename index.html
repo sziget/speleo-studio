@@ -39,7 +39,9 @@
       }
 
       #close {
-        float: right;
+        position: absolute;
+        top: 3px;
+        right: 3px;
         display: inline-block;
         padding: 2px 5px;
         transition: 0.3s;
@@ -140,6 +142,7 @@
       }
 
       #locatepoint {
+        font-size: 12px;
         padding: 10px;
         position: absolute;
         display: block;
@@ -387,10 +390,7 @@
       <p id="content"></p>
     </div>
     <div id="navbarcontainer" , class="topnavbar"></div>
-    <div id="locatepoint">
-      <input type="text" id="pointtolocate" /><button id="locatebutton">Locate point</button>
-      <span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>
-    </div>
+    <div id="locatepoint"></div>
 
     <div id="caveeditor" class="popup"> </div>
     <div id="surveyeditor" class="popup"></div>

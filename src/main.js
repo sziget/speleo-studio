@@ -25,6 +25,7 @@ class Main {
     const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
     controls.close();
     const interaction = new SceneInteraction(
+      db,
       options,
       footer,
       scene,
