@@ -1,7 +1,7 @@
 import * as U from '../utils/utils.js';
 import { CaveMetadata, Color, StationAttribute } from '../model.js';
 import { AttributesDefinitions } from '../attributes.js';
-import { SectionAttribute } from '../model.js';
+import { SectionAttribute, Shot } from '../model.js';
 import { SectionHelper } from '../section.js';
 import { randomAlphaNumbericString } from '../utils/utils.js';
 import { makeMoveableDraggable, showErrorPanel } from './popups.js';
@@ -49,6 +49,41 @@ class Editor {
     editor.addEventListener('blur', () => successFn(editor.value, cell, success));
 
     return editor;
+  }
+
+  floatFormatter(defaultValue = '0') {
+    return (cell) => {
+      if (cell.getValue() !== undefined) {
+        return cell.getValue().toFixed(2);
+      } else {
+        return defaultValue;
+      }
+    };
+  }
+
+  getContextMenu() {
+    return [
+      {
+        label  : '<span class="delete-row"></span><span>Delete row<span/> ',
+        action : function (e, row) {
+          row.delete();
+        }
+      },
+      {
+        label  : '<span class="add-row"></span><span>Add row above<span/> ',
+        action : (e, row) => {
+          const newRow = this.getEmptyRow();
+          row.getTable().addRow(newRow, true, row.getIndex());
+        }
+      },
+      {
+        label  : '<span class="add-row"></span><span>Add row below<span/> ',
+        action : (e, row) => {
+          const newRow = this.getEmptyRow();
+          row.getTable().addRow(newRow, false, row.getIndex());
+        }
+      }
+    ];
   }
 
   attributeHeaderFilter(headerValue, _rowValue, rowData) {
@@ -420,13 +455,7 @@ class CaveEditor extends Editor {
           field      : 'section.distance',
           headerSort : false,
           editor     : false,
-          formatter  : function (cell) {
-            if (cell.getValue() !== undefined) {
-              return cell.getValue().toFixed(2);
-            } else {
-              return '0';
-            }
-          }
+          formatter  : this.floatFormatter('0')
         },
         {
           title            : 'Attribute',
@@ -467,12 +496,11 @@ class SurveyEditor extends Editor {
     document.addEventListener('surveyRecalculated', (e) => this.onSurveyRecalculated(e));
   }
 
-  #emitSurveyChanged(attributes) {
+  #emitSurveyChanged() {
     const event = new CustomEvent('surveyChanged', {
       detail : {
-        cave       : this.cave,
-        survey     : this.survey,
-        attributes : attributes
+        cave   : this.cave,
+        survey : this.survey
       }
     });
     document.dispatchEvent(event);
@@ -491,25 +519,28 @@ class SurveyEditor extends Editor {
   #getSurveyAttributesFromTable() {
     return this.table.getData()
       .filter((r) => r.attributes !== undefined && r.attributes.length > 0)
-      .flatMap((row) => row.attributes.map((a) => new StationAttribute(row.shot.to, a)));
+      .flatMap((row) => row.attributes.map((a) => new StationAttribute(row.to, a)));
+  }
+
+  updateShots() {
+    this.survey.shots = this.table.getData().map((r) => {
+      return new Shot(r.id, r.type, r.from, r.to, r.length, r.azimuth, r.clino);
+    });
+
   }
 
   requestRecalculation() {
     if (this.surveyModified) {
+      this.updateShots();
       const attributes = this.#getSurveyAttributesFromTable();
-      this.#emitSurveyChanged(attributes);
+      this.survey.attributes = attributes;
+      this.#emitSurveyChanged();
       this.surveyModified = false;
     }
   }
 
   closeEditor() {
-
-    if (this.surveyModified) {
-      const attributes = this.#getSurveyAttributesFromTable();
-      this.#emitSurveyChanged(attributes);
-      this.surveyModified = false;
-    }
-
+    this.requestRecalculation();
     super.closeEditor();
   }
 
@@ -518,19 +549,45 @@ class SurveyEditor extends Editor {
       const stationAttributes = survey.attributes
         .filter((a) => a.name === sh.to)
         .map((a) => a.attribute);
-
-      const rowToBe = {
-        shot       : sh,
-        isOrphan   : survey.orphanShotIds.has(sh.id),
-        attributes : stationAttributes
-      };
-      const fromStation = stations.get(survey.getFromStationName(sh));
       const toStation = stations.get(survey.getToStationName(sh));
 
-      rowToBe.from = fromStation; // not shown in table
-      rowToBe.to = toStation; // not shown in table
+      const rowToBe = {
+        id         : sh.id,
+        from       : sh.from,
+        to         : sh.to,
+        length     : sh.length,
+        azimuth    : sh.azimuth,
+        clino      : sh.clino,
+        type       : sh.type,
+        isOrphan   : survey.orphanShotIds.has(sh.id),
+        attributes : stationAttributes,
+        x          : toStation?.position?.x,
+        y          : toStation?.position?.y,
+        z          : toStation?.position?.z
+      };
+
       return rowToBe;
     });
+  }
+
+  getEmptyRow() {
+    const id = Math.max(...this.table.getData().map((r) => r.id));
+
+    return {
+      id         : id + 1,
+      from       : undefined,
+      to         : undefined,
+      length     : undefined,
+      azimuth    : undefined,
+      clino      : undefined,
+      type       : undefined,
+      isOrphan   : undefined,
+      attributes : [],
+      x          : undefined,
+      y          : undefined,
+      z          : undefined
+    };
+
   }
 
   setupTable() {
@@ -549,11 +606,18 @@ class SurveyEditor extends Editor {
       { id: 'sumCenterLines', text: 'Show orphans', click: () => this.table.addFilter(showOrphans) },
       { id: 'hideorphan', text: 'Hide orphans', click: () => this.table.addFilter(hideOrphans) },
       { id: 'clear-filter', text: 'Clear filters', click: () => this.table.clearFilter() },
-      { id: 'update-survey', text: 'Update', click: () => this.requestRecalculation() }
+      { break: true },
+      { id: 'update-survey', text: 'Update', click: () => this.requestRecalculation() },
+      { id: 'add-row', text: 'Add row bottom', click: () => this.table.addRow(this.getEmptyRow()) }
+
     ].forEach((b) => {
-      const button = U.node`<button id="${b.id}">${b.text}</button>`;
-      button.onclick = b.click;
-      this.panel.appendChild(button);
+      if (b.break === true) {
+        this.panel.appendChild(document.createElement('br'));
+      } else {
+        const button = U.node`<button id="${b.id}">${b.text}</button>`;
+        button.onclick = b.click;
+        this.panel.appendChild(button);
+      }
     });
     this.panel.appendChild(U.node`<div id="surveydata"></div>`);
 
@@ -577,19 +641,25 @@ class SurveyEditor extends Editor {
 
     const sumCenterLines = function (_values, data) {
       var sumLength = 0;
-      data.forEach(function (value) {
-        sumLength += value.shot.type === 'center' ? U.parseMyFloat(value.shot.length) : 0;
+      data.forEach((value) => {
+        if (value !== undefined && value.shot !== undefined) {
+          sumLength += value.type === 'center' ? U.parseMyFloat(value.length) : 0;
+        }
       });
 
       return sumLength.toFixed(2);
     };
 
     var floatAccessor = function (value) {
-      return U.parseMyFloat(value);
+      if (value === undefined) {
+        return undefined;
+      } else {
+        return U.parseMyFloat(value);
+      }
     };
 
     function showCenter(data) {
-      return data.shot.type === 'center';
+      return data.type === 'center';
     }
 
     function hideOrphans(data) {
@@ -600,9 +670,39 @@ class SurveyEditor extends Editor {
       return data.isOrphan;
     }
 
+    const attributesToClipboard = (attributes) => {
+      const formatted = AttributesDefinitions.getAttributesAsString(attributes);
+      return formatted;
+    };
+
+    const clipboardFormatter = (cell) => {
+      const attrs = cell.getData().attributes;
+      if (Array.isArray(attrs) && attrs.length > 0) {
+        return AttributesDefinitions.getAttributesAsString(attrs);
+      } else {
+        return '';
+      }
+    };
+
+    const attributesFromClipboard = (value) => {
+      if (value === undefined || typeof value !== 'string' || value.length === 0) {
+        return [];
+      }
+      const result = this.attributeDefs.getAttributesFromString(value);
+      if (result.errors.length > 0) {
+        this.showAlert(result.errors.join('<br>'), 6);
+      } else if (result.attributes.length > 0) {
+        return result.attributes;
+      }
+    };
+
     const atrributesFormatter = (cell) => {
       const attrs = cell.getData().attributes;
-      if (attrs !== undefined && attrs.length > 0) {
+      if (attrs === undefined) {
+        return undefined;
+      }
+
+      if (Array.isArray(attrs) && attrs.length > 0) {
         return AttributesDefinitions.getAttributesAsString(attrs);
       } else {
         return undefined;
@@ -618,13 +718,56 @@ class SurveyEditor extends Editor {
       }
     };
 
+    const deleteIcon = () => {
+      return '<div class="delete-row"></div>';
+    };
+
+    const deleteRow = (cell) => {
+      const id = cell.getData().id;
+      const toDelete = this.survey.shots.find((shot) => shot.id === id);
+      const indexToDelete = this.survey.shots.indexOf(toDelete);
+      if (indexToDelete !== -1) {
+        this.survey.shots.splice(indexToDelete, 1);
+      }
+      cell.getRow().delete();
+    };
+
     this.table = new Tabulator('#surveydata', {
-      height         : 300,
-      data           : this.#getTableData(this.survey, this.cave.stations),
-      layout         : 'fitDataStretch',
-      validationMode : 'highlight',
-      rowHeader      : { formatter: 'rownum', headerSort: false, hozAlign: 'center', resizable: false, frozen: true },
-      rowFormatter   : function (row) {
+      height                    : 300,
+      data                      : this.#getTableData(this.survey, this.cave.stations),
+      layout                    : 'fitDataStretch',
+      validationMode            : 'highlight',
+      //enable range selection
+      selectableRange           : 1,
+      selectableRangeColumns    : true,
+      selectableRangeRows       : true,
+      selectableRangeClearCells : true,
+
+      //change edit trigger mode to make cell navigation smoother
+      editTriggerEvent : 'dblclick',
+
+      //configure clipboard to allow copy and paste of range format data
+      clipboard           : true,
+      clipboardCopyStyled : false,
+      clipboardCopyConfig : {
+        rowHeaders    : false,
+        columnHeaders : false,
+        columnCalcs   : false
+      },
+      clipboardCopyRowRange : 'range',
+      clipboardPasteParser  : 'range',
+      clipboardPasteAction  : 'range',
+
+      rowContextMenu : this.getContextMenu(),
+      rowHeader      : {
+        formatter : 'rownum',
+        hozAlign  : 'center',
+        resizable : false,
+        frozen    : true,
+        editor    : false,
+        cssClass  : 'range-header-col'
+      },
+      rowFormatter : function (row) {
         const rowData = row.getData();
         if (rowData.isOrphan) {
           row.getElement().style.backgroundColor = '#ff0000';
@@ -633,11 +776,16 @@ class SurveyEditor extends Editor {
           row.getElement().style.backgroundColor = '#012109';
         }
       },
+      columnDefaults : {
+        headerSort     : false,
+        headerHozAlign : 'center',
+        resizable      : 'header'
+      },
       columns : [
+
         {
           title        : 'From',
-          field        : 'shot.from',
-          headerSort   : false,
+          field        : 'from',
           editor       : true,
           validator    : ['required'],
           headerFilter : 'input',
@@ -645,8 +793,7 @@ class SurveyEditor extends Editor {
         },
         {
           title        : 'To',
-          field        : 'shot.to',
-          headerSort   : false,
+          field        : 'to',
           editor       : true,
           validator    : ['required'],
           headerFilter : 'input',
@@ -654,38 +801,65 @@ class SurveyEditor extends Editor {
         },
         {
           title      : 'Length',
-          field      : 'shot.length',
-          headerSort : false,
+          field      : 'length',
           editor     : true,
           accessor   : floatAccessor,
           validator  : ['required', customValidator],
           bottomCalc : sumCenterLines
         },
         {
-          title      : 'Azimuth',
-          field      : 'shot.azimuth',
-          headerSort : false,
-          editor     : true,
-          accessor   : floatAccessor,
-          validator  : ['required', 'min:-360', 'max:360', customValidator]
+          title     : 'Azimuth',
+          field     : 'azimuth',
+          editor    : true,
+          accessor  : floatAccessor,
+          validator : ['required', 'min:-360', 'max:360', customValidator]
         },
         {
-          title      : 'Clino',
-          field      : 'shot.clino',
-          headerSort : false,
-          editor     : true,
-          accessor   : floatAccessor,
-          validator  : ['required', customValidator]
+          title     : 'Clino',
+          field     : 'clino',
+          editor    : true,
+          accessor  : floatAccessor,
+          validator : ['required', customValidator]
         },
         {
-          title            : 'Attributes',
-          field            : 'attributes',
-          headerFilterFunc : this.attributeHeaderFilter,
-          headerFilter     : 'input',
-          formatter        : atrributesFormatter,
-          editor           : (cell, onRendered, success) =>
-            this.attributesEditor(cell, onRendered, success, (cv) => cv.attributes, successFunc),
-          headerSort : false
+          title            : 'X',
+          field            : 'x',
+          mutatorClipboard : floatAccessor,
+          formatter        : this.floatFormatter(''),
+          editor           : false
+        },
+        {
+          title            : 'Y',
+          field            : 'y',
+          editor           : false,
+          mutatorClipboard : floatAccessor,
+          formatter        : this.floatFormatter(''),
+          validator        : ['required']
+        },
+        {
+          title            : 'Z',
+          field            : 'z',
+          editor           : false,
+          mutatorClipboard : floatAccessor,
+          formatter        : this.floatFormatter('')
+        },
+        {
+          title              : 'Attributes',
+          field              : 'attributes',
+          headerFilterFunc   : this.attributeHeaderFilter,
+          headerFilter       : 'input',
+          formatter          : atrributesFormatter,
+          accessorClipboard  : attributesToClipboard,
+          mutatorClipboard   : attributesFromClipboard,
+          formatterClipboard : clipboardFormatter,
+          editor             : (cell, onRendered, success) =>
+            this.attributesEditor(cell, onRendered, success, (cv) => cv.attributes, successFunc)
+        },
+        {
+          clipboard : false,
+          formatter : deleteIcon,
+          width     : 40,
+          cellClick : (_e, cell) => deleteRow(cell)
         }
       ]
     });

@@ -331,16 +331,19 @@ class MyScene {
       cave.surveys.forEach((s) => {
         const matchingAttributes = s.getAttributesWithPositionsByName(cave.stations, attributeName);
         if (matchingAttributes.length === 0) return;
-        const [position, firstAttribute] = matchingAttributes[0]; //TODO:show warning if there are additional elements
-        const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
-        const plane = new THREE.Mesh(geometry, this.materials.planes.get(attributeName));
-        plane.position.set(0, 0, 0);
-        const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip));
-        plane.lookAt(dir.x, dir.y, dir.z);
-        const v = new THREE.Vector3(position.x, position.y, position.z);
-        plane.position.copy(v);
-        planes.push(plane);
-        this.threejsScene.add(plane);
+        matchingAttributes.forEach((ma) => {
+          const [position, firstAttribute] = ma;
+          const geometry = new THREE.PlaneGeometry(firstAttribute.width, firstAttribute.height, 10, 10);
+          const plane = new THREE.Mesh(geometry, this.materials.planes.get(attributeName));
+          plane.position.set(0, 0, 0);
+          const dir = U.normal(U.degreesToRads(firstAttribute.azimuth), U.degreesToRads(firstAttribute.dip));
+          plane.lookAt(dir.x, dir.y, dir.z);
+          const v = new THREE.Vector3(position.x, position.y, position.z);
+          plane.position.copy(v);
+          planes.push(plane);
+          this.threejsScene.add(plane);
+        });
+
       });
     });
 

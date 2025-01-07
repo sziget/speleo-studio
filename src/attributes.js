@@ -78,6 +78,16 @@ const attributeDefintions = {
       }
     },
     {
+      id     : 14,
+      type   : 2,
+      name   : 'co',
+      params : {
+        value : {
+          type : 'int'
+        }
+      }
+    },
+    {
       id     : 5,
       type   : 3,
       name   : 'label',

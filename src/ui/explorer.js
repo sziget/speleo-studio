@@ -26,10 +26,8 @@ class ProjectManager {
   }
 
   onSurveyChanged(e) {
+    //TODO : consider survey here and only recalculate following surveys
     const cave = e.detail.cave;
-    const survey = e.detail.survey;
-    const attributes = e.detail.attributes;
-    cave.surveys.find((s) => s.name === survey.name).attributes = attributes;
     this.recalculateCave(cave);
     this.scene.renderScene();
     this.explorer.updateCave(cave, (n) => n.name === cave.name);
