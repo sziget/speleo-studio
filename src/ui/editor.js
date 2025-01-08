@@ -511,8 +511,30 @@ class SurveyEditor extends Editor {
     const survey = e.detail.survey;
 
     if (this.table !== undefined && this.cave.name === cave.name && this.survey.name === survey.name) {
-      const data = this.#getTableData(survey, cave.stations);
-      this.table.replaceData(data);
+      const tableRows = this.#getTableData(this.survey, this.cave.stations);
+      const invalidShotIdsArray = tableRows
+        .filter((r) => ['invalid', 'incomplete'].includes(r.status))
+        .map((x) => x.id);
+      const invalidShotIds = new Set(invalidShotIdsArray);
+      if (invalidShotIds.symmetricDifference(this.survey.invalidShotIds).size > 0) {
+        throw new Error(
+          `Invalid shot ids do not match for survey '${[...this.survey.invalidShotIds].join(',')}' and rows '${invalidShotIdsArray.join(',')}'`
+        );
+      }
+      if (invalidShotIds.size > 0 || survey.orphanShotIds.size > 0) {
+        let invalidMessage = '';
+        if (invalidShotIds.size > 0) {
+          invalidMessage = `${invalidShotIds.size} row(s) are invalid: ${invalidShotIdsArray.slice(0, 15).join(',')}<br>`;
+        }
+        let orphanMessage = '';
+        if (survey.orphanShotIds.size > 0) {
+          const first15Ids = [...survey.orphanShotIds.values()].slice(0, 15);
+          orphanMessage = `${survey.orphanShotIds.size} row(s) are orphan: ${first15Ids.join(',')}<br>`;
+        }
+        this.showAlert(`${invalidMessage}${orphanMessage}Check warning icon for details.`, 7);
+      }
+
+      this.table.replaceData(tableRows);
     }
   }
 
@@ -523,10 +545,57 @@ class SurveyEditor extends Editor {
   }
 
   updateShots() {
-    this.survey.shots = this.table.getData().map((r) => {
-      return new Shot(r.id, r.type, r.from, r.to, r.length, r.azimuth, r.clino);
-    });
+    this.survey.updateShots(this.getNewShots());
+  }
 
+  getNewShots() {
+    return this.table.getData().map((r) => new Shot(r.id, r.type, r.from, r.to, r.length, r.azimuth, r.clino));
+  }
+
+  validateSurvey(showAlert = true) {
+    const rowsToUpdated = this.getShotValidationUpdates(this.table.getData());
+    rowsToUpdated.forEach((e) => this.table.updateData([e]));
+    const badRows = rowsToUpdated.filter((r) => ['invalid', 'incomplete'].includes(r.status)).map((r) => r.id + 1);
+    if (badRows.length > 0 && showAlert) {
+      this.showAlert(
+        `${badRows.length} row(s) with the following ids are invalid: ${badRows.slice(0, 15)}<br>Click on the warning icon for details.`,
+        4
+      );
+    }
+
+  }
+
+  getShotValidationUpdates(data) {
+    const rowsToUpdated = [];
+
+    data.forEach((r) => {
+      const shot = new Shot(r.id, r.type, r.from, r.to, r.length, r.azimuth, r.clino);
+      const emptyFields = shot.getEmptyFields();
+      const oldStatus = r.status;
+      let validationErrors = [];
+      if (emptyFields.length > 0) {
+        const newRow = { ...r };
+        newRow.status = 'incomplete';
+        newRow.message = `Shot with id ${shot.id + 1} has missing fields: ${emptyFields.join(',')}`;
+        rowsToUpdated.push(newRow);
+      } else {
+        validationErrors = shot.validate();
+        if (validationErrors.length > 0) {
+          const newRow = { ...r };
+          newRow.status = 'invalid';
+          newRow.message = `Shot with id ${shot.id + 1} is invalid: ${validationErrors.join('<br>')}`;
+          rowsToUpdated.push(newRow);
+        }
+      }
+      if (['invalid', 'incomplete'].includes(oldStatus) && emptyFields.length === 0 && validationErrors.length === 0) {
+        const newRow = { ...r };
+        newRow.status = 'ok';
+        newRow.message = undefined;
+        rowsToUpdated.push(newRow);
+      }
+
+    });
+    return rowsToUpdated;
   }
 
   requestRecalculation() {
@@ -539,13 +608,17 @@ class SurveyEditor extends Editor {
     }
   }
 
+  updateSurvey() {
+    this.requestRecalculation();
+  }
+
   closeEditor() {
     this.requestRecalculation();
     super.closeEditor();
   }
 
   #getTableData(survey, stations) {
-    return survey.shots.map((sh) => {
+    const rows = survey.shots.map((sh) => {
       const stationAttributes = survey.attributes
         .filter((a) => a.name === sh.to)
         .map((a) => a.attribute);
@@ -559,7 +632,8 @@ class SurveyEditor extends Editor {
         azimuth    : sh.azimuth,
         clino      : sh.clino,
         type       : sh.type,
-        isOrphan   : survey.orphanShotIds.has(sh.id),
+        status     : 'ok',
+        message    : 'No errors',
         attributes : stationAttributes,
         x          : toStation?.position?.x,
         y          : toStation?.position?.y,
@@ -568,6 +642,15 @@ class SurveyEditor extends Editor {
 
       return rowToBe;
     });
+    survey.orphanShotIds.forEach((id) => {
+      const row = rows[rows.findIndex((r) => r.id === id)];
+      row.status = 'orphan';
+      row.message = 'Row is orphan';
+    });
+    const rowsToUpdate = this.getShotValidationUpdates(rows);
+    rowsToUpdate.forEach((u) => (rows[rows.findIndex((r) => r.id === u.id)] = u));
+
+    return rows;
   }
 
   getEmptyRow() {
@@ -581,7 +664,8 @@ class SurveyEditor extends Editor {
       azimuth    : undefined,
       clino      : undefined,
       type       : undefined,
-      isOrphan   : undefined,
+      status     : 'incomplete',
+      message    : 'Shot is newly created',
       attributes : [],
       x          : undefined,
       y          : undefined,
@@ -607,8 +691,22 @@ class SurveyEditor extends Editor {
       { id: 'hideorphan', text: 'Hide orphans', click: () => this.table.addFilter(hideOrphans) },
       { id: 'clear-filter', text: 'Clear filters', click: () => this.table.clearFilter() },
       { break: true },
-      { id: 'update-survey', text: 'Update', click: () => this.requestRecalculation() },
-      { id: 'add-row', text: 'Add row bottom', click: () => this.table.addRow(this.getEmptyRow()) }
+      { id: 'validate-shots', text: 'Validate shots', click: () => this.validateSurvey() },
+      { id: 'update-survey', text: 'Update survey', click: () => this.updateSurvey() },
+      { id: 'add-row', text: 'Add row to bottom', click: () => this.table.addRow(this.getEmptyRow()) },
+      {
+        id    : 'delete-row',
+        text  : 'Delete active rows',
+        click : () => {
+          var ranges = this.table.getRanges();
+          ranges.forEach((r) => {
+            const rows = r.getRows();
+            rows.forEach((r) => r.delete());
+            r.remove();
+          });
+
+        }
+      }
 
     ].forEach((b) => {
       if (b.break === true) {
@@ -630,9 +728,9 @@ class SurveyEditor extends Editor {
       type : isFloatNumber
     };
 
-    const countOrphans = function (_values, data) {
-      const cnt = data.filter((v) => v.isOrphan).length;
-      return `o: ${cnt}`;
+    const countBadRows = function (_values, data) {
+      const cnt = data.filter((v) => v.status !== 'ok').length;
+      return `${cnt}`;
     };
 
     const countLines = function (_values, data) {
@@ -642,7 +740,7 @@ class SurveyEditor extends Editor {
     const sumCenterLines = function (_values, data) {
       var sumLength = 0;
       data.forEach((value) => {
-        if (value !== undefined && value.shot !== undefined) {
+        if (value !== undefined && value.length !== undefined) {
           sumLength += value.type === 'center' ? U.parseMyFloat(value.length) : 0;
         }
       });
@@ -653,9 +751,33 @@ class SurveyEditor extends Editor {
     var floatAccessor = function (value) {
       if (value === undefined) {
         return undefined;
-      } else {
+      } else if (floatPattern.test(value)) {
         return U.parseMyFloat(value);
+      } else {
+        return value;
       }
+    };
+
+    const statusIcon = (cell) => {
+      const data = cell.getData();
+      if (data.status === 'ok') {
+        return '<div class="ok-row"></div>';
+      } else {
+        return '<div class="warning-row"></div>';
+      }
+    };
+
+    const typeIcon = (cell) => {
+      const data = cell.getData();
+      if (data.type === 'center') {
+        return '<div class="center-row"></div>';
+      } else if (data.type === 'splay') {
+        return '<div class="splay-row"></div>';
+      }
+    };
+
+    const typeEdited = (cell) => {
+      cell.getRow().reformat();
     };
 
     function showCenter(data) {
@@ -663,11 +785,11 @@ class SurveyEditor extends Editor {
     }
 
     function hideOrphans(data) {
-      return !data.isOrphan;
+      return data.status !== 'orphan';
     }
 
     function showOrphans(data) {
-      return data.isOrphan;
+      return data.status === 'orphan';
     }
 
     const attributesToClipboard = (attributes) => {
@@ -718,22 +840,9 @@ class SurveyEditor extends Editor {
       }
     };
 
-    const deleteIcon = () => {
-      return '<div class="delete-row"></div>';
-    };
-
-    const deleteRow = (cell) => {
-      const id = cell.getData().id;
-      const toDelete = this.survey.shots.find((shot) => shot.id === id);
-      const indexToDelete = this.survey.shots.indexOf(toDelete);
-      if (indexToDelete !== -1) {
-        this.survey.shots.splice(indexToDelete, 1);
-      }
-      cell.getRow().delete();
-    };
-
     this.table = new Tabulator('#surveydata', {
       height                    : 300,
+      reactiveData              : true,
       data                      : this.#getTableData(this.survey, this.cave.stations),
       layout                    : 'fitDataStretch',
       validationMode            : 'highlight',
@@ -769,11 +878,18 @@ class SurveyEditor extends Editor {
       },
       rowFormatter : function (row) {
         const rowData = row.getData();
-        if (rowData.isOrphan) {
-          row.getElement().style.backgroundColor = '#ff0000';
-        }
-        if (rowData.type === 'splay') {
-          row.getElement().style.backgroundColor = '#012109';
+
+        if (rowData.status === 'orphan') {
+          row.getElement().style.backgroundColor = '#7d4928';
+        } else if (rowData.status === 'ok') {
+          if (rowData.type === 'splay') {
+            row.getElement().style.backgroundColor = '#012109';
+          } else {
+            row.getElement().style.backgroundColor = '';
+          }
+        } else {
+          //invalid, incomplete
+          row.getElement().style.backgroundColor = '#b99922';
         }
       },
       columnDefaults : {
@@ -782,7 +898,29 @@ class SurveyEditor extends Editor {
         resizable      : 'header'
       },
       columns : [
-
+        {
+          width      : 25,
+          title      : '',
+          field      : 'status',
+          editor     : false,
+          formatter  : statusIcon,
+          clickPopup : function (x, cell) {
+            const message = cell.getData().message;
+            return message === undefined ? 'No errors' : message;
+          },
+          validator  : ['required'],
+          bottomCalc : countBadRows
+        },
+        {
+          width        : 25,
+          title        : '',
+          field        : 'type',
+          editor       : 'list',
+          editorParams : { values: ['center', 'splay'] },
+          formatter    : typeIcon,
+          cellEdited   : typeEdited,
+          validator    : ['required']
+        },
         {
           title        : 'From',
           field        : 'from',
@@ -796,15 +934,14 @@ class SurveyEditor extends Editor {
           field        : 'to',
           editor       : true,
           validator    : ['required'],
-          headerFilter : 'input',
-          bottomCalc   : countOrphans
+          headerFilter : 'input'
         },
         {
           title      : 'Length',
           field      : 'length',
           editor     : true,
           accessor   : floatAccessor,
-          validator  : ['required', customValidator],
+          validator  : ['required', 'min:0', customValidator],
           bottomCalc : sumCenterLines
         },
         {
@@ -819,7 +956,7 @@ class SurveyEditor extends Editor {
           field     : 'clino',
           editor    : true,
           accessor  : floatAccessor,
-          validator : ['required', customValidator]
+          validator : ['required', 'min:-90', 'max:90', customValidator]
         },
         {
           title            : 'X',
@@ -833,8 +970,7 @@ class SurveyEditor extends Editor {
           field            : 'y',
           editor           : false,
           mutatorClipboard : floatAccessor,
-          formatter        : this.floatFormatter(''),
-          validator        : ['required']
+          formatter        : this.floatFormatter('')
         },
         {
           title            : 'Z',
@@ -854,13 +990,8 @@ class SurveyEditor extends Editor {
           formatterClipboard : clipboardFormatter,
           editor             : (cell, onRendered, success) =>
             this.attributesEditor(cell, onRendered, success, (cv) => cv.attributes, successFunc)
-        },
-        {
-          clipboard : false,
-          formatter : deleteIcon,
-          width     : 40,
-          cellClick : (_e, cell) => deleteRow(cell)
         }
+
       ]
     });
 

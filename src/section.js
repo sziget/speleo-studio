@@ -33,7 +33,7 @@ class SectionHelper {
     const g = new Graph();
     [...cave.stations.keys()].forEach((k) => g.addVertex(k));
     cave.surveys.forEach((s) => {
-      s.shots.forEach((sh) => {
+      s.validShots.forEach((sh) => {
         const fromName = s.getFromStationName(sh);
         const from = cave.stations.get(fromName);
         const toStationName = s.getToStationName(sh);

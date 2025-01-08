@@ -25,7 +25,7 @@ class SurveyHelper {
 
   static calculateSurveyStations(survey, stations, aliases, startName, startPosition) {
 
-    if (survey.shots.length === 0) return [];
+    if (survey.validShots.length === 0) return [];
 
     const startStationName = startName !== undefined ? startName : survey.shots[0].from;
 
@@ -44,7 +44,7 @@ class SurveyHelper {
     // the basics of this algorithm come from Topodroid cave surveying software by Marco Corvi
     while (repeat) {
       repeat = false;
-      survey.shots.forEach((sh) => {
+      survey.validShots.forEach((sh) => {
         if (sh.processed) return; // think of it like a continue statement in a for loop
 
         let fromStation = stations.get(sh.from);
@@ -119,7 +119,7 @@ class SurveyHelper {
   static getSegments(survey, stations) {
     const splaySegments = [];
     const centerlineSegments = [];
-    survey.shots.forEach((sh) => {
+    survey.validShots.forEach((sh) => {
       const fromStation = stations.get(survey.getFromStationName(sh));
       const toStation = stations.get(survey.getToStationName(sh));
 
@@ -177,7 +177,7 @@ class SurveyHelper {
       if (index === 0) {
         startStationName = s.start !== undefined ? s.start.name : s.shots[0].from;
       }
-      s.shots.forEach((sh) => {
+      s.validShots.forEach((sh) => {
         const fromName = s.getFromStationName(sh);
         const from = cave.stations.get(fromName);
         const toStationName = s.getToStationName(sh);
@@ -198,7 +198,7 @@ class SurveyHelper {
       const centerColors = [];
       const splayColors = [];
 
-      s.shots.forEach((sh) => {
+      s.validShots.forEach((sh) => {
         const fromDistance = distances.get(s.getFromStationName(sh));
         const toDistance = distances.get(s.getToStationName(sh));
 
@@ -252,7 +252,7 @@ class SurveyHelper {
     const centerColors = [];
     const splayColors = [];
     const colorDiff = endColor.sub(startColor);
-    survey.shots.forEach((sh) => {
+    survey.validShots.forEach((sh) => {
       const fromStation = stations.get(survey.getFromStationName(sh));
       const toStation = stations.get(survey.getToStationName(sh));
 

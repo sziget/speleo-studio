@@ -284,6 +284,8 @@ class ProjectExplorer {
 
     const isolatedSurvey = state.nodeType === 'survey' && state.survey.isolated === true;
     const orphanSurvey = state.nodeType === 'survey' && state.survey.orphanShotIds.size > 0;
+    const invalidShots = state.nodeType === 'survey' && state.survey.invalidShotIds.size > 0;
+
     let color;
 
     if (state.nodeType === 'survey' && state.survey.color !== undefined) {
@@ -360,7 +362,8 @@ class ProjectExplorer {
       {
         class : classNames(
           { 'infinite-tree-isolated': isolatedSurvey },
-          { 'infinite-tree-orphan': orphanSurvey && !isolatedSurvey }
+          { 'infinite-tree-warning': invalidShots && !isolatedSurvey },
+          { 'infinite-tree-warning': orphanSurvey && !invalidShots && !isolatedSurvey }
         )
       },
       ''

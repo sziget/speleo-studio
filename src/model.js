@@ -102,6 +102,61 @@ class Shot {
     return this.type === 'center';
   }
 
+  isValid() {
+    return this.validate().length === 0;
+  }
+
+  validate() {
+    const isValidFloat = (f) => {
+      return typeof f === 'number' && f !== Infinity && !isNaN(f);
+    };
+
+    const errors = [];
+    if (!(typeof this.id === 'number' && this.id == parseInt(this.id, 10))) {
+      errors.push(`Id (${this.id}, type=${typeof this.id}) is not valid integer number`);
+    }
+    if (!(typeof this.type === 'string' && ['center', 'splay'].includes(this.type))) {
+      errors.push(`Type (${this.type}) is not 'center' or 'splay'`);
+    }
+    if (!(typeof this.from === 'string' && this.from.length > 0)) {
+      errors.push(`From (${this.from}, type=${typeof this.from}) is not a string or empty`);
+    } else if (!(typeof this.to === 'string' && this.to.length > 0)) {
+      if (this.from === this.to) {
+        errors.push(`From (${this.from}) and to (${this.to}) cannot be the same`);
+      }
+    }
+
+    if (isValidFloat(this.length) && this.length <= 0) {
+      errors.push(`Length must be greater than 0`);
+    }
+
+    if (isValidFloat(this.clino) && (this.clino > 90 || this.clino < -90)) {
+      errors.push(`Clino should be between -90 and 90.`);
+    }
+
+    if (isValidFloat(this.azimuth) && (this.azimuth > 360 || this.clino < -360)) {
+      errors.push(`Azimuth should be between -360 and 360.`);
+    }
+
+    ['length', 'azimuth', 'clino'].forEach((f) => {
+      if (!isValidFloat(this[f])) {
+        errors.push(`${f} (${this[f]}, type=${typeof this[f]}) is not a valid decimal number`);
+      }
+    });
+
+    return errors;
+
+  }
+
+  getEmptyFields() {
+    return this.export_fields
+      .filter((f) => f !== 'to')
+      .filter((f) => this[f] === undefined || this[f] === null);
+  }
+  isComplete() {
+    return this.getEmptyFields().length === 0;
+  }
+
   toExport() {
     let newShot = {};
     this.export_fields.forEach((fName) => {
@@ -273,6 +328,8 @@ class Survey {
     this.orphanShotIds = orphanShotIds;
     this.attributes = attributes;
     this.isolated = false;
+    this.validShots = this.getValidShots();
+    this.invalidShotIds = this.getInvalidShotIds();
   }
 
   getSplayStationName(id) {
@@ -291,6 +348,20 @@ class Survey {
     } else {
       return shot.to;
     }
+  }
+
+  updateShots(shots) {
+    this.shots = shots;
+    this.validShots = this.getValidShots();
+    this.invalidShotIds = this.getInvalidShotIds();
+  }
+
+  getValidShots() {
+    return this.shots.filter((sh) => sh.isComplete() && sh.isValid());
+  }
+
+  getInvalidShotIds() {
+    return new Set(this.shots.filter((sh) => !sh.isComplete() || !sh.isValid()).map((sh) => sh.id));
   }
 
   /**
@@ -327,7 +398,10 @@ class Survey {
     pure.attributes = pure.attributes
       .map((a) => new StationAttribute(a.name, attributeDefs.createFromPure(a.attribute)));
     pure.shots = pure.shots.map((s) => Object.assign(new Shot(), s));
-    return Object.assign(new Survey(), pure);
+    const survey = Object.assign(new Survey(), pure);
+    survey.validShots = survey.getValidShots();
+    survey.invalidShotIds = survey.getInvalidShotIds();
+    return survey;
   }
 
 }

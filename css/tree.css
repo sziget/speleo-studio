@@ -96,7 +96,7 @@
   background: black no-repeat center/70% url(../icons/trash_hover.svg);
 }
 
-.infinite-tree-orphan {
+.infinite-tree-warning {
   height: 15px;
   width: 15px;
   display: inline-block;
