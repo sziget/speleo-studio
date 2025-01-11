@@ -172,16 +172,25 @@ body {
   font-size: 12px;
 }
 
-.tabulator .delete-row {
-  color: rgb(38, 49, 73);
+.tabulator .add-row {
   height: 20px;
   width: 20px;
-  padding-bottom: 0px;
-  padding-left: 0px;
-  padding-right: 0px;
-  padding-top: 0px;
-  position: absolute;
+  margin-left: 5px;
+  vertical-align: middle;
+  display: inline-block;
+  background: no-repeat center/70% url(../icons/add_white.svg);
+}
+
+.tabulator .delete-row {
+  height: 20px;
+  width: 20px;
+  margin-left: 5px;
+  vertical-align: middle;
+  display: inline-block;
   background: no-repeat center/70% url(../icons/trash_white.svg);
+}
+.tabulator .delete-row:hover {
+  background: no-repeat center/70% url(../icons/trash_red.svg);
 }
 
 .tabulator .warning-row {
@@ -208,10 +217,6 @@ body {
   background: no-repeat center/70% url(../icons/splay.svg);
 }
 
-.tabulator .delete-row:hover {
-  background: no-repeat center/80% url(../icons/trash_red.svg);
-}
-
 .tabulator input[type='color'] {
   display: none;
 }
@@ -222,6 +227,81 @@ body {
   border-radius: 20px;
   position: absolute;
   left: 10px;
+}
+
+.tabulator-editing[tabulator-field='attributes'] {
+  overflow: visible;
+}
+
+.tabulator .tabulator-cell .attributes-editor {
+  font-size: 12px;
+  position: absolute;
+  z-index: 100;
+  min-width: 300px;
+  right: 0px;
+  background: rgb(40, 40, 40);
+  border: 2px solid white;
+  padding: 5px 5px;
+}
+
+.tabulator .tabulator-cell .attributes-editor input {
+  outline: none;
+  color: azure;
+  background: rgb(40, 40, 40);
+  text-align: center;
+  display: inline-block;
+}
+
+.tabulator .tabulator-cell .attributes-editor input[type='text'] {
+  border-top-width: 0px;
+  border-right-width: 0px;
+  border-left-width: 0px;
+}
+
+.tabulator .tabulator-cell .attributes-editor input[type='search'] {
+  border-top-width: 0px;
+  border-right-width: 0px;
+  border-left-width: 0px;
+}
+
+.tabulator .tabulator-cell .attributes-editor .optionalInput {
+  border-bottom: solid rgb(118, 118, 118) 2px;
+}
+
+.tabulator .tabulator-cell .attributes-editor .requiredInput {
+  border-bottom: solid white 2px;
+}
+
+.tabulator .tabulator-cell .attributes-editor .invalidInput {
+  border-bottom: solid red 2px;
+}
+
+.tabulator .tabulator-cell .attributes-editor .shortInput {
+  width: 30px;
+}
+
+.tabulator .tabulator-cell .attributes-editor .longInput {
+  width: 120px;
+}
+
+.tabulator .tabulator-cell .attributes-editor label {
+  color: white;
+  margin-right: 5px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.tabulator .tabulator-cell .attribute-editor {
+}
+
+.tabulator .tabulator-cell .attribute-editor .warning {
+  background: rgb(40, 40, 40);
+  text-align: center;
+  position: absolute;
+  top: -40px;
+  width: 150px;
+  z-index: 102;
+  display: none;
 }
 
 .tabulator-menu .delete-row {
@@ -236,6 +316,7 @@ body {
   font-size: 12px;
   border-color: white;
 }
+
 .tabulator-menu .add-row {
   padding: 5px 10px;
   margin-right: 3px;

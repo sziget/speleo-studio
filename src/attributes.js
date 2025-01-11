@@ -1,5 +1,8 @@
+import { falsy, parseMyFloat, isFloatStr } from './utils/utils.js';
+
 const attributeDefintions = {
-  types : [
+  verion : '1.0',
+  types  : [
     {
       id   : 1,
       name : 'geology'
@@ -15,10 +18,10 @@ const attributeDefintions = {
   ],
   definitions : [
     {
-      id     : 1,
-      type   : 1,
-      name   : 'speleotheme',
-      params : {
+      id       : 1,
+      category : 1,
+      name     : 'speleotheme',
+      params   : {
         type : {
           required : true,
           type     : 'string',
@@ -30,10 +33,35 @@ const attributeDefintions = {
       }
     },
     {
-      id     : 2,
-      type   : 1,
-      name   : 'bedding',
-      params : {
+      id       : 2,
+      category : 1,
+      name     : 'bedding',
+      params   : {
+        azimuth : {
+          type     : 'float',
+          required : true
+        },
+        dip : {
+          type       : 'float',
+          required   : true,
+          validators : {
+            min : -90.0,
+            max : 90.0
+          }
+        },
+        width : {
+          type : 'int'
+        },
+        height : {
+          type : 'int'
+        }
+      }
+    },
+    {
+      id       : 3,
+      category : 1,
+      name     : 'fault',
+      params   : {
         azimuth : {
           type : 'float'
         },
@@ -49,39 +77,20 @@ const attributeDefintions = {
       }
     },
     {
-      id     : 3,
-      type   : 1,
-      name   : 'fault',
-      params : {
-        azimuth : {
-          type : 'float'
-        },
-        dip : {
-          type : 'float'
-        },
-        width : {
-          type : 'int'
-        },
-        height : {
-          type : 'int'
-        }
-      }
-    },
-    {
-      id     : 4,
-      type   : 2,
-      name   : 'rope',
-      params : {
+      id       : 4,
+      category : 2,
+      name     : 'rope',
+      params   : {
         type : {
           type : 'string'
         }
       }
     },
     {
-      id     : 14,
-      type   : 2,
-      name   : 'co',
-      params : {
+      id       : 14,
+      category : 2,
+      name     : 'co',
+      params   : {
         value : {
           type : 'int'
         }
@@ -108,43 +117,40 @@ class AttributesDefinitions {
     this.defs = attributeDefintions;
   }
 
-  #cloneDefiniton(predicate) {
-    const definition = this.#getDefiniton(predicate);
-    if (definition === undefined) {
-      return undefined;
-    } else {
-      return Object.assign({}, definition);
-    }
-  }
-
   #getDefiniton(predicate) {
     return this.defs.definitions.find(predicate);
   }
   createById(id) {
-    const o = this.#cloneDefiniton((x) => x.id === id);
-    if (o !== undefined) {
-      return this.#attributeByDef(o);
+    const def = this.#getDefiniton((x) => x.id === id);
+
+    if (def !== undefined) {
+      return new Attribute(def).setValues;
     } else {
       return undefined;
     }
   }
 
   createByName(name) {
-    const o = this.#cloneDefiniton((d) => d.name === name);
-    if (o !== undefined) {
-      return this.#attributeByDef(o);
+    const def = this.#getDefiniton((d) => d.name === name);
+    if (def !== undefined) {
+      const a = new Attribute(def);
+      return function (...varargs) {
+        a.setValues(...varargs);
+        return a;
+      };
     } else {
       return undefined;
     }
   }
 
   createFromPure(attribute) {
-    const o = this.#cloneDefiniton((d) => d.name === attribute.name);
-    const paramNames = Object.keys(o.params);
+    const def = this.#getDefiniton((d) => d.name === attribute.name);
+    const newAttribute = new Attribute(def);
+    const paramNames = Object.keys(def.params);
     paramNames.forEach((pName) => {
-      o[pName] = attribute[pName];
+      newAttribute[pName] = attribute[pName];
     });
-    return o;
+    return newAttribute;
   }
 
   tranformPureAttributes(attributes) {
@@ -152,6 +158,10 @@ class AttributesDefinitions {
       this.createFromPure(a);
     });
 
+  }
+
+  getAttributeNames() {
+    return this.defs.definitions.map((d) => d.name);
   }
 
   getAttributesFromString(str) {
@@ -181,31 +191,167 @@ class AttributesDefinitions {
       .join('|');
   }
 
-  #attributeByDef(o) {
-    const paramNames = Object.keys(o.params);
-    o.create = function (...varargs) {
-      Array.from(varargs.entries()).forEach(([index, value]) => {
-        const pName = paramNames[index];
-        const dataType = o.params[pName].type;
-        switch (dataType) {
-          case 'float':
-            o[pName] = parseFloat(value);
-            break;
-          case 'int':
-            o[pName] = parseInt(value);
-            break;
-          case 'string':
-            o[pName] = value;
-            break;
-          default:
-            throw new Error(`Not supported data type ${dataType}`);
+}
+
+class Attribute {
+
+  paramNames;
+
+  constructor(definition) {
+    Object.assign(this, definition);
+    this.paramNames = Object.keys(definition.params);
+  }
+
+  setParamFromString(paramName, str) {
+    const paramDef = this.params[paramName];
+    switch (paramDef.type) {
+      case 'string':
+        this[paramName] = str;
+        break;
+      case 'float':
+        this[paramName] = parseMyFloat(str);
+        break;
+      case 'int':
+        this[paramName] = parseInt(str, 10);
+        break;
+    }
+  }
+
+  setValues(...varargs) {
+    Array.from(varargs.entries()).forEach(([index, value]) => {
+      const pName = this.paramNames[index];
+      const dataType = this.params[pName].type;
+      switch (dataType) {
+        case 'float':
+          this[pName] = parseFloat(value);
+          break;
+        case 'int':
+          this[pName] = parseInt(value);
+          break;
+        case 'string':
+          this[pName] = value;
+          break;
+        default:
+          throw new Error(`Not supported data type ${dataType}`);
+      }
+
+    });
+    return this;
+  }
+
+  validateFieldValue(paramName, value, validateAsString = false) {
+
+    const runFieldValidators = (paramDef, v) => {
+      const e = [];
+
+      if (paramDef.validators !== undefined) {
+
+        if ('min' in paramDef.validators && v < paramDef.validators['min']) {
+          e.push(`Value should not be less than ${paramDef.validators['min']} `);
         }
 
-      });
-      return o;
+        if ('max' in paramDef.validators && v > paramDef.validators['max']) {
+          e.push(`Value should not be greater than ${paramDef.validators['max']} `);
+        }
+      }
+      return e;
     };
 
-    return o.create;
+    const paramDef = this.params[paramName];
+    const errors = [];
+
+    if ((paramDef.required ?? false) && falsy(value)) {
+      errors.push('Required value is empty');
+    }
+    if (value !== undefined) {
+
+      if (!validateAsString) {
+        let typeMatch;
+        switch (paramDef.type + '-' + typeof value) {
+          case 'string-string':
+          case 'int-number':
+          case 'float-number':
+            typeMatch = true;
+            break;
+          default:
+            typeMatch = false;
+            break;
+        }
+
+        if (!typeMatch) {
+          errors.push(`Value '${value}' is a ${typeof value} and not ${paramDef.type}`);
+        } else {
+          if (paramDef.type === 'int' && !Number.isInteger(value)) {
+            errors.push(`Value '${value}' is not a valid integer`);
+          }
+
+          if (paramDef.type === 'float' && (isNaN(value) || Infinity === value || -Infinity === value)) {
+            errors.push(`Value is NaN or Infinity`);
+          }
+
+          errors.push(...runFieldValidators(paramDef, value));
+        }
+
+      } else {
+        let validForType, parsedValue;
+        switch (paramDef.type) {
+          case 'int':
+            if (!Number.isInteger(value)) {
+              errors.push(`Value '${value}' is not a valid integer`);
+            } else {
+              validForType = true;
+              parsedValue = parseInt(value, 10);
+            }
+            break;
+          case 'float':
+            if (!isFloatStr(value)) {
+              errors.push(`Value '${value}' is not a valid float`);
+            } else {
+              validForType = true;
+              parsedValue = parseMyFloat(value);
+            }
+            break;
+          case 'string':
+            validForType = true;
+            parsedValue = value;
+            break;
+        }
+
+        if (validForType) {
+          errors.push(...runFieldValidators(paramDef, parsedValue));
+        }
+      }
+
+      if (paramDef.type === 'string') {
+        if ((paramDef.values?.length ?? 0) > 0 && !paramDef.values.includes(value)) {
+          errors.push(`Value is not one of ${paramDef.values.join(', ')}`);
+        }
+      }
+
+    }
+    return errors;
+
+  }
+
+  validate(validateAsString = false) {
+    const errors = new Map();
+
+    this.paramNames.forEach((n) => {
+      const fieldErrors = this.validateFieldValue(n, this[n], validateAsString);
+      if (fieldErrors.length > 0) {
+        errors.set(n, fieldErrors);
+      }
+
+    });
+    return errors;
+  }
+
+  isValid() {
+    return this.validate().size === 0;
+  }
+
+  clone() {
+    return Object.create(this);
   }
 }
 

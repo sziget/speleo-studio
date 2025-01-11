@@ -14,6 +14,7 @@ class Editor {
     this.cave = cave;
     this.attributeDefs = attributeDefs;
     this.closed = false;
+    this.attributesModified = false;
   }
 
   showAlert(msg, timeoutSec = 5, postAction = () => {}) {
@@ -25,30 +26,112 @@ class Editor {
     }, timeoutSec * 1000);
   }
 
-  attributesEditor(cell, onRendered, success, setValueFn, successFn) {
+  getAttributeEditorDiv(a, attributes, index) {
+    const attributeNode = U.node`<div class="attribute-editor" id="attribute-editor-${index}"></div>`;
+    //const warning = U.node`<div class="warning" id="attribute-editor-${index}-warning">hel</div>`;
+    //attributeNode.appendChild(warning);
+    //warning.style.display = 'none'; TODO: somehow show the warning div
+    const name = U.node`<span>${a.name}(</span>`;
+    const del = U.node`<span class="delete-row">`;
+    del.onclick = () => {
+      const indexToDelete = attributes.indexOf(a);
+      if (indexToDelete !== -1) {
+        attributes.splice(indexToDelete, 1);
+        attributeNode.parentNode.removeChild(attributeNode); // funny self destruction :-)
+      }
+    };
+
+    attributeNode.appendChild(name);
+    const paramNames = Object.keys(a.params);
+    var paramIndex = 0;
+    paramNames.forEach((paramName) => {
+      const value = a[paramName] === undefined ? '' : a[paramName];
+      const paramDef = a.params[paramName];
+
+      let underScoreClass;
+      const requiredField = paramDef.required ?? false;
+      if (requiredField) {
+        underScoreClass = 'requiredInput';
+      } else {
+        underScoreClass = 'optionalInput';
+      }
+      const classes = [['int', 'float'].includes(paramDef.type) ? 'shortInput' : 'longInput', underScoreClass];
+
+      let datalist;
+      if ((paramDef.values ?? []).length > 0) {
+        datalist = U.node`<datalist id="paramValues-${paramName}-${index}">${paramDef.values.map((n) => '<option value="' + n + '">').join('')}</datalist>`;
+      }
+      const inputType = datalist === undefined ? 'text' : 'search';
+      const list = datalist === undefined ? '' : `list="paramValues-${paramName}-${index}"`;
+      const param = U.node`<input placeholder="${paramName}" type="${inputType}" ${list} class="${classes.join(' ')}" id="${paramName}-${index}" value="${value}">`;
+      param.onchange = (e) => {
+        this.attributesModified = true;
+        const newValue = e.target.value === '' ? undefined : e.target.value;
+        const errors = a.validateFieldValue(paramName, newValue, true);
+        if (errors.length > 0) {
+          param.classList.remove('requiredInput');
+          param.classList.add('invalidInput');
+          a[paramName] = newValue; // set the invalid value
+          this.showAlert(`Invalid '${paramName}': ${errors.join('<br>')}`);
+        } else {
+          a.setParamFromString(paramName, newValue);
+        }
+      };
+      if (paramIndex !== 0) {
+        attributeNode.appendChild(document.createTextNode(','));
+      }
+      attributeNode.appendChild(param);
+      if (datalist !== undefined) {
+        attributeNode.appendChild(datalist);
+      }
+      paramIndex += 1;
+    });
+    attributeNode.appendChild(document.createTextNode(')'));
+    attributeNode.appendChild(del);
+    return attributeNode;
+  }
+
+  attributesEditor(cell, onRendered, success) {
     const cellValue = cell.getData();
-    var editor = document.createElement('input');
-    editor.setAttribute('type', 'text');
+    const attributes = cellValue.attributes;
 
-    editor.style.padding = '0px';
-    editor.style.width = '100%';
-    editor.style.boxSizing = 'border-box';
-
-    if (cellValue !== undefined) {
-      const val = setValueFn(cellValue);
-      editor.value = AttributesDefinitions.getAttributesAsString(val);
-    }
-
-    //set focus on the select box when the editor is selected (timeout allows for editor to be added to DOM)
-    onRendered(function () {
-      editor.focus();
-      editor.style.css = '100%';
+    const panel = U.node`<div tabindex="0" id="attributes-editor" class="attributes-editor"></div>`;
+    panel.addEventListener('keydown', (e) => {
+      if (e.key == 'Escape') {
+        //cell.cancelEdit();
+        success(attributes);
+      }
+    });
+    var index = 0;
+    attributes.forEach((a) => {
+      const attributeNode = this.getAttributeEditorDiv(a, attributes, index);
+      panel.appendChild(attributeNode);
+      index += 1;
     });
 
-    editor.addEventListener('change', () => successFn(editor.value, cell, success));
-    editor.addEventListener('blur', () => successFn(editor.value, cell, success));
+    const aNames = this.attributeDefs.getAttributeNames();
+    const options = aNames.map((n) => `<option value="${n}">`).join('');
 
-    return editor;
+    const add = U.node`<div><label>New attribute: </label><input placeholder="attribute name" type="search" class="longInput requiredInput" list="attributeNames" id="new-attribute-value"><datalist id="attributeNames">${options}</datalist><span class="add-row"></span></div>`;
+    add.childNodes[3].onclick = () => {
+      const input = add.querySelector('#new-attribute-value');
+      const aName = input.value;
+      if (aNames.includes(aName)) {
+        const newAttribute = this.attributeDefs.createByName(input.value)();
+        const attributeNode = this.getAttributeEditorDiv(newAttribute, attributes, index);
+        panel.insertBefore(attributeNode, add);
+        attributes.push(newAttribute);
+        input.value = '';
+      } else if (aName === '') {
+        this.showAlert(`No attribute name is selected`);
+      } else {
+        this.showAlert(`Cannot find attribute with name '${aName}'`);
+      }
+    };
+
+    panel.appendChild(add);
+
+    return panel;
   }
 
   floatFormatter(defaultValue = '0') {
@@ -506,6 +589,16 @@ class SurveyEditor extends Editor {
     document.dispatchEvent(event);
   }
 
+  #emitAttribuesChanged() {
+    const event = new CustomEvent('attributesChanged', {
+      detail : {
+        cave   : this.cave,
+        survey : this.survey
+      }
+    });
+    document.dispatchEvent(event);
+  }
+
   onSurveyRecalculated(e) {
     const cave = e.detail.cave;
     const survey = e.detail.survey;
@@ -513,7 +606,7 @@ class SurveyEditor extends Editor {
     if (this.table !== undefined && this.cave.name === cave.name && this.survey.name === survey.name) {
       const tableRows = this.#getTableData(this.survey, this.cave.stations);
       const invalidShotIdsArray = tableRows
-        .filter((r) => ['invalid', 'incomplete'].includes(r.status))
+        .filter((r) => ['invalid', 'invalidShot', 'incomplete'].includes(r.status))
         .map((x) => x.id);
       const invalidShotIds = new Set(invalidShotIdsArray);
       if (invalidShotIds.symmetricDifference(this.survey.invalidShotIds).size > 0) {
@@ -553,19 +646,34 @@ class SurveyEditor extends Editor {
   }
 
   validateSurvey(showAlert = true) {
-    const rowsToUpdated = this.getShotValidationUpdates(this.table.getData());
-    rowsToUpdated.forEach((e) => this.table.updateData([e]));
-    const badRows = rowsToUpdated.filter((r) => ['invalid', 'incomplete'].includes(r.status)).map((r) => r.id + 1);
-    if (badRows.length > 0 && showAlert) {
+    const data = this.table.getData();
+    const rowsToUpdated = this.getValidationUpdates(data);
+    this.table.updateData(rowsToUpdated);
+    const badRowIds = rowsToUpdated
+      .filter((r) => ['invalid', 'invalidAttributes', 'invalidShot', 'incomplete'].includes(r.status))
+      .map((r) => r.id + 1);
+    if (badRowIds.length > 0 && showAlert) {
       this.showAlert(
-        `${badRows.length} row(s) with the following ids are invalid: ${badRows.slice(0, 15)}<br>Click on the warning icon for details.`,
+        `${badRowIds.length} row(s) with the following ids are invalid: ${badRowIds.slice(0, 15)}<br>Click on the warning icon for details.`,
         4
       );
     }
 
   }
 
-  getShotValidationUpdates(data) {
+  getAttributeErrors(row) {
+    const errors = [];
+    row.attributes.forEach((a) => {
+      const paramErrors = a.validate();
+      paramErrors.forEach((error, paramName) => {
+        errors.push(`Invalid attribute '${a.name}' field ${paramName}: ${error}`);
+      });
+    });
+
+    return errors;
+  }
+
+  getValidationUpdates(data) {
     const rowsToUpdated = [];
 
     data.forEach((r) => {
@@ -579,15 +687,31 @@ class SurveyEditor extends Editor {
         newRow.message = `Shot with id ${shot.id + 1} has missing fields: ${emptyFields.join(',')}`;
         rowsToUpdated.push(newRow);
       } else {
-        validationErrors = shot.validate();
+        const shotErrors = shot.validate();
+        const attributeErrors = this.getAttributeErrors(r);
+        validationErrors.push(...shotErrors);
+        validationErrors.push(...attributeErrors);
         if (validationErrors.length > 0) {
+          let status;
+          if (attributeErrors.length > 0 && shotErrors.length === 0) {
+            status = 'invalidAttributes';
+          } else if (attributeErrors.length === 0 && shotErrors.length > 0) {
+            status = 'invalidShot';
+          } else {
+            status = 'invalid'; // both shot and attributes are invalid
+          }
+
           const newRow = { ...r };
-          newRow.status = 'invalid';
-          newRow.message = `Shot with id ${shot.id + 1} is invalid: ${validationErrors.join('<br>')}`;
+          newRow.status = status;
+          newRow.message = `Shot with id ${shot.id + 1} is invalid: <br>${validationErrors.join('<br>')}`;
           rowsToUpdated.push(newRow);
         }
       }
-      if (['invalid', 'incomplete'].includes(oldStatus) && emptyFields.length === 0 && validationErrors.length === 0) {
+      if (
+        ['invalid', 'invalidAttributes', 'invalidShot', 'incomplete'].includes(oldStatus) &&
+        emptyFields.length === 0 &&
+        validationErrors.length === 0
+      ) {
         const newRow = { ...r };
         newRow.status = 'ok';
         newRow.message = undefined;
@@ -598,22 +722,26 @@ class SurveyEditor extends Editor {
     return rowsToUpdated;
   }
 
-  requestRecalculation() {
-    if (this.surveyModified) {
-      this.updateShots();
+  updateSurvey() {
+
+    if (this.attributesModified || this.surveyModified) {
+
       const attributes = this.#getSurveyAttributesFromTable();
       this.survey.attributes = attributes;
-      this.#emitSurveyChanged();
-      this.surveyModified = false;
+
+      if (this.attributesModified && !this.surveyModified) {
+        this.#emitAttribuesChanged();
+        this.attributesModified = false;
+      } else if (this.surveyModified) {
+        this.updateShots();
+        this.#emitSurveyChanged();
+        this.surveyModified = false;
+      }
     }
   }
 
-  updateSurvey() {
-    this.requestRecalculation();
-  }
-
   closeEditor() {
-    this.requestRecalculation();
+    this.updateSurvey();
     super.closeEditor();
   }
 
@@ -647,7 +775,7 @@ class SurveyEditor extends Editor {
       row.status = 'orphan';
       row.message = 'Row is orphan';
     });
-    const rowsToUpdate = this.getShotValidationUpdates(rows);
+    const rowsToUpdate = this.getValidationUpdates(rows);
     rowsToUpdate.forEach((u) => (rows[rows.findIndex((r) => r.id === u.id)] = u));
 
     return rows;
@@ -842,7 +970,6 @@ class SurveyEditor extends Editor {
 
     this.table = new Tabulator('#surveydata', {
       height                    : 300,
-      reactiveData              : true,
       data                      : this.#getTableData(this.survey, this.cave.stations),
       layout                    : 'fitDataStretch',
       validationMode            : 'highlight',

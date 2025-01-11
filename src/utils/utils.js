@@ -42,6 +42,12 @@ function parseMyFloat(strOrNum) {
   }
 }
 
+const floatPattern = /^[+-]?\d+([.,]\d+)?$/;
+
+function isFloatStr(value) {
+  return floatPattern.test(value);
+}
+
 function get3DCoordsStr(vector) {
   const s = ['x', 'y', 'z'].map((n) => vector[n].toFixed(2)).join(', ');
   return `(${s})`;
@@ -60,15 +66,17 @@ function iterateUntil(iterator, condition) {
   }
 }
 
-const parser = new DOMParser();
-
 const node = (strings, ...values) => {
+  const parser = new DOMParser();
+
   const cookedStr = String.raw({ raw: strings }, ...values);
   const doc = parser.parseFromString(cookedStr, 'text/html');
   return doc.body.firstChild;
 };
 
 const nodes = (strings, ...values) => {
+  const parser = new DOMParser();
+
   const cookedStr = String.raw({ raw: strings }, ...values);
   const doc = parser.parseFromString(cookedStr, 'text/html');
   return doc.body.childNodes;
@@ -93,17 +101,23 @@ function formatDateISO(date) {
   return formattedDate;
 }
 
+function falsy(value) {
+  return value === undefined || value === null || value === '' || value === ``;
+}
+
 export {
   fromPolar,
   normal,
   degreesToRads,
   randomAlphaNumbericString,
   parseMyFloat,
+  isFloatStr,
   get3DCoordsStr,
   iterateUntil,
   node,
   nodes,
   addDays,
   getPolygonDate,
-  formatDateISO
+  formatDateISO,
+  falsy
 };

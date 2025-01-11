@@ -20,6 +20,7 @@ class ProjectManager {
     this.scene = scene;
     this.explorer = explorer;
     document.addEventListener('surveyChanged', (e) => this.onSurveyChanged(e));
+    document.addEventListener('attributesChanged', (e) => this.onAttributesChanged(e));
     document.addEventListener('surveyDeleted', (e) => this.onSurveyDeleted(e));
     document.addEventListener('caveDeleted', (e) => this.onCaveDeleted(e));
     document.addEventListener('caveRenamed', (e) => this.onCaveRenamed(e));
@@ -29,6 +30,14 @@ class ProjectManager {
     //TODO : consider survey here and only recalculate following surveys
     const cave = e.detail.cave;
     this.recalculateCave(cave);
+    this.scene.renderScene();
+    this.explorer.updateCave(cave, (n) => n.name === cave.name);
+  }
+
+  onAttributesChanged(e) {
+    const cave = e.detail.cave;
+    const survey = e.detail.survey;
+
     this.scene.renderScene();
     this.explorer.updateCave(cave, (n) => n.name === cave.name);
   }
