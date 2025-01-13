@@ -233,6 +233,10 @@ body {
   overflow: visible;
 }
 
+.tabulator-editing[tabulator-field='attribute'] {
+  overflow: visible;
+}
+
 .tabulator .tabulator-cell .attributes-editor {
   font-size: 12px;
   position: absolute;

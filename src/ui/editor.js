@@ -1,7 +1,6 @@
 import * as U from '../utils/utils.js';
-import { CaveMetadata, Color, StationAttribute } from '../model.js';
+import { CaveMetadata, Color, StationAttribute, CaveSection, SectionAttribute, Shot } from '../model.js';
 import { AttributesDefinitions } from '../attributes.js';
-import { SectionAttribute, Shot } from '../model.js';
 import { SectionHelper } from '../section.js';
 import { randomAlphaNumbericString } from '../utils/utils.js';
 import { makeMoveableDraggable, showErrorPanel } from './popups.js';
@@ -47,10 +46,12 @@ class Editor {
     paramNames.forEach((paramName) => {
       const value = a[paramName] === undefined ? '' : a[paramName];
       const paramDef = a.params[paramName];
-
+      const errors = a.validateFieldValue(paramName, value, true, true); // validate as string, skip empty check
       let underScoreClass;
       const requiredField = paramDef.required ?? false;
-      if (requiredField) {
+      if (errors.length > 0) {
+        underScoreClass = 'invalidInput';
+      } else if (requiredField) {
         underScoreClass = 'requiredInput';
       } else {
         underScoreClass = 'optionalInput';
@@ -91,17 +92,24 @@ class Editor {
     return attributeNode;
   }
 
-  attributesEditor(cell, onRendered, success) {
-    const cellValue = cell.getData();
-    const attributes = cellValue.attributes;
+  attributesEditor(cell, onRendered, success, extractor, mutator, extraValidators) {
+    const attributes = extractor(cell.getData());
 
     const panel = U.node`<div tabindex="0" id="attributes-editor" class="attributes-editor"></div>`;
     panel.addEventListener('keydown', (e) => {
-      if (e.key == 'Escape') {
-        //cell.cancelEdit();
-        success(attributes);
+      if (e.keyCode === 9) {
+        e.stopPropagation(); // when a user clicks or tabs out of a cell the edit is cancelled and and the user is navigated to the next row
+        this.dispatch('cell-value-changed', this);
+      }
+      if (e.key === 'Escape') {
+        if (extraValidators(attributes) === true) {
+          const cloned = attributes.map((a) => a.clone()); // we need to clone the attribute otherwise tabulator won't detect a change (this.value ===  value) in setValueProcessData(value, mutate, force) internal
+          const toSuccess = mutator(cloned);
+          success(toSuccess);
+        }
       }
     });
+
     var index = 0;
     attributes.forEach((a) => {
       const attributeNode = this.getAttributeEditorDiv(a, attributes, index);
@@ -134,40 +142,70 @@ class Editor {
     return panel;
   }
 
-  floatFormatter(defaultValue = '0') {
-    return (cell) => {
-      if (cell.getValue() !== undefined) {
-        return cell.getValue().toFixed(2);
-      } else {
-        return defaultValue;
-      }
-    };
+  getAttributeErrors(row) {
+    const errors = [];
+
+    row.attributes.forEach((a) => {
+      const paramErrors = a.validate();
+      paramErrors.forEach((error, paramName) => {
+        errors.push(`Invalid attribute '${a.name}' field ${paramName}: ${error}`);
+      });
+    });
+
+    return errors;
   }
 
-  getContextMenu() {
-    return [
-      {
-        label  : '<span class="delete-row"></span><span>Delete row<span/> ',
-        action : function (e, row) {
-          row.delete();
-        }
-      },
-      {
-        label  : '<span class="add-row"></span><span>Add row above<span/> ',
-        action : (e, row) => {
-          const newRow = this.getEmptyRow();
-          row.getTable().addRow(newRow, true, row.getIndex());
-        }
-      },
-      {
-        label  : '<span class="add-row"></span><span>Add row below<span/> ',
-        action : (e, row) => {
-          const newRow = this.getEmptyRow();
-          row.getTable().addRow(newRow, false, row.getIndex());
-        }
+  tableFunctions = {
+
+    statusIcon : (cell) => {
+      const data = cell.getData();
+      if (data.status === 'ok') {
+        return '<div class="ok-row"></div>';
+      } else {
+        return '<div class="warning-row"></div>';
       }
-    ];
-  }
+    },
+
+    countBadRows : (_values, data) => {
+      const cnt = data.filter((v) => v.status !== 'ok').length;
+      return `${cnt}`;
+    },
+
+    getContextMenu : () => {
+      return [
+        {
+          label  : '<span class="delete-row"></span><span>Delete row<span/> ',
+          action : function (e, row) {
+            row.delete();
+          }
+        },
+        {
+          label  : '<span class="add-row"></span><span>Add row above<span/> ',
+          action : (e, row) => {
+            const newRow = this.getEmptyRow();
+            row.getTable().addRow(newRow, true, row.getIndex());
+          }
+        },
+        {
+          label  : '<span class="add-row"></span><span>Add row below<span/> ',
+          action : (e, row) => {
+            const newRow = this.getEmptyRow();
+            row.getTable().addRow(newRow, false, row.getIndex());
+          }
+        }
+      ];
+    },
+
+    floatFormatter : (defaultValue = '0') => {
+      return (cell) => {
+        if (cell.getValue() !== undefined) {
+          return cell.getValue().toFixed(2);
+        } else {
+          return defaultValue;
+        }
+      };
+    }
+  };
 
   attributeHeaderFilter(headerValue, _rowValue, rowData) {
 
@@ -332,39 +370,175 @@ class CaveEditor extends Editor {
     this.panel.appendChild(U.node`<hr/>`);
   }
 
+  closeEditor() {
+    this.setCaveSectionAttributes();
+    super.closeEditor();
+  }
+
+  setCaveSectionAttributes() {
+    this.cave.sectionAttributes = this.getNewSectionAttributes();
+  }
+
+  getNewSectionAttributes() {
+    return this.table
+      .getData()
+      .map(
+        (r) =>
+          new SectionAttribute(
+            r.id,
+            new CaveSection(r.from, r.to, r.path, r.distance),
+            r.attribute,
+            r.color,
+            r.visible
+          )
+      );
+  }
+
+  validateRows(showAlert = true) {
+    const data = this.table.getData();
+    const rowsToUpdated = this.getValidationUpdates(data);
+    if (rowsToUpdated.length > 0) {
+      this.table.updateData(rowsToUpdated);
+      const badRows = rowsToUpdated
+        .filter((r) => ['invalid', 'incomplete'].includes(r.status));
+      if (badRows.length > 0 && showAlert) {
+        this.showAlert(`${badRows.length} row(s) are invalid.<br>Click on the warning icon for details.`, 4);
+      }
+    }
+  }
+
+  getValidationUpdate(r) {
+    let newRow;
+    const sa = new SectionAttribute(
+      r.id,
+      new CaveSection(r.from, r.to, r.path, r.distance),
+      r.attribute,
+      r.color,
+      r.visible
+    );
+    const emptyFields = sa.getEmptyFields();
+    emptyFields.push(...sa.section.getEmptyFields().filter((f) => f !== 'path'));
+    const oldStatus = r.status;
+    let validationErrors = [];
+    if (emptyFields.length > 0) {
+      newRow = { ...r };
+      newRow.status = 'incomplete';
+      newRow.message = `Row has missing fields: ${emptyFields.join(',')}`;
+    } else {
+      const errors = sa.validate();
+      if (errors.length > 0) {
+        newRow = { ...r };
+        newRow.status = 'invalid';
+        newRow.message = `Row is invalid: <br>${errors.join('<br>')}`;
+      }
+    }
+    if (['invalid', 'incomplete'].includes(oldStatus) && emptyFields.length === 0 && validationErrors.length === 0) {
+      newRow = { ...r };
+      newRow.status = 'ok';
+      newRow.message = undefined;
+    }
+
+    return newRow;
+  }
+
+  getValidationUpdates(data) {
+    const rowsToUpdated = [];
+
+    data.forEach((r) => {
+      const newRow = this.getValidationUpdate(r);
+      if (newRow !== undefined) {
+        rowsToUpdated.push(newRow);
+      }
+    });
+    return rowsToUpdated;
+  }
+
+  getEmptyRow() {
+    return {
+      id        : randomAlphaNumbericString(6),
+      visible   : false,
+      color     : this.options.scene.sectionAttributes.color,
+      from      : undefined,
+      to        : undefined,
+      path      : undefined,
+      distance  : undefined,
+      attribute : undefined,
+      status    : 'incomplete',
+      message   : 'New row'
+    };
+
+  }
+
+  #getTableData() {
+
+    const rows = this.cave.sectionAttributes.map((r) => {
+      return {
+        id        : r.id,
+        visible   : r.visible,
+        color     : r.color,
+        from      : r.section.from,
+        to        : r.section.to,
+        path      : r.section.path, //hidden
+        distance  : r.section.distance,
+        attribute : r.attribute,
+        status    : 'ok',
+        message   : 'No errors'
+      };
+    });
+
+    const rowsToUpdate = this.getValidationUpdates(rows);
+    rowsToUpdate.forEach((u) => (rows[rows.findIndex((r) => r.id === u.id)] = u));
+
+    return rows;
+  }
+
   #setupTable() {
 
-    const addRow = document.createElement('button');
-    addRow.appendChild(document.createTextNode('Add row'));
-    addRow.onclick = () => {
-      const sa = new SectionAttribute(
-        randomAlphaNumbericString(6),
-        undefined,
-        undefined,
-        this.options.scene.sectionAttributes.color
-      );
-      this.cave.sectionAttributes.push(sa);
-      this.table.addRow(sa);
-    };
-    this.panel.appendChild(addRow);
+    [
+      { id: 'clear-filter', text: 'Clear filters', click: () => this.table.clearFilter() },
+      { break: true },
+      { id: 'validate-rows', text: 'Validate rows', click: () => this.validateRows() },
+      { id: 'update-section-attributes', text: 'Update attributes', click: () => this.setCaveSectionAttributes() },
+      { id: 'add-row', text: 'Add row to bottom', click: () => this.table.addRow(this.getEmptyRow()) },
+      {
+        id    : 'delete-row',
+        text  : 'Delete active rows',
+        click : () => {
+          var ranges = this.table.getRanges();
+          ranges.forEach((r) => {
+            const rows = r.getRows();
+            rows.forEach((r) => r.delete());
+            r.remove();
+          });
+        }
+      }
+    ].forEach((b) => {
+      if (b.break === true) {
+        this.panel.appendChild(document.createElement('br'));
+      } else {
+        const button = U.node`<button id="${b.id}">${b.text}</button>`;
+        button.onclick = b.click;
+        this.panel.appendChild(button);
+      }
+    });
 
     const tableDiv = document.createElement('div');
     tableDiv.setAttribute('id', 'sectionattributes');
     this.panel.appendChild(tableDiv);
 
-    const tickToggle = (ev, cell) => {
-      if (!cell.getData().isComplete()) {
-        this.showAlert('Section attribute has missing arguments, cannot change visibility!', 4);
+    const toggleVisibility = (ev, cell) => {
+      const data = cell.getData();
+      if (data.status !== 'ok') {
+        this.showAlert('Section attribute has missing arguments or is invalid. <br>Cannot change visibility!', 4);
         return;
       }
 
       cell.setValue(!cell.getValue());
-      const data = cell.getData();
 
       if (cell.getValue() === true) {
         this.scene.showSectionAttribute(
           data.id,
-          SectionHelper.getSegments(data.section, this.cave.stations),
+          SectionHelper.getSegments(new CaveSection(data.from, data.to, data.path, data.distance), this.cave.stations),
           data.attribute,
           data.color,
           this.cave.name
@@ -378,23 +552,26 @@ class CaveEditor extends Editor {
       const data = cell.getData();
 
       // new row
-      if (data.section.from === undefined || data.section.to === undefined) {
+      if (data.from === undefined || data.to === undefined) {
         return;
       }
 
-      if (data.section.from !== data.section.to) {
+      if (data.from !== data.to) {
         if (this.graph === undefined) {
           this.graph = SectionHelper.getGraph(this.cave);
         }
-        const section = SectionHelper.getSection(this.graph, data.section.from, data.section.to);
+        const section = SectionHelper.getSection(this.graph, data.from, data.to);
         if (section !== undefined && section.distance !== 'Infinity') {
-          data.section = section;
+          data.from = section.from;
+          data.to = section.to;
+          data.path = section.path;
+          data.distance = section.distance;
           cell.getRow().update(data);
           if (data.visible) {
             this.scene.disposeSectionAttribute(data.id);
             this.scene.showSectionAttribute(
               data.id,
-              SectionHelper.getSegments(data.section, this.cave.stations),
+              SectionHelper.getSegments(section, this.cave.stations),
               data.attribute,
               data.color,
               this.cave.name
@@ -402,7 +579,7 @@ class CaveEditor extends Editor {
           }
         } else {
           this.showAlert(
-            `Unable to find path between ${data.section.from} -> ${data.section.to}.<br>Restoring previous value (${cell.getOldValue()}).`,
+            `Unable to find path between ${data.from} -> ${data.to}.<br>Restoring previous value (${cell.getOldValue()}).`,
             7,
             () => {
               cell.setValue(cell.getOldValue());
@@ -412,7 +589,7 @@ class CaveEditor extends Editor {
         }
       } else {
         this.showAlert(
-          `From and to cannot be the same (${data.section.from})!<br>Restoring previous value (${cell.getOldValue()}).`,
+          `From and to cannot be the same (${data.from})!<br>Restoring previous value (${cell.getOldValue()}).`,
           6,
           () => {
             cell.setValue(cell.getOldValue());
@@ -420,17 +597,6 @@ class CaveEditor extends Editor {
         );
 
       }
-    };
-
-    const deleteRow = (cell) => {
-      const id = cell.getData().id;
-      const toDelete = this.cave.sectionAttributes.find((sa) => sa.id === id);
-
-      const indexToDelete = this.cave.sectionAttributes.indexOf(toDelete);
-      if (indexToDelete !== -1) {
-        this.cave.sectionAttributes.splice(indexToDelete, 1);
-      }
-      cell.getRow().delete();
     };
 
     const atrributesFormatter = (cell) => {
@@ -442,22 +608,13 @@ class CaveEditor extends Editor {
       }
     };
 
-    const successFunc = (value, cell, successCallback) => {
-      const result = this.attributeDefs.getAttributesFromString(value);
-      if (result.errors.length > 0) {
-        this.showAlert(result.errors.join('<br>'), 6);
-      } else if (result.attributes.length === 0) {
-        this.showAlert('Zero attributes has been parsed!');
-      } else if (result.attributes.length > 1) {
-        this.showAlert('Only a single attribute is allowed here!');
-      } else if (result.attributes.length === 1) {
-        cell.getData().attribute = result.attributes[0];
-        successCallback(result.attributes[0]);
+    const checkAttributesLength = (attributes) => {
+      if (attributes.length > 1) {
+        this.showAlert(`Only a single attribute is allowed here!<br>Delete ${attributes.length - 1} attribute(s)`);
+        return false;
+      } else {
+        return true;
       }
-    };
-
-    const deleteIcon = () => {
-      return '<div class="delete-row"></div>';
     };
 
     const colorIcon = function (cell) {
@@ -477,7 +634,10 @@ class CaveEditor extends Editor {
             this.scene.disposeSectionAttribute(data.id);
             this.scene.showSectionAttribute(
               data.id,
-              SectionHelper.getSegments(data.section, this.cave.stations),
+              SectionHelper.getSegments(
+                new CaveSection(data.from, data.to, data.path, data.distance),
+                this.cave.stations
+              ),
               data.attribute,
               data.color,
               this.cave.name
@@ -492,19 +652,44 @@ class CaveEditor extends Editor {
     this.table = new Tabulator('#sectionattributes', {
       height         : this.panel.style.height - 140,
       autoResize     : false,
-      data           : this.cave.sectionAttributes,
+      data           : this.#getTableData(),
       layout         : 'fitColumns',
       validationMode : 'highlight',
-      rowHeader      : { formatter: 'rownum', headerSort: false, hozAlign: 'center', resizable: false, frozen: true },
-      addRowPos      : 'bottom',
+      rowContextMenu : this.tableFunctions.getContextMenu(),
+      rowFormatter   : function (row) {
+        const rowData = row.getData();
+
+        if (rowData.status === 'ok') {
+          row.getElement().style.backgroundColor = '';
+        } else {
+          //invalid, incomplete
+          row.getElement().style.backgroundColor = '#b99922';
+        }
+      },
+      rowHeader : { formatter: 'rownum', headerSort: false, hozAlign: 'center', resizable: false, frozen: true },
+      addRowPos : 'bottom',
 
       columns : [
+        {
+          width      : 25,
+          title      : '',
+          field      : 'status',
+          editor     : false,
+          formatter  : this.tableFunctions.statusIcon,
+          clickPopup : function (x, cell) {
+            const message = cell.getData().message;
+            return message === undefined ? 'No errors' : message;
+          },
+          validator  : ['required'],
+          bottomCalc : this.tableFunctions.countBadRows
+        },
+
         {
           title      : 'Visible',
           field      : 'visible',
           headerSort : false,
           formatter  : 'tickCross',
-          cellClick  : tickToggle
+          cellClick  : toggleVisibility
         },
         {
           title      : 'Color',
@@ -515,7 +700,7 @@ class CaveEditor extends Editor {
         },
         {
           title        : 'From',
-          field        : 'section.from',
+          field        : 'from',
           headerSort   : false,
           editor       : 'list',
           editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
@@ -525,7 +710,7 @@ class CaveEditor extends Editor {
         },
         {
           title        : 'To',
-          field        : 'section.to',
+          field        : 'to',
           headerSort   : false,
           editor       : 'list',
           editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
@@ -535,14 +720,14 @@ class CaveEditor extends Editor {
         },
         {
           title      : 'Distance',
-          field      : 'section.distance',
+          field      : 'distance',
           headerSort : false,
           editor     : false,
-          formatter  : this.floatFormatter('0')
+          formatter  : this.tableFunctions.floatFormatter('0')
         },
         {
           title            : 'Attribute',
-          field            : 'section.attribute',
+          field            : 'attribute',
           headerSort       : false,
           headerFilterFunc : this.attributeHeaderFilter,
           headerFilter     : 'input',
@@ -553,16 +738,24 @@ class CaveEditor extends Editor {
               onRendered,
               success,
               (cv) => (cv.attribute === undefined ? [] : [cv.attribute]),
-              successFunc
+              (attrs) => {
+                return attrs.lenth === 0 ? undefined : attrs[0];
+              },
+              checkAttributesLength
             )
-        },
-        {
-          formatter  : deleteIcon,
-          width      : 40,
-          headerSort : false,
-          cellClick  : (_e, cell) => deleteRow(cell)
         }
       ]
+    });
+
+    this.table.on('cellEdited', (cell) => {
+      const data = cell.getData();
+      const invalidRow = this.getValidationUpdate(data);
+      if (invalidRow !== undefined) {
+        data.status = invalidRow.status;
+        data.message = invalidRow.message;
+        cell.getRow().reformat();
+      }
+
     });
 
   }
@@ -648,29 +841,18 @@ class SurveyEditor extends Editor {
   validateSurvey(showAlert = true) {
     const data = this.table.getData();
     const rowsToUpdated = this.getValidationUpdates(data);
-    this.table.updateData(rowsToUpdated);
-    const badRowIds = rowsToUpdated
-      .filter((r) => ['invalid', 'invalidAttributes', 'invalidShot', 'incomplete'].includes(r.status))
-      .map((r) => r.id + 1);
-    if (badRowIds.length > 0 && showAlert) {
-      this.showAlert(
-        `${badRowIds.length} row(s) with the following ids are invalid: ${badRowIds.slice(0, 15)}<br>Click on the warning icon for details.`,
-        4
-      );
+    if (rowsToUpdated.length > 0) {
+      this.table.updateData(rowsToUpdated);
+      const badRowIds = rowsToUpdated
+        .filter((r) => ['invalid', 'invalidAttributes', 'invalidShot', 'incomplete'].includes(r.status))
+        .map((r) => r.id + 1);
+      if (badRowIds.length > 0 && showAlert) {
+        this.showAlert(
+          `${badRowIds.length} row(s) with the following ids are invalid: ${badRowIds.slice(0, 15)}<br>Click on the warning icon for details.`,
+          4
+        );
+      }
     }
-
-  }
-
-  getAttributeErrors(row) {
-    const errors = [];
-    row.attributes.forEach((a) => {
-      const paramErrors = a.validate();
-      paramErrors.forEach((error, paramName) => {
-        errors.push(`Invalid attribute '${a.name}' field ${paramName}: ${error}`);
-      });
-    });
-
-    return errors;
   }
 
   getValidationUpdates(data) {
@@ -684,7 +866,7 @@ class SurveyEditor extends Editor {
       if (emptyFields.length > 0) {
         const newRow = { ...r };
         newRow.status = 'incomplete';
-        newRow.message = `Shot with id ${shot.id + 1} has missing fields: ${emptyFields.join(',')}`;
+        newRow.message = `Row has missing fields: ${emptyFields.join(',')}`;
         rowsToUpdated.push(newRow);
       } else {
         const shotErrors = shot.validate();
@@ -703,7 +885,7 @@ class SurveyEditor extends Editor {
 
           const newRow = { ...r };
           newRow.status = status;
-          newRow.message = `Shot with id ${shot.id + 1} is invalid: <br>${validationErrors.join('<br>')}`;
+          newRow.message = `Row is invalid: <br>${validationErrors.join('<br>')}`;
           rowsToUpdated.push(newRow);
         }
       }
@@ -845,6 +1027,7 @@ class SurveyEditor extends Editor {
         this.panel.appendChild(button);
       }
     });
+
     this.panel.appendChild(U.node`<div id="surveydata"></div>`);
 
     const floatPattern = /^[+-]?\d+([.,]\d+)?$/;
@@ -854,11 +1037,6 @@ class SurveyEditor extends Editor {
 
     const customValidator = {
       type : isFloatNumber
-    };
-
-    const countBadRows = function (_values, data) {
-      const cnt = data.filter((v) => v.status !== 'ok').length;
-      return `${cnt}`;
     };
 
     const countLines = function (_values, data) {
@@ -883,15 +1061,6 @@ class SurveyEditor extends Editor {
         return U.parseMyFloat(value);
       } else {
         return value;
-      }
-    };
-
-    const statusIcon = (cell) => {
-      const data = cell.getData();
-      if (data.status === 'ok') {
-        return '<div class="ok-row"></div>';
-      } else {
-        return '<div class="warning-row"></div>';
       }
     };
 
@@ -994,8 +1163,9 @@ class SurveyEditor extends Editor {
       clipboardPasteParser  : 'range',
       clipboardPasteAction  : 'range',
 
-      rowContextMenu : this.getContextMenu(),
-      rowHeader      : {
+      rowContextMenu      : this.tableFunctions.getContextMenu(),
+      debugEventsInternal : true,
+      rowHeader           : {
         formatter : 'rownum',
         hozAlign  : 'center',
         resizable : false,
@@ -1030,13 +1200,13 @@ class SurveyEditor extends Editor {
           title      : '',
           field      : 'status',
           editor     : false,
-          formatter  : statusIcon,
+          formatter  : this.tableFunctions.statusIcon,
           clickPopup : function (x, cell) {
             const message = cell.getData().message;
             return message === undefined ? 'No errors' : message;
           },
           validator  : ['required'],
-          bottomCalc : countBadRows
+          bottomCalc : this.tableFunctions.countBadRows
         },
         {
           width        : 25,
@@ -1089,7 +1259,7 @@ class SurveyEditor extends Editor {
           title            : 'X',
           field            : 'x',
           mutatorClipboard : floatAccessor,
-          formatter        : this.floatFormatter(''),
+          formatter        : this.tableFunctions.floatFormatter(''),
           editor           : false
         },
         {
@@ -1097,14 +1267,14 @@ class SurveyEditor extends Editor {
           field            : 'y',
           editor           : false,
           mutatorClipboard : floatAccessor,
-          formatter        : this.floatFormatter('')
+          formatter        : this.tableFunctions.floatFormatter('')
         },
         {
           title            : 'Z',
           field            : 'z',
           editor           : false,
           mutatorClipboard : floatAccessor,
-          formatter        : this.floatFormatter('')
+          formatter        : this.tableFunctions.floatFormatter('')
         },
         {
           title              : 'Attributes',
@@ -1116,7 +1286,14 @@ class SurveyEditor extends Editor {
           mutatorClipboard   : attributesFromClipboard,
           formatterClipboard : clipboardFormatter,
           editor             : (cell, onRendered, success) =>
-            this.attributesEditor(cell, onRendered, success, (cv) => cv.attributes, successFunc)
+            this.attributesEditor(
+              cell,
+              onRendered,
+              success,
+              (cv) => cv.attributes,
+              (attrs) => attrs,
+              () => true
+            )
         }
 
       ]

@@ -239,7 +239,7 @@ class Attribute {
     return this;
   }
 
-  validateFieldValue(paramName, value, validateAsString = false) {
+  validateFieldValue(paramName, value, validateAsString = false, skipEmptyCheck = false) {
 
     const runFieldValidators = (paramDef, v) => {
       const e = [];
@@ -260,7 +260,7 @@ class Attribute {
     const paramDef = this.params[paramName];
     const errors = [];
 
-    if ((paramDef.required ?? false) && falsy(value)) {
+    if (!skipEmptyCheck && (paramDef.required ?? false) && falsy(value)) {
       errors.push('Required value is empty');
     }
     if (value !== undefined) {
@@ -296,7 +296,7 @@ class Attribute {
         let validForType, parsedValue;
         switch (paramDef.type) {
           case 'int':
-            if (!Number.isInteger(value)) {
+            if (!Number.isInteger(parseInt(value, 10))) {
               errors.push(`Value '${value}' is not a valid integer`);
             } else {
               validForType = true;

@@ -153,6 +153,7 @@ class Shot {
       .filter((f) => f !== 'to')
       .filter((f) => this[f] === undefined || this[f] === null);
   }
+
   isComplete() {
     return this.getEmptyFields().length === 0;
   }
@@ -202,12 +203,52 @@ class CaveSection {
   }
 
   isComplete() {
-    return this.from !== undefined &&
-      this.to !== undefined &&
-      this.path !== undefined &&
-      this.path.length > 0 &&
-      this.path.distance !== undefined &&
-      this.path.distance !== Infinity;
+    return this.getEmptyFields().length === 0;
+  }
+
+  getEmptyFields() {
+    return ['from', 'to', 'path', 'distance']
+      .filter((f) => this[f] === undefined || this[f] === null);
+  }
+
+  isValid() {
+    return this.validate().length === 0;
+  }
+
+  validate() {
+    const isValidFloat = (f) => {
+      return typeof f === 'number' && f !== Infinity && !isNaN(f);
+    };
+
+    const errors = [];
+    if (!(typeof this.from === 'string' && this.from.length > 0)) {
+      errors.push(`From (${this.from}, type=${typeof this.from}) is not a string or empty`);
+    }
+
+    if (!(typeof this.to === 'string' && this.to.length > 0)) {
+      errors.push(`To (${this.to}, type=${typeof this.to}) is not a string or empty`);
+    }
+
+    if (this.from === this.to) {
+      errors.push(`From (${this.from}) and to (${this.to}) cannot be the same`);
+    }
+
+    if (!isValidFloat(this.distance)) {
+      errors.push(
+        `${this.distance} (${this[this.distance]}, type=${typeof this[this.distance]}) is not a valid decimal number`
+      );
+    }
+
+    if (!Array.isArray(this.path)) {
+      errors.push(`Path (${this.path}) is not an array`);
+    } else if (this.path.length === 0) {
+      errors.push(`Path should not be an empty array`);
+    }
+
+    if (isValidFloat(this.distance) && this.distance <= 0) {
+      errors.push(`Distance must be greater than 0`);
+    }
+    return errors;
   }
 
   toExport() {
@@ -234,11 +275,40 @@ class SectionAttribute {
   }
 
   isComplete() {
-    return this.attribute !== undefined &&
-      typeof this.attribute === 'object' &&
-      this.section !== undefined &&
-      this.section instanceof CaveSection &&
-      this.section.isComplete;
+    return this.getEmptyFields().length === 0 && this.section.isComplete();
+  }
+
+  getEmptyFields() {
+    return ['id', 'section', 'attribute', 'color', 'visible']
+      .filter((f) => this[f] === undefined || this[f] === null);
+  }
+
+  isValid() {
+    return this.validate().length === 0 && this.section.isValid();
+  }
+
+  validate() {
+    const errors = [];
+
+    if (typeof this.visible !== 'boolean' && ![true, false].includes(this.visible)) {
+      errors.push(`Visible '${this.visible}' is not a valid boolean`);
+    }
+
+    if (!(this.color instanceof Color)) {
+      errors.push(`Color '${this.color}' is not a valid color`);
+    }
+
+    const sectionErrors = this.section.validate();
+    sectionErrors.forEach((error) => {
+      errors.push(`Invalid section: ${error}`);
+    });
+
+    const paramErrors = this.attribute.validate();
+    paramErrors.forEach((error, paramName) => {
+      errors.push(`Invalid attribute '${this.attribute.name}' field ${paramName}: ${error}`);
+    });
+    return errors;
+
   }
 
   toExport() {
