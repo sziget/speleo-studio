@@ -155,7 +155,7 @@ class Editor {
     return errors;
   }
 
-  tableFunctions = {
+  baseTableFunctions = {
 
     statusIcon : (cell) => {
       const data = cell.getData();
@@ -196,6 +196,16 @@ class Editor {
       ];
     },
 
+    floatAccessor : (value) => {
+      if (value === undefined) {
+        return undefined;
+      } else if (U.isFloatStr(value)) {
+        return U.parseMyFloat(value);
+      } else {
+        return value;
+      }
+    },
+
     floatFormatter : (defaultValue = '0') => {
       return (cell) => {
         if (cell.getValue() !== undefined) {
@@ -204,24 +214,63 @@ class Editor {
           return defaultValue;
         }
       };
+    },
+    atrributesFormatter : (cell, extractor) => {
+      const attrs = extractor(cell.getData());
+      if (attrs === undefined) {
+        return undefined;
+      }
+
+      if (Array.isArray(attrs) && attrs.length > 0) {
+        return AttributesDefinitions.getAttributesAsString(attrs);
+      } else {
+        return undefined;
+      }
+    },
+    attributeHeaderFilter : (headerValue, _rowValue, rowData) => {
+
+      let attrs;
+      if (rowData.attribute !== undefined) {
+        attrs = [rowData.attribute];
+      } else if (rowData.attributes !== undefined) {
+        attrs = rowData.attributes;
+      }
+      if (attrs !== undefined) {
+        const formatted = AttributesDefinitions.getAttributesAsString(attrs);
+        return formatted.includes(headerValue);
+      } else {
+        return false;
+      }
+    },
+    attributesToClipboard : (value, extractor) => {
+      const attributes = extractor(value);
+      if (attributes !== undefined) {
+        return AttributesDefinitions.getAttributesAsString(attributes);
+      } else {
+        return '';
+      }
+    },
+    clipboardFormatter : (cell, extractor) => {
+      const attrs = extractor(cell.getData());
+      if (Array.isArray(attrs) && attrs.length > 0) {
+        return AttributesDefinitions.getAttributesAsString(attrs);
+      } else {
+        return '';
+      }
+    },
+
+    attributesFromClipboard : (value, converter) => {
+      if (value === undefined || typeof value !== 'string' || value.length === 0) {
+        return [];
+      }
+      const result = this.attributeDefs.getAttributesFromString(value);
+      if (result.errors.length > 0) {
+        this.showAlert(result.errors.join('<br>'), 6);
+      } else if (result.attributes.length > 0) {
+        return converter(result.attributes);
+      }
     }
   };
-
-  attributeHeaderFilter(headerValue, _rowValue, rowData) {
-
-    let attrs;
-    if (rowData.attribute !== undefined) {
-      attrs = [rowData.attribute];
-    } else if (rowData.attributes !== undefined) {
-      attrs = rowData.attributes;
-    }
-    if (attrs !== undefined) {
-      const formatted = AttributesDefinitions.getAttributesAsString(attrs);
-      return formatted.includes(headerValue);
-    } else {
-      return false;
-    }
-  }
 
   show() {
     this.panel.style.display = 'block';
@@ -526,7 +575,161 @@ class CaveEditor extends Editor {
     tableDiv.setAttribute('id', 'sectionattributes');
     this.panel.appendChild(tableDiv);
 
-    const toggleVisibility = (ev, cell) => {
+    this.table = new Tabulator('#sectionattributes', {
+      height                    : this.panel.style.height - 140,
+      autoResize                : false,
+      data                      : this.#getTableData(),
+      layout                    : 'fitColumns',
+      validationMode            : 'highlight',
+      //enable range selection
+      selectableRange           : 1,
+      selectableRangeColumns    : true,
+      selectableRangeRows       : true,
+      selectableRangeClearCells : true,
+
+      //change edit trigger mode to make cell navigation smoother
+      editTriggerEvent : 'dblclick',
+
+      //configure clipboard to allow copy and paste of range format data
+      clipboard           : true,
+      clipboardCopyStyled : false,
+      clipboardCopyConfig : {
+        rowHeaders    : false,
+        columnHeaders : false,
+        columnCalcs   : false,
+        formatCells   : false //show raw cell values without formatter
+      },
+      clipboardCopyRowRange : 'range',
+      clipboardPasteParser  : 'range',
+      clipboardPasteAction  : 'range',
+      rowContextMenu        : this.baseTableFunctions.getContextMenu(),
+      rowHeader             : {
+        formatter : 'rownum',
+        hozAlign  : 'center',
+        resizable : false,
+        frozen    : true,
+        editor    : false
+      },
+      rowFormatter : function (row) {
+        const rowData = row.getData();
+
+        if (rowData.status === 'ok') {
+          row.getElement().style.backgroundColor = '';
+        } else {
+          //invalid, incomplete
+          row.getElement().style.backgroundColor = '#b99922';
+        }
+      },
+      addRowPos      : 'bottom',
+      columnDefaults : {
+        headerSort     : false,
+        headerHozAlign : 'center',
+        resizable      : 'header'
+      },
+      columns : [
+        {
+          width      : 25,
+          title      : '',
+          field      : 'status',
+          editor     : false,
+          formatter  : this.baseTableFunctions.statusIcon,
+          clickPopup : function (x, cell) {
+            const message = cell.getData().message;
+            return message === undefined ? 'No errors' : message;
+          },
+          validator  : ['required'],
+          bottomCalc : this.baseTableFunctions.countBadRows
+        },
+
+        {
+          title            : 'Visible',
+          field            : 'visible',
+          formatter        : 'tickCross',
+          cellClick        : this.tableFunctions.toggleVisibility,
+          mutatorClipboard : (str) => (str === 'true' ? true : false) //TODO:better parser here that considers other values (like 0, 1)
+        },
+        {
+          title             : 'Color',
+          field             : 'color',
+          formatter         : this.tableFunctions.colorIcon,
+          accessorClipboard : (color) => color.hexString(),
+          mutatorClipboard  : (hex) => new Color(hex),
+          width             : 45,
+          cellClick         : (_e, cell) => this.tableFunctions.changeColor(_e, cell)
+        },
+        {
+          title        : 'From',
+          field        : 'from',
+          editor       : 'list',
+          editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
+          validator    : ['required'],
+          headerFilter : 'input',
+          cellEdited   : this.tableFunctions.fromOrToEdited
+        },
+        {
+          title        : 'To',
+          field        : 'to',
+          editor       : 'list',
+          editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
+          validator    : ['required'],
+          headerFilter : 'input',
+          cellEdited   : this.tableFunctions.fromOrToEdited
+        },
+        {
+          title            : 'Distance',
+          field            : 'distance',
+          editor           : false,
+          mutatorClipboard : this.baseTableFunctions.floatAccessor,
+          formatter        : this.baseTableFunctions.floatFormatter('0')
+        },
+        {
+          title            : 'Attribute',
+          field            : 'attribute',
+          headerFilterFunc : this.baseTableFunctions.attributeHeaderFilter,
+          headerFilter     : 'input',
+          formatter        : (cell) =>
+            this.baseTableFunctions.atrributesFormatter(cell, (cv) =>
+              cv.attribute === undefined ? [] : [cv.attribute]
+            ),
+          accessorClipboard : (value) =>
+            this.baseTableFunctions.attributesToClipboard(value, (attribute) =>
+              attribute === undefined ? undefined : [attribute]
+            ),
+          mutatorClipboard   : (value) => this.baseTableFunctions.attributesFromClipboard(value, (attrs) => attrs[0]),
+          formatterClipboard : (cell) =>
+            this.baseTableFunctions.clipboardFormatter(cell, (cv) =>
+              cv.attribute === undefined ? [] : [cv.attribute]
+            ),
+
+          editor : (cell, onRendered, success) =>
+            this.attributesEditor(
+              cell,
+              onRendered,
+              success,
+              (cv) => (cv.attribute === undefined ? [] : [cv.attribute]),
+              (attrs) => {
+                return attrs.lenth === 0 ? undefined : attrs[0];
+              },
+              this.tableFunctions.checkAttributesLength
+            )
+        }
+      ]
+    });
+
+    this.table.on('cellEdited', (cell) => {
+      const data = cell.getData();
+      const invalidRow = this.getValidationUpdate(data);
+      if (invalidRow !== undefined) {
+        data.status = invalidRow.status;
+        data.message = invalidRow.message;
+        cell.getRow().reformat();
+      }
+    });
+
+  }
+
+  tableFunctions = {
+    toggleVisibility : (ev, cell) => {
       const data = cell.getData();
       if (data.status !== 'ok') {
         this.showAlert('Section attribute has missing arguments or is invalid. <br>Cannot change visibility!', 4);
@@ -546,9 +749,8 @@ class CaveEditor extends Editor {
       } else {
         this.scene.disposeSectionAttribute(data.id);
       }
-    };
-
-    const fromOrToEdited = (cell) => {
+    },
+    fromOrToEdited : (cell) => {
       const data = cell.getData();
 
       // new row
@@ -597,34 +799,22 @@ class CaveEditor extends Editor {
         );
 
       }
-    };
-
-    const atrributesFormatter = (cell) => {
-      const attribute = cell.getData().attribute;
-      if (attribute !== undefined) {
-        return AttributesDefinitions.getAttributesAsString([attribute]);
-      } else {
-        return undefined;
-      }
-    };
-
-    const checkAttributesLength = (attributes) => {
+    },
+    checkAttributesLength : (attributes) => {
       if (attributes.length > 1) {
         this.showAlert(`Only a single attribute is allowed here!<br>Delete ${attributes.length - 1} attribute(s)`);
         return false;
       } else {
         return true;
       }
-    };
-
-    const colorIcon = function (cell) {
+    },
+    colorIcon : (cell) => {
       const data = cell.getData();
       const color = data.color.hexString();
       const style = `style="background: ${color}"`;
       return `<input type="color" id="color-picker-${data.id}" value="${color}"><label id="color-picker-${data.id}-label" for="color-picker-${data.id}" ${style}></label>`;
-    };
-
-    const changeColor = (e, cell) => {
+    },
+    changeColor : (e, cell) => {
       if (e.target.tagName === 'INPUT') {
         e.target.oninput = (e2) => {
           const newColor = e2.target.value;
@@ -647,118 +837,8 @@ class CaveEditor extends Editor {
           label.style.background = newColor;
         };
       }
-    };
-
-    this.table = new Tabulator('#sectionattributes', {
-      height         : this.panel.style.height - 140,
-      autoResize     : false,
-      data           : this.#getTableData(),
-      layout         : 'fitColumns',
-      validationMode : 'highlight',
-      rowContextMenu : this.tableFunctions.getContextMenu(),
-      rowFormatter   : function (row) {
-        const rowData = row.getData();
-
-        if (rowData.status === 'ok') {
-          row.getElement().style.backgroundColor = '';
-        } else {
-          //invalid, incomplete
-          row.getElement().style.backgroundColor = '#b99922';
-        }
-      },
-      rowHeader : { formatter: 'rownum', headerSort: false, hozAlign: 'center', resizable: false, frozen: true },
-      addRowPos : 'bottom',
-
-      columns : [
-        {
-          width      : 25,
-          title      : '',
-          field      : 'status',
-          editor     : false,
-          formatter  : this.tableFunctions.statusIcon,
-          clickPopup : function (x, cell) {
-            const message = cell.getData().message;
-            return message === undefined ? 'No errors' : message;
-          },
-          validator  : ['required'],
-          bottomCalc : this.tableFunctions.countBadRows
-        },
-
-        {
-          title      : 'Visible',
-          field      : 'visible',
-          headerSort : false,
-          formatter  : 'tickCross',
-          cellClick  : toggleVisibility
-        },
-        {
-          title      : 'Color',
-          formatter  : colorIcon,
-          width      : 45,
-          headerSort : false,
-          cellClick  : (_e, cell) => changeColor(_e, cell)
-        },
-        {
-          title        : 'From',
-          field        : 'from',
-          headerSort   : false,
-          editor       : 'list',
-          editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
-          validator    : ['required'],
-          headerFilter : 'input',
-          cellEdited   : fromOrToEdited
-        },
-        {
-          title        : 'To',
-          field        : 'to',
-          headerSort   : false,
-          editor       : 'list',
-          editorParams : { values: [...this.cave.stations.keys()], autocomplete: true },
-          validator    : ['required'],
-          headerFilter : 'input',
-          cellEdited   : fromOrToEdited
-        },
-        {
-          title      : 'Distance',
-          field      : 'distance',
-          headerSort : false,
-          editor     : false,
-          formatter  : this.tableFunctions.floatFormatter('0')
-        },
-        {
-          title            : 'Attribute',
-          field            : 'attribute',
-          headerSort       : false,
-          headerFilterFunc : this.attributeHeaderFilter,
-          headerFilter     : 'input',
-          formatter        : atrributesFormatter,
-          editor           : (cell, onRendered, success) =>
-            this.attributesEditor(
-              cell,
-              onRendered,
-              success,
-              (cv) => (cv.attribute === undefined ? [] : [cv.attribute]),
-              (attrs) => {
-                return attrs.lenth === 0 ? undefined : attrs[0];
-              },
-              checkAttributesLength
-            )
-        }
-      ]
-    });
-
-    this.table.on('cellEdited', (cell) => {
-      const data = cell.getData();
-      const invalidRow = this.getValidationUpdate(data);
-      if (invalidRow !== undefined) {
-        data.status = invalidRow.status;
-        data.message = invalidRow.message;
-        cell.getRow().reformat();
-      }
-
-    });
-
-  }
+    }
+  };
 
 }
 
@@ -1030,9 +1110,8 @@ class SurveyEditor extends Editor {
 
     this.panel.appendChild(U.node`<div id="surveydata"></div>`);
 
-    const floatPattern = /^[+-]?\d+([.,]\d+)?$/;
     var isFloatNumber = function (_cell, value) {
-      return floatPattern.test(value);
+      return U.isFloatStr(value);
     };
 
     const customValidator = {
@@ -1052,16 +1131,6 @@ class SurveyEditor extends Editor {
       });
 
       return sumLength.toFixed(2);
-    };
-
-    var floatAccessor = function (value) {
-      if (value === undefined) {
-        return undefined;
-      } else if (floatPattern.test(value)) {
-        return U.parseMyFloat(value);
-      } else {
-        return value;
-      }
     };
 
     const typeIcon = (cell) => {
@@ -1089,54 +1158,6 @@ class SurveyEditor extends Editor {
       return data.status === 'orphan';
     }
 
-    const attributesToClipboard = (attributes) => {
-      const formatted = AttributesDefinitions.getAttributesAsString(attributes);
-      return formatted;
-    };
-
-    const clipboardFormatter = (cell) => {
-      const attrs = cell.getData().attributes;
-      if (Array.isArray(attrs) && attrs.length > 0) {
-        return AttributesDefinitions.getAttributesAsString(attrs);
-      } else {
-        return '';
-      }
-    };
-
-    const attributesFromClipboard = (value) => {
-      if (value === undefined || typeof value !== 'string' || value.length === 0) {
-        return [];
-      }
-      const result = this.attributeDefs.getAttributesFromString(value);
-      if (result.errors.length > 0) {
-        this.showAlert(result.errors.join('<br>'), 6);
-      } else if (result.attributes.length > 0) {
-        return result.attributes;
-      }
-    };
-
-    const atrributesFormatter = (cell) => {
-      const attrs = cell.getData().attributes;
-      if (attrs === undefined) {
-        return undefined;
-      }
-
-      if (Array.isArray(attrs) && attrs.length > 0) {
-        return AttributesDefinitions.getAttributesAsString(attrs);
-      } else {
-        return undefined;
-      }
-    };
-
-    const successFunc = (value, cell, successCallback) => {
-      const result = this.attributeDefs.getAttributesFromString(value);
-      if (result.errors.length > 0) {
-        this.showAlert(result.errors.join('<br>'), 6);
-      } else if (result.attributes.length > 0) {
-        successCallback(result.attributes);
-      }
-    };
-
     this.table = new Tabulator('#surveydata', {
       height                    : 300,
       data                      : this.#getTableData(this.survey, this.cave.stations),
@@ -1157,21 +1178,20 @@ class SurveyEditor extends Editor {
       clipboardCopyConfig : {
         rowHeaders    : false,
         columnHeaders : false,
-        columnCalcs   : false
+        columnCalcs   : false,
+        formatCells   : false
       },
       clipboardCopyRowRange : 'range',
       clipboardPasteParser  : 'range',
       clipboardPasteAction  : 'range',
 
-      rowContextMenu      : this.tableFunctions.getContextMenu(),
-      debugEventsInternal : true,
-      rowHeader           : {
+      rowContextMenu : this.baseTableFunctions.getContextMenu(),
+      rowHeader      : {
         formatter : 'rownum',
         hozAlign  : 'center',
         resizable : false,
         frozen    : true,
-        editor    : false,
-        cssClass  : 'range-header-col'
+        editor    : false
       },
       rowFormatter : function (row) {
         const rowData = row.getData();
@@ -1196,17 +1216,18 @@ class SurveyEditor extends Editor {
       },
       columns : [
         {
-          width      : 25,
-          title      : '',
-          field      : 'status',
-          editor     : false,
-          formatter  : this.tableFunctions.statusIcon,
-          clickPopup : function (x, cell) {
+          width             : 25,
+          title             : '',
+          field             : 'status',
+          editor            : false,
+          accessorClipboard : (value) => value,
+          formatter         : this.baseTableFunctions.statusIcon,
+          clickPopup        : function (x, cell) {
             const message = cell.getData().message;
             return message === undefined ? 'No errors' : message;
           },
           validator  : ['required'],
-          bottomCalc : this.tableFunctions.countBadRows
+          bottomCalc : this.baseTableFunctions.countBadRows
         },
         {
           width        : 25,
@@ -1237,7 +1258,7 @@ class SurveyEditor extends Editor {
           title      : 'Length',
           field      : 'length',
           editor     : true,
-          accessor   : floatAccessor,
+          accessor   : this.baseTableFunctions.floatAccessor,
           validator  : ['required', 'min:0', customValidator],
           bottomCalc : sumCenterLines
         },
@@ -1245,46 +1266,46 @@ class SurveyEditor extends Editor {
           title     : 'Azimuth',
           field     : 'azimuth',
           editor    : true,
-          accessor  : floatAccessor,
+          accessor  : this.baseTableFunctions.floatAccessor,
           validator : ['required', 'min:-360', 'max:360', customValidator]
         },
         {
           title     : 'Clino',
           field     : 'clino',
           editor    : true,
-          accessor  : floatAccessor,
+          accessor  : this.baseTableFunctions.floatAccessor,
           validator : ['required', 'min:-90', 'max:90', customValidator]
         },
         {
           title            : 'X',
           field            : 'x',
-          mutatorClipboard : floatAccessor,
-          formatter        : this.tableFunctions.floatFormatter(''),
+          mutatorClipboard : this.baseTableFunctions.floatAccessor,
+          formatter        : this.baseTableFunctions.floatFormatter(''),
           editor           : false
         },
         {
           title            : 'Y',
           field            : 'y',
           editor           : false,
-          mutatorClipboard : floatAccessor,
-          formatter        : this.tableFunctions.floatFormatter('')
+          mutatorClipboard : this.baseTableFunctions.floatAccessor,
+          formatter        : this.baseTableFunctions.floatFormatter('')
         },
         {
           title            : 'Z',
           field            : 'z',
           editor           : false,
-          mutatorClipboard : floatAccessor,
-          formatter        : this.tableFunctions.floatFormatter('')
+          mutatorClipboard : this.baseTableFunctions.floatAccessor,
+          formatter        : this.baseTableFunctions.floatFormatter('')
         },
         {
           title              : 'Attributes',
           field              : 'attributes',
-          headerFilterFunc   : this.attributeHeaderFilter,
+          headerFilterFunc   : this.baseTableFunctions.attributeHeaderFilter,
           headerFilter       : 'input',
-          formatter          : atrributesFormatter,
-          accessorClipboard  : attributesToClipboard,
-          mutatorClipboard   : attributesFromClipboard,
-          formatterClipboard : clipboardFormatter,
+          formatter          : (cell) => this.baseTableFunctions.atrributesFormatter(cell, (cv) => cv.attributes),
+          accessorClipboard  : (value) => this.baseTableFunctions.attributesToClipboard(value, (v) => v),
+          mutatorClipboard   : (value) => this.baseTableFunctions.attributesFromClipboard(value, (attrs) => attrs),
+          formatterClipboard : (cell) => this.baseTableFunctions.clipboardFormatter(cell, (v) => v.attributes),
           editor             : (cell, onRendered, success) =>
             this.attributesEditor(
               cell,
