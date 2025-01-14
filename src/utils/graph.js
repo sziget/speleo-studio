@@ -112,23 +112,28 @@ export class Graph {
   };
 
   //https://www.freecodecamp.org/news/8-essential-graph-algorithms-in-javascript/
-  traverse = function (start) {
+  traverse = function (start, terminationNodes = []) {
     const queue = [{ node: start, distance: 0 }];
-    const result = new Map();
-    const visited = {};
-    visited[start] = true;
+    const distances = new Map();
+    var distance = 0;
+    const visited = new Set(terminationNodes);
+    visited.add(start);
+    const path = [];
     let currentVertex;
     while (queue.length) {
       currentVertex = queue.shift();
-      result.set(currentVertex.node, currentVertex.distance);
+      distances.set(currentVertex.node, currentVertex.distance);
       this.adjacencyList[currentVertex.node].forEach((neighbor) => {
-        if (!visited[neighbor.node]) {
-          visited[neighbor.node] = true;
+        if (!visited.has(neighbor.node)) {
+          visited.add(neighbor.node);
           queue.push({ node: neighbor.node, distance: currentVertex.distance + neighbor.weight });
+          path.push({ from: currentVertex.node, to: neighbor.node });
+          distance += neighbor.weight;
+
         }
       });
     }
-    return result;
+    return { distances: distances, distance: distance, path: path };
   };
 
 }

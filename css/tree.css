@@ -174,3 +174,30 @@
   text-align: center;
   display: none;
 }
+
+.context-menu-tree {
+  width: 230px;
+  box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  display: none;
+  background: #333;
+  z-index: 101;
+  color: azure;
+  border: 2px solid white;
+
+  .menu-options {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+
+    .menu-option {
+      font-size: 14px;
+      padding: 10px 40px 10px 20px;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
+}

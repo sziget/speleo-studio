@@ -51,7 +51,6 @@ class Main {
   }
 
   #setupEventListeners() {
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
     this.#setupFileInputListener('topodroidInput', (file) => this.importers.topodroid.importFile(file));
     this.#setupFileInputListener('polygonInput', (file) => this.importers.polygon.importFile(file));
     this.#setupFileInputListener('jsonInput', (file) => this.importers.json.importFile(file));

@@ -1,4 +1,4 @@
-import { CaveSection } from './model.js';
+import { CaveComponent, CaveSection } from './model.js';
 import { Graph } from './utils/graph.js';
 
 class SectionHelper {
@@ -12,7 +12,16 @@ class SectionHelper {
     }
   }
 
-  static getSegments(section, stations) {
+  static getComponent(graph, start, termination) {
+    const result = graph.traverse(start, termination);
+    if (result !== undefined) {
+      return new CaveComponent(start, termination, result.path, result.distance);
+    } else {
+      return undefined;
+    }
+  }
+
+  static getSectionSegments(section, stations) {
     const segments = [];
     for (let index = 0; index < section.path.length - 1; index++) {
       const from = section.path[index];
@@ -25,6 +34,21 @@ class SectionHelper {
         segments.push(fromPos.x, fromPos.y, fromPos.z, toPos.x, toPos.y, toPos.z);
       }
     }
+    return segments;
+  }
+
+  static getComponentSegments(component, stations) {
+    const segments = [];
+    component.path.forEach((p) => {
+      const fromSt = stations.get(p.from);
+      const toSt = stations.get(p.to);
+      const fromPos = fromSt.position;
+      const toPos = toSt.position;
+      if (fromPos !== undefined && toPos !== undefined) {
+        segments.push(fromPos.x, fromPos.y, fromPos.z, toPos.x, toPos.y, toPos.z);
+      }
+
+    });
     return segments;
   }
 

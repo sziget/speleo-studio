@@ -4,7 +4,7 @@ import { escapeHtml } from '../../dependencies/escape-html.js';
 import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
 import { Color } from '../model.js';
-import { SurveyEditor, CaveEditor } from './editor.js';
+import { SurveyEditor, CaveEditor, SectionAttributeEditor, ComponentAttributeEditor } from './editor.js';
 
 class ProjectManager {
 
@@ -125,6 +125,11 @@ class ProjectExplorer {
     this.trees = new Map();
     this.treeNode = treeNode;
     this.itree = undefined;
+    this.contextMenuElement = U.node`<div class="context-menu-tree" id="tree-contextmenu"></div>`;
+    document.body.insertBefore(this.contextMenuElement, document.body.firstChild);
+    window.addEventListener('click', () => {
+      this.contextMenuElement.style.display = 'none';
+    });
   }
 
   deleteSurvey(caveName, surveyName) {
@@ -154,6 +159,78 @@ class ProjectExplorer {
     this.itree.updateNode(caveNode, data);
   }
 
+  showCaveContextMenu(cave) {
+    const menu = U.node`<ul class="menu-options">`;
+    const editCaveData = U.node`<li class="menu-option">Edit cave sheet</li>`;
+    editCaveData.onclick = () => {
+      this.caveeditor = new CaveEditor(
+        this.db,
+        this.options,
+        cave,
+        this.scene,
+        this.attributeDefs,
+        document.getElementById('caveeditor')
+      );
+      this.caveeditor.setupPanel();
+      this.caveeditor.show();
+      this.contextMenuElement.style.display = 'none';
+    };
+
+    const editSectionAttributes = U.node`<li class="menu-option">Edit section attributes</li>`;
+    editSectionAttributes.onclick = () => {
+      this.caveeditor = new SectionAttributeEditor(
+        this.db,
+        this.options,
+        cave,
+        this.scene,
+        this.attributeDefs,
+        document.getElementById('caveeditor')
+      );
+      this.caveeditor.setupPanel();
+      this.caveeditor.show();
+      this.contextMenuElement.style.display = 'none';
+
+    };
+
+    const editComponentAttributes = U.node`<li class="menu-option">Edit component attributes</li>`;
+    editComponentAttributes.onclick = () => {
+      this.caveeditor = new ComponentAttributeEditor(
+        this.db,
+        this.options,
+        cave,
+        this.scene,
+        this.attributeDefs,
+        document.getElementById('caveeditor')
+      );
+      this.caveeditor.setupPanel();
+      this.caveeditor.show();
+      this.contextMenuElement.style.display = 'none';
+
+    };
+
+    menu.appendChild(editCaveData);
+    menu.appendChild(editSectionAttributes);
+    menu.appendChild(editComponentAttributes);
+    this.contextMenuElement.innerHTML = '';
+    this.contextMenuElement.appendChild(menu);
+  }
+
+  contextMewnu = (tree) => (e) => {
+    e.preventDefault();
+    const currentNode = tree.getNodeFromPoint(e.clientX, e.clientY);
+    if (!currentNode) {
+      return;
+    }
+    const state = currentNode.state;
+    if (state.nodeType === 'cave') {
+      this.showCaveContextMenu(state.cave);
+      this.contextMenuElement.style.left = `${e.pageX}px`;
+      this.contextMenuElement.style.top = `${e.pageY}px`;
+      this.contextMenuElement.style.display = 'block';
+    }
+
+  };
+
   initializeTree(data) {
     this.itree = new InfiniteTree({
       el          : this.treeNode,
@@ -164,6 +241,7 @@ class ProjectExplorer {
       options     : this.options
     });
     this.itree.on('click', this.click(this.itree));
+    this.treeNode.addEventListener('contextmenu', this.contextMewnu(this.itree));
   }
 
   transformCave(cave) {
@@ -199,7 +277,6 @@ class ProjectExplorer {
 
   click = (tree) => (event) => {
     const currentNode = tree.getNodeFromPoint(event.clientX, event.clientY);
-
     if (!currentNode) {
       return;
     }

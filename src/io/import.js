@@ -12,7 +12,10 @@ import {
   SurveyStation,
   SurveyAlias,
   Surface,
-  CaveMetadata
+  CaveMetadata,
+  CaveComponent,
+  ComponentAttribute,
+  Color
 } from '../model.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
@@ -82,10 +85,15 @@ class CaveImporter {
 
       cave.sectionAttributes.forEach((sa) => {
         if (sa.visible) {
-          const segments = SectionHelper.getSegments(sa.section, cave.stations);
+          const segments = SectionHelper.getSectionSegments(sa.section, cave.stations);
           this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.color, cave.name);
         }
-
+      });
+      cave.componentAttributes.forEach((ca) => {
+        if (ca.visible) {
+          const segments = SectionHelper.getComponentSegments(ca.component, cave.stations);
+          this.scene.showSectionAttribute(ca.id, segments, ca.attribute, ca.color, cave.name);
+        }
       });
       this.explorer.addCave(cave);
       const boundingBox = this.scene.computeBoundingBox();
@@ -314,6 +322,17 @@ class JsonImporter extends CaveImporter {
 
       });
     }
+
+    const g = SectionHelper.getGraph(cave);
+    const comp = SectionHelper.getComponent(g, 'Padf22', ['Padf21', 'Lapi43']);
+    const componentAttribute = new ComponentAttribute(
+      'hello',
+      comp,
+      this.attributeDefs.createByName('co')(2.4),
+      new Color('#ff00ff'),
+      true
+    );
+    cave.componentAttributes = [componentAttribute];
     this.addCave(cave);
   }
 }

@@ -188,8 +188,8 @@ class SurveyHelper {
       });
     });
 
-    const distances = g.traverse(startStationName);
-    const maxDistance = Math.max(...Array.from(distances.values()));
+    const traverse = g.traverse(startStationName);
+    const maxDistance = Math.max(...Array.from(traverse.distances.values()));
     const startColor = clOptions.color.start;
     const endColor = clOptions.color.end;
     const colorDiff = endColor.sub(startColor);
@@ -199,8 +199,8 @@ class SurveyHelper {
       const splayColors = [];
 
       s.validShots.forEach((sh) => {
-        const fromDistance = distances.get(s.getFromStationName(sh));
-        const toDistance = distances.get(s.getToStationName(sh));
+        const fromDistance = traverse.distances.get(s.getFromStationName(sh));
+        const toDistance = traverse.distances.get(s.getToStationName(sh));
 
         if (fromDistance !== undefined && toDistance !== undefined) {
           const fc = startColor.add(colorDiff.mul(fromDistance / maxDistance));

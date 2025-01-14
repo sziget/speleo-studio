@@ -193,6 +193,77 @@ class SurveyStartStation {
   }
 }
 
+class CaveComponent {
+
+  constructor(start, termination = [], path = [], distance = 0) {
+    this.start = start;
+    this.termination = termination;
+    this.path = path;
+    this.distance = distance;
+  }
+
+  isComplete() {
+    return this.getEmptyFields().length === 0;
+  }
+
+  getEmptyFields() {
+    return ['start', 'termination', 'path', 'distance']
+      .filter((f) => this[f] === undefined || this[f] === null);
+  }
+
+  isValid() {
+    return this.validate().length === 0;
+  }
+
+  validate() {
+    const isValidFloat = (f) => {
+      return typeof f === 'number' && f !== Infinity && !isNaN(f);
+    };
+
+    const errors = [];
+    if (!(typeof this.start === 'string' && this.start.length > 0)) {
+      errors.push(`From (${this.from}, type=${typeof this.start}) is not a string or empty`);
+    }
+
+    if (Array.isArray(this.termination)) {
+      this.termination.forEach((t) => {
+        if (!(typeof t === 'string' && t.length > 0)) {
+          errors.push(`Termination node (${t}, type=${typeof t}) is not a string or empty`);
+        }
+      });
+    } else {
+      errors.push(`Termination nodes '${this.termination}' is not an array`);
+    }
+
+    if (!isValidFloat(this.distance)) {
+      errors.push(`Distance (${this.distance}, type=${typeof this.distance}) is not a valid decimal number`);
+    }
+
+    if (!Array.isArray(this.path)) {
+      errors.push(`Path (${this.path}) is not an array`);
+    } else if (this.path.length === 0) {
+      errors.push(`Path should not be an empty array`);
+    }
+
+    if (isValidFloat(this.distance) && this.distance <= 0) {
+      errors.push(`Distance must be greater than 0`);
+    }
+    return errors;
+  }
+
+  toExport() {
+    return {
+      from        : this.from,
+      termination : this.to
+    };
+  }
+
+  static fromPure(pure) {
+    return Object.assign(new CaveComponent(), pure);
+  }
+
+}
+
 class CaveSection {
 
   constructor(from, to, path, distance) {
@@ -234,9 +305,7 @@ class CaveSection {
     }
 
     if (!isValidFloat(this.distance)) {
-      errors.push(
-        `${this.distance} (${this[this.distance]}, type=${typeof this[this.distance]}) is not a valid decimal number`
-      );
+      errors.push(`Distance (${this.distance}, type=${typeof this.distance}) is not a valid decimal number`);
     }
 
     if (!Array.isArray(this.path)) {
@@ -264,11 +333,10 @@ class CaveSection {
 
 }
 
-class SectionAttribute {
+class FragmentAttribute {
 
-  constructor(id, section, attribute, color, visible = false) {
+  constructor(id, attribute, color, visible) {
     this.id = id;
-    this.section = section;
     this.attribute = attribute;
     this.color = color;
     this.visible = visible;
@@ -279,7 +347,7 @@ class SectionAttribute {
   }
 
   getEmptyFields() {
-    return ['id', 'section', 'attribute', 'color', 'visible']
+    return this.fields
       .filter((f) => this[f] === undefined || this[f] === null);
   }
 
@@ -298,17 +366,35 @@ class SectionAttribute {
       errors.push(`Color '${this.color}' is not a valid color`);
     }
 
-    const sectionErrors = this.section.validate();
-    sectionErrors.forEach((error) => {
-      errors.push(`Invalid section: ${error}`);
-    });
-
     const paramErrors = this.attribute.validate();
     paramErrors.forEach((error, paramName) => {
       errors.push(`Invalid attribute '${this.attribute.name}' field ${paramName}: ${error}`);
     });
     return errors;
 
+  }
+}
+
+class SectionAttribute extends FragmentAttribute {
+
+  fields = ['id', 'section', 'attribute', 'color', 'visible'];
+
+  constructor(id, section, attribute, color, visible = false) {
+    super(id, attribute, color, visible);
+    this.section = section;
+  }
+
+  isComplete() {
+    return super.isComplete() && this.section.isComplete();
+  }
+
+  validate() {
+    const errors = [];
+    errors.push(...super.validate());
+    this.section.validate().forEach((error) => {
+      errors.push(`Invalid section: ${error}`);
+    });
+    return errors;
   }
 
   toExport() {
@@ -326,6 +412,46 @@ class SectionAttribute {
     pure.color = new Color(pure.color);
     pure.section = CaveSection.fromPure(pure.section);
     return Object.assign(new SectionAttribute(), pure);
+  }
+}
+
+class ComponentAttribute extends FragmentAttribute {
+
+  fields = ['id', 'component', 'attribute', 'color', 'visible'];
+
+  constructor(id, component, attribute, color, visible = false) {
+    super(id, attribute, color, visible);
+    this.component = component;
+  }
+
+  isComplete() {
+    return super.isComplete() && this.component.isComplete();
+  }
+
+  validate() {
+    const errors = [];
+    errors.push(...super.validate());
+    this.component.validate().forEach((error) => {
+      errors.push(`Invalid component: ${error}`);
+    });
+    return errors;
+  }
+
+  toExport() {
+    return {
+      id        : this.id,
+      component : this.component.toExport(),
+      attribute : this.attribute,
+      color     : this.color.hexString(),
+      visible   : this.visible
+    };
+  }
+
+  static fromPure(pure, attributeDefs) {
+    pure.attribute = attributeDefs.createFromPure(pure.attribute);
+    pure.color = new Color(pure.color);
+    pure.component = CaveComponent.fromPure(pure.component);
+    return Object.assign(new ComponentAttribute(), pure);
   }
 }
 
@@ -565,6 +691,7 @@ class Cave {
     surveys = [],
     aliases = [],
     sectionAttributes = [],
+    componentAttributes = [],
     visible = true
   ) {
     this.name = name;
@@ -574,6 +701,7 @@ class Cave {
     this.surveys = surveys;
     this.aliases = aliases;
     this.sectionAttributes = sectionAttributes;
+    this.componentAttributes = componentAttributes;
     this.visible = visible;
   }
 
@@ -642,12 +770,13 @@ class Cave {
 
   toExport() {
     return {
-      name              : this.name,
-      metaData          : this.metaData.toExport(),
-      startPosition     : this.startPosition,
-      aliases           : this.aliases.map((a) => a.toExport()),
-      sectionAttributes : this.sectionAttributes.map((sa) => sa.toExport()),
-      surveys           : this.surveys.map((s) => s.toExport())
+      name                : this.name,
+      metaData            : this.metaData.toExport(),
+      startPosition       : this.startPosition,
+      aliases             : this.aliases.map((a) => a.toExport()),
+      sectionAttributes   : this.sectionAttributes.map((sa) => sa.toExport()),
+      componentAttributes : this.componentAttributes.map((ca) => ca.toExport()),
+      surveys             : this.surveys.map((s) => s.toExport())
     };
   }
 
@@ -662,6 +791,10 @@ class Cave {
       pure.sectionAttributes === undefined
         ? []
         : pure.sectionAttributes.map((sa) => SectionAttribute.fromPure(sa, attributeDefs));
+    pure.componentAttributes =
+      pure.componentAttributes === undefined
+        ? []
+        : pure.componentAttributes.map((ca) => ComponentAttribute.fromPure(ca, attributeDefs));
     return Object.assign(new Cave(), pure);
   }
 }
@@ -673,7 +806,9 @@ export {
   SurveyStartStation,
   StationAttribute,
   CaveSection,
+  CaveComponent,
   SectionAttribute,
+  ComponentAttribute,
   SurveyStation,
   Survey,
   SurveyAlias,
