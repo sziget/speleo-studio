@@ -378,7 +378,14 @@ class Attribute {
   }
 
   clone() {
-    return Object.create(this);
+    const definition = {
+      id       : this.id,
+      category : this.category,
+      name     : this.name,
+      params   : this.params
+    };
+
+    return Object.assign(new Attribute(definition), this);
   }
 
   toExport() {
