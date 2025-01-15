@@ -84,6 +84,8 @@ class Editor {
           a[paramName] = newValue; // set the invalid value
           this.showAlert(`Invalid '${paramName}': ${errors.join('<br>')}`);
         } else {
+          param.classList.remove('invalidInput');
+          param.classList.add(requiredField ? 'requiredInput' : 'optionalInput');
           a.setParamFromString(paramName, newValue);
         }
       };
@@ -240,10 +242,15 @@ class Editor {
             this.scene.disposeSectionAttribute(data.id);
             this.scene.showSectionAttribute(
               data.id,
-              SectionHelper.getSectionSegments(
-                new CaveSection(data.from, data.to, data.path, data.distance),
-                this.cave.stations
-              ),
+              data.start === undefined
+                ? SectionHelper.getSectionSegments(
+                    new CaveSection(data.from, data.to, data.path, data.distance),
+                    this.cave.stations
+                  )
+                : SectionHelper.getComponentSegments(
+                    new CaveComponent(data.start, data.termination, data.path, data.distance),
+                    this.cave.stations
+                  ),
               data.attribute,
               data.format,
               data.color,
@@ -555,7 +562,7 @@ class FragmentAttributeEditor extends CaveEditor {
       },
 
       {
-        title            : 'Visible',
+        width            : 25,
         field            : 'visible',
         formatter        : 'tickCross',
         cellClick        : this.functions.toggleVisibility,

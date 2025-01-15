@@ -134,11 +134,12 @@ export function addGui(options, scene, materials, element) {
   });
 
   labelsFolder
-    .add(labelParam, 'font size', 0.1, 10)
+    .add(labelParam, 'font size', 0.1, 20)
     .step(0.1)
     .onChange(function (val) {
       s.labels.size = val;
       scene.updateLabelSize(val);
+      scene.renderScene();
     });
 
   const sceneFolder = gui.addFolder('Scene');

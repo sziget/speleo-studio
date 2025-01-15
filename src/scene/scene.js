@@ -295,7 +295,11 @@ class MyScene {
       });
       const lineSegments = new LineSegments2(geometry, material);
       this.sectionAttributes3DGroup.add(lineSegments);
-      const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+      const bb = geometry.boundingBox;
+      const center = bb.getCenter(new THREE.Vector3());
+      const maxZ = bb.min.z > bb.max.z ? bb.min.z : bb.max.z;
+      center.z = maxZ;
+      //center.setComponent(2, maxZ + 10);
       const formattedAttribute = U.interpolate(format, attribute);
       const textMesh = this.addLabel(formattedAttribute, center, this.options.scene.labels.size);
       this.sectionAttributes3DGroup.add(textMesh);
@@ -303,7 +307,7 @@ class MyScene {
       this.sectionAttributes.set(id, {
         segments : lineSegments,
         text     : textMesh,
-        label    : attribute.name,
+        label    : formattedAttribute,
         center   : center,
         caveName : caveName
       });
@@ -549,7 +553,12 @@ class MyScene {
     //         )
     //     );
     // }
-    this.sectionAttributes.forEach((e) => e.text.lookAt(this.currentCamera.position));
+    this.sectionAttributes.forEach((e) => {
+      const pos = e.center.clone();
+      pos.z = pos.z + 100;
+      e.text.lookAt(pos);
+
+    });
     this.sceneRenderer.render(this.threejsScene, this.currentCamera);
   }
 
