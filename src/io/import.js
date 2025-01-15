@@ -12,10 +12,7 @@ import {
   SurveyStation,
   SurveyAlias,
   Surface,
-  CaveMetadata,
-  CaveComponent,
-  ComponentAttribute,
-  Color
+  CaveMetadata
 } from '../model.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 import * as THREE from 'three';
@@ -86,13 +83,13 @@ class CaveImporter {
       cave.sectionAttributes.forEach((sa) => {
         if (sa.visible) {
           const segments = SectionHelper.getSectionSegments(sa.section, cave.stations);
-          this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.color, cave.name);
+          this.scene.showSectionAttribute(sa.id, segments, sa.attribute, sa.format, sa.color, cave.name);
         }
       });
       cave.componentAttributes.forEach((ca) => {
         if (ca.visible) {
           const segments = SectionHelper.getComponentSegments(ca.component, cave.stations);
-          this.scene.showSectionAttribute(ca.id, segments, ca.attribute, ca.color, cave.name);
+          this.scene.showSectionAttribute(ca.id, segments, ca.attribute, ca.format, ca.color, cave.name);
         }
       });
       this.explorer.addCave(cave);
@@ -310,29 +307,32 @@ class JsonImporter extends CaveImporter {
     [...cave.surveys.entries()]
       .forEach(([index, es]) => SurveyHelper.recalculateSurvey(index, es, cave.stations, cave.aliases));
 
-    if (cave.sectionAttributes.length > 0) {
+    if (cave.sectionAttributes.length > 0 || cave.componentAttributes.length > 0) {
       const g = SectionHelper.getGraph(cave);
-      cave.sectionAttributes.forEach((sa) => {
-        const cs = SectionHelper.getSection(g, sa.section.from, sa.section.to);
-        if (cs !== undefined) {
-          sa.section = cs;
-        } else {
-          //TODO: show error
-        }
 
-      });
+      if (cave.sectionAttributes.length > 0) {
+        cave.sectionAttributes.forEach((sa) => {
+          const cs = SectionHelper.getSection(g, sa.section.from, sa.section.to);
+          if (cs !== undefined) {
+            sa.section = cs;
+          } else {
+            //TODO: show error
+          }
+
+        });
+      }
+      if (cave.componentAttributes.length > 0) {
+        cave.componentAttributes.forEach((ca) => {
+          const cs = SectionHelper.getComponent(g, ca.component.start, ca.component.termination);
+          if (cs !== undefined) {
+            ca.component = cs;
+          } else {
+            //TODO: show error
+          }
+
+        });
+      }
     }
-
-    const g = SectionHelper.getGraph(cave);
-    const comp = SectionHelper.getComponent(g, 'Padf22', ['Padf21', 'Lapi43']);
-    const componentAttribute = new ComponentAttribute(
-      'hello',
-      comp,
-      this.attributeDefs.createByName('co')(2.4),
-      new Color('#ff00ff'),
-      true
-    );
-    cave.componentAttributes = [componentAttribute];
     this.addCave(cave);
   }
 }

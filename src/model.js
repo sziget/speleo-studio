@@ -253,8 +253,8 @@ class CaveComponent {
 
   toExport() {
     return {
-      from        : this.from,
-      termination : this.to
+      start       : this.start,
+      termination : this.termination
     };
   }
 
@@ -335,15 +335,16 @@ class CaveSection {
 
 class FragmentAttribute {
 
-  constructor(id, attribute, color, visible) {
+  constructor(id, attribute, format, color, visible) {
     this.id = id;
     this.attribute = attribute;
+    this.format = format;
     this.color = color;
     this.visible = visible;
   }
 
   isComplete() {
-    return this.getEmptyFields().length === 0 && this.section.isComplete();
+    return this.getEmptyFields().length === 0;
   }
 
   getEmptyFields() {
@@ -352,7 +353,7 @@ class FragmentAttribute {
   }
 
   isValid() {
-    return this.validate().length === 0 && this.section.isValid();
+    return this.validate().length === 0;
   }
 
   validate() {
@@ -379,8 +380,8 @@ class SectionAttribute extends FragmentAttribute {
 
   fields = ['id', 'section', 'attribute', 'color', 'visible'];
 
-  constructor(id, section, attribute, color, visible = false) {
-    super(id, attribute, color, visible);
+  constructor(id, section, attribute, format, color, visible = false) {
+    super(id, attribute, format, color, visible);
     this.section = section;
   }
 
@@ -401,7 +402,8 @@ class SectionAttribute extends FragmentAttribute {
     return {
       id        : this.id,
       section   : this.section.toExport(),
-      attribute : this.attribute,
+      attribute : this.attribute.toExport(),
+      format    : this.format,
       color     : this.color.hexString(),
       visible   : this.visible
     };
@@ -419,8 +421,8 @@ class ComponentAttribute extends FragmentAttribute {
 
   fields = ['id', 'component', 'attribute', 'color', 'visible'];
 
-  constructor(id, component, attribute, color, visible = false) {
-    super(id, attribute, color, visible);
+  constructor(id, component, attribute, format, color, visible = false) {
+    super(id, attribute, format, color, visible);
     this.component = component;
   }
 
@@ -441,7 +443,8 @@ class ComponentAttribute extends FragmentAttribute {
     return {
       id        : this.id,
       component : this.component.toExport(),
-      attribute : this.attribute,
+      attribute : this.attribute.toExport(),
+      format    : this.format,
       color     : this.color.hexString(),
       visible   : this.visible
     };
@@ -465,7 +468,7 @@ class StationAttribute {
   toExport() {
     return {
       name      : this.name,
-      attribute : this.attribute
+      attribute : this.attribute.toExport()
     };
   }
 }

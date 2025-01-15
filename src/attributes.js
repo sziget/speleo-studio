@@ -105,6 +105,31 @@ const attributeDefintions = {
           type : 'string'
         }
       }
+    },
+    {
+      id       : 14,
+      category : 3,
+      name     : 'exploration',
+      params   : {
+        year : {
+          type     : 'int',
+          required : true
+        },
+        month : {
+          type       : 'int',
+          validators : {
+            min : 1,
+            max : 12
+          }
+        },
+        day : {
+          type       : 'int',
+          validators : {
+            min : 1,
+            max : 31
+          }
+        }
+      }
     }
   ]
 };
@@ -244,7 +269,7 @@ class Attribute {
     const runFieldValidators = (paramDef, v) => {
       const e = [];
 
-      if (paramDef.validators !== undefined) {
+      if (paramDef.validators !== undefined && !falsy(v)) {
 
         if ('min' in paramDef.validators && v < paramDef.validators['min']) {
           e.push(`Value should not be less than ${paramDef.validators['min']} `);
@@ -293,32 +318,34 @@ class Attribute {
         }
 
       } else {
-        let validForType, parsedValue;
-        switch (paramDef.type) {
-          case 'int':
-            if (!Number.isInteger(parseInt(value, 10))) {
-              errors.push(`Value '${value}' is not a valid integer`);
-            } else {
+        if (!falsy(value)) {
+          let validForType, parsedValue;
+          switch (paramDef.type) {
+            case 'int':
+              if (!Number.isInteger(parseInt(value, 10))) {
+                errors.push(`Value '${value}' is not a valid integer`);
+              } else {
+                validForType = true;
+                parsedValue = parseInt(value, 10);
+              }
+              break;
+            case 'float':
+              if (!isFloatStr(value)) {
+                errors.push(`Value '${value}' is not a valid float`);
+              } else {
+                validForType = true;
+                parsedValue = parseMyFloat(value);
+              }
+              break;
+            case 'string':
               validForType = true;
-              parsedValue = parseInt(value, 10);
-            }
-            break;
-          case 'float':
-            if (!isFloatStr(value)) {
-              errors.push(`Value '${value}' is not a valid float`);
-            } else {
-              validForType = true;
-              parsedValue = parseMyFloat(value);
-            }
-            break;
-          case 'string':
-            validForType = true;
-            parsedValue = value;
-            break;
-        }
+              parsedValue = value;
+              break;
+          }
 
-        if (validForType) {
-          errors.push(...runFieldValidators(paramDef, parsedValue));
+          if (validForType) {
+            errors.push(...runFieldValidators(paramDef, parsedValue));
+          }
         }
       }
 
@@ -352,6 +379,18 @@ class Attribute {
 
   clone() {
     return Object.create(this);
+  }
+
+  toExport() {
+    const a = {};
+    a.id = this.id;
+    a.name = this.name;
+    this.paramNames.forEach((n) => {
+      if (this[n] !== undefined) {
+        a[n] = this[n];
+      }
+    });
+    return a;
   }
 }
 

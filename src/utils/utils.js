@@ -25,6 +25,12 @@ function degreesToRads(deg) {
   return deg * deg2rad;
 }
 
+function interpolate(template, params) {
+  const names = Object.keys(params);
+  const vals = Object.values(params);
+  return new Function(...names, `return \`${template}\`;`)(...vals);
+}
+
 function randomAlphaNumbericString(maxLength) {
   return Math.random()
     .toString(36)
@@ -112,6 +118,7 @@ export {
   randomAlphaNumbericString,
   parseMyFloat,
   isFloatStr,
+  interpolate,
   get3DCoordsStr,
   iterateUntil,
   node,

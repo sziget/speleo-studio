@@ -20,13 +20,8 @@
       },
       "attribute": {
         "id": 4,
-        "type": "static",
         "name": "rope",
-        "params": {
-          "type": {
-            "type": "string"
-          }
-        }
+        "type": "static"
       },
       "color": "#ff0059",
       "visible": false
@@ -39,16 +34,43 @@
       },
       "attribute": {
         "id": 4,
-        "type": "static",
         "name": "rope",
-        "params": {
-          "type": {
-            "type": "string"
-          }
-        }
+        "type": "static"
       },
       "color": "#00ff2a",
       "visible": false
+    }
+  ],
+  "componentAttributes": [
+    {
+      "id": "saaqbv",
+      "component": {
+        "start": "Padf22",
+        "termination": ["Padf21", "Lapi43"]
+      },
+      "attribute": {
+        "id": 14,
+        "name": "co",
+        "value": 2
+      },
+      "format": "${name}",
+      "color": "#ff00ff",
+      "visible": true
+    },
+    {
+      "id": "sbrqbv",
+      "component": {
+        "start": "34z7",
+        "termination": ["34z6"]
+      },
+      "attribute": {
+        "id": 14,
+        "name": "exploration",
+        "year": 2018
+      },
+      "format": "${name}(${year})",
+      "color": "#00ffaf",
+      "visible": true
     }
   ],
   "surveys": [
@@ -70,22 +92,7 @@
           "name": "1",
           "attribute": {
             "id": 2,
-            "type": 1,
             "name": "bedding",
-            "params": {
-              "azimuth": {
-                "type": "float"
-              },
-              "dip": {
-                "type": "float"
-              },
-              "width": {
-                "type": "int"
-              },
-              "height": {
-                "type": "int"
-              }
-            },
             "azimuth": 190,
             "dip": 80,
             "width": 10,
@@ -96,22 +103,7 @@
           "name": "1",
           "attribute": {
             "id": 2,
-            "type": 1,
             "name": "bedding",
-            "params": {
-              "azimuth": {
-                "type": "float"
-              },
-              "dip": {
-                "type": "float"
-              },
-              "width": {
-                "type": "int"
-              },
-              "height": {
-                "type": "int"
-              }
-            },
             "azimuth": 190,
             "dip": 80,
             "width": 10,
@@ -788,22 +780,7 @@
           "name": "Fo19",
           "attribute": {
             "id": 2,
-            "type": 1,
             "name": "bedding",
-            "params": {
-              "azimuth": {
-                "type": "float"
-              },
-              "dip": {
-                "type": "float"
-              },
-              "width": {
-                "type": "int"
-              },
-              "height": {
-                "type": "int"
-              }
-            },
             "azimuth": 10,
             "dip": 10,
             "width": 10,

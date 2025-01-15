@@ -245,6 +245,7 @@ class Editor {
                 this.cave.stations
               ),
               data.attribute,
+              data.format,
               data.color,
               this.cave.name
             );
@@ -602,6 +603,11 @@ class FragmentAttributeEditor extends CaveEditor {
             },
             this.tableFunctions.checkAttributesLength
           )
+      },
+      {
+        title  : 'Format',
+        field  : 'format',
+        editor : 'input'
       }
     ];
 
@@ -712,6 +718,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
             r.id,
             new CaveComponent(r.start, r.termination, r.path, r.distance),
             r.attribute,
+            r.format,
             r.color,
             r.visible
           )
@@ -724,6 +731,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
       r.id,
       new CaveComponent(r.start, r.termination, r.path, r.distance),
       r.attribute,
+      r.format,
       r.color,
       r.visible
     );
@@ -762,6 +770,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
       path        : undefined,
       distance    : undefined,
       attribute   : undefined,
+      format      : '${name}',
       status      : 'incomplete',
       message     : 'New row'
     };
@@ -780,6 +789,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
         path        : r.component.path, //hidden
         distance    : r.component.distance,
         attribute   : r.attribute,
+        format      : r.format === undefined ? '${name}' : r.format,
         status      : 'ok',
         message     : 'No errors'
       };
@@ -843,7 +853,11 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
         mutatorClipboard : (value) => {
           return value.split(',');
         },
-        accessor : (value) => {
+        accessorClipboard : (value) => {
+          return value.join(',');
+
+        },
+        formatterClipboard : (value) => {
           return value.join(',');
 
         },
@@ -874,6 +888,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
             this.cave.stations
           ),
           data.attribute,
+          data.format,
           data.color,
           this.cave.name
         );
@@ -906,6 +921,7 @@ class ComponentAttributeEditor extends FragmentAttributeEditor {
             data.id,
             SectionHelper.getComponentSegments(component, this.cave.stations),
             data.attribute,
+            data.format,
             data.color,
             this.cave.name
           );
@@ -952,6 +968,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
             r.id,
             new CaveSection(r.from, r.to, r.path, r.distance),
             r.attribute,
+            r.format,
             r.color,
             r.visible
           )
@@ -964,6 +981,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
       r.id,
       new CaveSection(r.from, r.to, r.path, r.distance),
       r.attribute,
+      r.format,
       r.color,
       r.visible
     );
@@ -1002,6 +1020,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
       path      : undefined,
       distance  : undefined,
       attribute : undefined,
+      format    : '${name}',
       status    : 'incomplete',
       message   : 'New row'
     };
@@ -1020,6 +1039,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
         path      : r.section.path, //hidden
         distance  : r.section.distance,
         attribute : r.attribute,
+        format    : r.format === undefined ? '${name}' : r.format,
         status    : 'ok',
         message   : 'No errors'
       };
@@ -1074,6 +1094,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
             this.cave.stations
           ),
           data.attribute,
+          data.format,
           data.color,
           this.cave.name
         );
@@ -1106,6 +1127,7 @@ class SectionAttributeEditor extends FragmentAttributeEditor {
               data.id,
               SectionHelper.getSectionSegments(section, this.cave.stations),
               data.attribute,
+              data.format,
               data.color,
               this.cave.name
             );

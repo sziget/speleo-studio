@@ -282,7 +282,7 @@ class MyScene {
     this.renderScene();
   }
 
-  showSectionAttribute(id, segments, attribute, color, caveName) {
+  showSectionAttribute(id, segments, attribute, format = '${name}', color, caveName) {
     if (!this.sectionAttributes.has(id)) {
       const geometry = new LineSegmentsGeometry();
       geometry.setPositions(segments);
@@ -296,7 +296,8 @@ class MyScene {
       const lineSegments = new LineSegments2(geometry, material);
       this.sectionAttributes3DGroup.add(lineSegments);
       const center = geometry.boundingBox.getCenter(new THREE.Vector3());
-      const textMesh = this.addLabel(attribute.name, center, this.options.scene.labels.size);
+      const formattedAttribute = U.interpolate(format, attribute);
+      const textMesh = this.addLabel(formattedAttribute, center, this.options.scene.labels.size);
       this.sectionAttributes3DGroup.add(textMesh);
 
       this.sectionAttributes.set(id, {
