@@ -132,20 +132,30 @@ body {
   display: none;
 }
 
-#locatepoint {
+#interactive {
+  text-align: left;
   font-size: 12px;
-  padding: 10px;
   position: absolute;
-  display: block;
   color: azure;
   background: #333;
   width: 260px;
-  border-style: solid;
-  border-color: coral;
-  border-width: 1px;
+  min-width: 200px;
   z-index: 100;
   display: none;
   top: 50px;
+}
+
+#interactive button {
+  margin-top: 20px;
+  margin-left: 50%;
+  width: 170px;
+  transform: translate(-50%); /* Centers the button */
+}
+
+#interactive div {
+  /* Shortest path label */
+  margin-bottom: 5px;
+  text-align: center;
 }
 
 .footer {
@@ -435,6 +445,7 @@ body {
 }
 
 .popup-header {
+  text-align: center;
   padding: 10px;
   cursor: move;
   z-index: 10;
