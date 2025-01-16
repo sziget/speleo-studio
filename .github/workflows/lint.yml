@@ -16,8 +16,6 @@ jobs:
     name: Run linters
     runs-on: ubuntu-latest
 
-    continue-on-error: true
-
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -32,7 +30,9 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
+        if: always()
         run: npx eslint src/**
         
       - name: Run Prettier check
+        if: always()
         run: npx prettier ./src/** --check
