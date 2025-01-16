@@ -34,5 +34,5 @@ jobs:
         continue-on-error: true
         
       - name: Run Prettier check
-        run: npm run check-format
+        run: npx prettier ./src/** --check
         continue-on-error: true
