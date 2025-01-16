@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-checks:
-    name: Run checks
+  setup-env:
+    name: Setup
     runs-on: ubuntu-latest
 
     steps:
@@ -28,14 +28,23 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
-      - name: Run ESLint
-        if: always()
+  eslint:
+    name: ESLint
+    runs-on: ubuntu-latest    
+    steps:
+      - name: Run ESLint check
         run: npx eslint src/**
-        
+
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-latest     
+    steps:
       - name: Run Prettier check
-        if: always()
         run: npx prettier ./src/** --check
 
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest     
+    steps:
       - name: Run Tests
-        if: always()
         run: npm run test
