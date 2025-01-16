@@ -13,7 +13,7 @@
   "quoteProps": "as-needed",
   "trailingComma": "none",
   "eslintIntegration": true,
-  "plugins": ["@yikes2000/prettier-plugin-merge-extras"],
+  "plugins": ["@yikes2000/prettier-plugin-merge-extras","eslint-plugin-prettier"],
   "preserveDotChain": true,
   "preserveFirstBlankLine": true
 }
