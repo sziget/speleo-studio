@@ -1,0 +1,24 @@
+name: Lint
+
+on:
+  # Trigger the workflow on push or pull request,
+  # but only for the main branch
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  eslint:
+    uses: ./.github/workflows/eslint.yml
+  
+  prettier:
+    name: Prettier check
+    uses: ./.github/workflows/prettier.yml
+  
+  tests:
+    name: Run tests
+    uses: ./.github/workflows/tests.yml
