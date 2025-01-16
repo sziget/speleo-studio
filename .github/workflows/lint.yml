@@ -29,10 +29,13 @@ jobs:
         run: npm ci
 
       - name: Run ESLint check
+        if: always()
         run: npx eslint src/**
 
       - name: Run Prettier check
+        if: always()
         run: npx prettier ./src/** --check
 
       - name: Run Tests
+        if: always()
         run: npm run test
