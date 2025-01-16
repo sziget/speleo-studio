@@ -1,0 +1,25 @@
+name: Prettier
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  prettier-check:
+    name: Prettier check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 22
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Prettier check
+        run: npx prettier ./src/** --check
