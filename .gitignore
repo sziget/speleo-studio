@@ -1,5 +1,3 @@
 .vscode/*
 app.mjs
 node_modules/
-package.json
-package-lock.json
