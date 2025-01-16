@@ -1,4 +1,4 @@
-name: Lint
+name: Checks
 
 on:
   # Trigger the workflow on push or pull request,
@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-env:
-    name: Setup
+  run-checks:
+    name: Run Checks
     runs-on: ubuntu-latest
 
     steps:
@@ -28,23 +28,11 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
-  eslint:
-    name: ESLint
-    runs-on: ubuntu-latest    
-    steps:
       - name: Run ESLint check
         run: npx eslint src/**
 
-  prettier:
-    name: Prettier
-    runs-on: ubuntu-latest     
-    steps:
       - name: Run Prettier check
         run: npx prettier ./src/** --check
 
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest     
-    steps:
       - name: Run Tests
         run: npm run test
