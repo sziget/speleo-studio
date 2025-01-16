@@ -31,3 +31,6 @@ jobs:
 
       - name: Run ESLint
         run: npx eslint src/**
+        
+      - name: Run Prettier check
+        run: npm run check-format
