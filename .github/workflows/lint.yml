@@ -16,6 +16,8 @@ jobs:
     name: Run linters
     runs-on: ubuntu-latest
 
+    continue-on-error: true
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -31,8 +33,6 @@ jobs:
 
       - name: Run ESLint
         run: npx eslint src/**
-        continue-on-error: true
         
       - name: Run Prettier check
         run: npx prettier ./src/** --check
-        continue-on-error: true
