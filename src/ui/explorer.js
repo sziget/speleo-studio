@@ -36,8 +36,6 @@ class ProjectManager {
 
   onAttributesChanged(e) {
     const cave = e.detail.cave;
-    const survey = e.detail.survey;
-
     this.scene.renderScene();
     this.explorer.updateCave(cave, (n) => n.name === cave.name);
   }
@@ -144,13 +142,9 @@ class ProjectExplorer {
   }
 
   closeEditors(caveName) {
-    if (this.caveeditor !== undefined && !this.caveeditor.closed && this.caveeditor.cave.name === caveName) {
-      this.caveeditor.closeEditor();
+    if (this.editor !== undefined && !this.closed && this.editor.cave.name === caveName) {
+      this.editor.closeEditor();
     }
-    if (this.surveyeditor !== undefined && !this.surveyeditor.closed && this.surveyeditor.cave.name === caveName) {
-      this.surveyeditor.closeEditor();
-    }
-
   }
 
   updateCave(cave, predicate) {
@@ -163,7 +157,7 @@ class ProjectExplorer {
     const menu = U.node`<ul class="menu-options">`;
     const editCaveData = U.node`<li class="menu-option">Edit cave sheet</li>`;
     editCaveData.onclick = () => {
-      this.caveeditor = new CaveEditor(
+      this.editor = new CaveEditor(
         this.db,
         this.options,
         cave,
@@ -171,14 +165,14 @@ class ProjectExplorer {
         this.attributeDefs,
         document.getElementById('caveeditor')
       );
-      this.caveeditor.setupPanel();
-      this.caveeditor.show();
+      this.editor.setupPanel();
+      this.editor.show();
       this.contextMenuElement.style.display = 'none';
     };
 
     const editSectionAttributes = U.node`<li class="menu-option">Edit section attributes</li>`;
     editSectionAttributes.onclick = () => {
-      this.caveeditor = new SectionAttributeEditor(
+      this.editor = new SectionAttributeEditor(
         this.db,
         this.options,
         cave,
@@ -186,15 +180,15 @@ class ProjectExplorer {
         this.attributeDefs,
         document.getElementById('caveeditor')
       );
-      this.caveeditor.setupPanel();
-      this.caveeditor.show();
+      this.editor.setupPanel();
+      this.editor.show();
       this.contextMenuElement.style.display = 'none';
 
     };
 
     const editComponentAttributes = U.node`<li class="menu-option">Edit component attributes</li>`;
     editComponentAttributes.onclick = () => {
-      this.caveeditor = new ComponentAttributeEditor(
+      this.editor = new ComponentAttributeEditor(
         this.db,
         this.options,
         cave,
@@ -202,8 +196,8 @@ class ProjectExplorer {
         this.attributeDefs,
         document.getElementById('caveeditor')
       );
-      this.caveeditor.setupPanel();
-      this.caveeditor.show();
+      this.editor.setupPanel();
+      this.editor.show();
       this.contextMenuElement.style.display = 'none';
 
     };
@@ -232,6 +226,7 @@ class ProjectExplorer {
   };
 
   initializeTree(data) {
+    // eslint-disable-next-line no-undef
     this.itree = new InfiniteTree({
       el          : this.treeNode,
       data        : data,
@@ -301,26 +296,23 @@ class ProjectExplorer {
       return;
     } else if (event.target.id === 'edit') {
 
-      if (this.caveeditor !== undefined && !this.caveeditor.closed) {
-        this.caveeditor.closeEditor();
-      }
-      if (this.surveyeditor !== undefined && !this.surveyeditor.closed) {
-        this.surveyeditor.closeEditor();
+      if (this.editor !== undefined && !this.editor.closed) {
+        this.editor.closeEditor();
       }
 
       if (state.nodeType === 'survey') {
-        this.surveyeditor = new SurveyEditor(
+        this.editor = new SurveyEditor(
           state.cave,
           state.survey,
           this.scene,
           this.attributeDefs,
           document.getElementById('surveyeditor')
         );
-        this.surveyeditor.setupTable();
-        this.surveyeditor.show();
+        this.editor.setupTable();
+        this.editor.show();
       } else if (state.nodeType === 'cave') {
 
-        this.caveeditor = new CaveEditor(
+        this.editor = new CaveEditor(
           this.db,
           this.options,
           state.cave,
@@ -328,8 +320,8 @@ class ProjectExplorer {
           this.attributeDefs,
           document.getElementById('caveeditor')
         );
-        this.caveeditor.setupPanel();
-        this.caveeditor.show();
+        this.editor.setupPanel();
+        this.editor.show();
       }
 
     } else if (event.target.id === 'delete') {

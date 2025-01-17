@@ -12,7 +12,7 @@ import {
 import { AttributesDefinitions } from '../attributes.js';
 import { SectionHelper } from '../section.js';
 import { randomAlphaNumbericString } from '../utils/utils.js';
-import { makeMoveableDraggable, showErrorPanel } from './popups.js';
+import { makeMovable, showErrorPanel } from './popups.js';
 
 class Editor {
 
@@ -357,9 +357,10 @@ class CaveEditor extends Editor {
 
   setupPanel() {
     this.panel.innerHTML = '';
-    makeMoveableDraggable(
+    makeMovable(
       this.panel,
       `Cave sheet editor: ${this.cave.name}`,
+      false,
       () => this.closeEditor(),
       () => {},
       () => {}
@@ -499,9 +500,10 @@ class FragmentAttributeEditor extends CaveEditor {
 
   setupPanel() {
     this.panel.innerHTML = '';
-    makeMoveableDraggable(
+    makeMovable(
       this.panel,
       this.title,
+      true,
       () => this.closeEditor(),
       (_newWidth, newHeight) => this.table.setHeight(newHeight - 140),
       () => this.table.redraw()
@@ -620,6 +622,7 @@ class FragmentAttributeEditor extends CaveEditor {
 
     columns.splice(3, 0, ...this.getColumns());
 
+    // eslint-disable-next-line no-undef
     this.table = new Tabulator('#sectionattributes', {
       height                    : this.panel.style.height - 140,
       autoResize                : false,
@@ -1387,11 +1390,11 @@ class SurveyEditor extends Editor {
   }
 
   setupTable() {
-
     this.panel.innerHTML = '';
-    makeMoveableDraggable(
+    makeMovable(
       this.panel,
       `Survey editor: ${this.survey.name}`,
+      true,
       () => this.closeEditor(),
       (_newWidth, newHeight) => this.table.setHeight(newHeight - 100),
       () => {
@@ -1482,6 +1485,7 @@ class SurveyEditor extends Editor {
       return data.status === 'orphan';
     }
 
+    // eslint-disable-next-line no-undef
     this.table = new Tabulator('#surveydata', {
       height                    : 300,
       data                      : this.#getTableData(this.survey, this.cave.stations),

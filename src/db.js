@@ -31,9 +31,17 @@ class Database {
     return this.caves.values().flatMap((c) => c.surveys);
   }
 
+  getStationNames(caveName) {
+    return [...(this.caves.get(caveName)?.stations?.keys() ?? [])];
+  }
+
   getAllStationNames() {
     const stNames = [...this.caves.values().flatMap((c) => [...c.stations.keys()])];
     return stNames.sort();
+  }
+
+  getAllCaveNames() {
+    return [...this.caves.keys()];
   }
 
   getSurvey(caveName, surveyName) {

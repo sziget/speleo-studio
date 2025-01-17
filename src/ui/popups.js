@@ -26,7 +26,7 @@ function showWarningPanel(message, seconds = 6) {
   showCautionPanel(message, seconds, 'warning');
 }
 
-function makeMoveableDraggable(panel, headerText, closeFn, doDragFn, stopDragFn) {
+function makeMovable(panel, headerText, resizable = true, closeFn, doDragFn, stopDragFn) {
 
   //https://codepen.io/jkasun/pen/QrLjXP
 
@@ -110,23 +110,25 @@ function makeMoveableDraggable(panel, headerText, closeFn, doDragFn, stopDragFn)
   header.onmousedown = dragMouseDown;
   panel.appendChild(header);
 
-  var right = document.createElement('div');
-  right.className = 'resizer-right';
-  panel.appendChild(right);
-  right.addEventListener('mousedown', initDrag, false);
-  right.parentPopup = panel;
+  if (resizable) {
+    var right = document.createElement('div');
+    right.className = 'resizer-right';
+    panel.appendChild(right);
+    right.addEventListener('mousedown', initDrag, false);
+    right.parentPopup = panel;
 
-  var bottom = document.createElement('div');
-  bottom.className = 'resizer-bottom';
-  panel.appendChild(bottom);
-  bottom.addEventListener('mousedown', initDrag, false);
-  bottom.parentPopup = panel;
+    var bottom = document.createElement('div');
+    bottom.className = 'resizer-bottom';
+    panel.appendChild(bottom);
+    bottom.addEventListener('mousedown', initDrag, false);
+    bottom.parentPopup = panel;
 
-  var both = document.createElement('div');
-  both.className = 'resizer-both';
-  panel.appendChild(both);
-  both.addEventListener('mousedown', initDrag, false);
-  both.parentPopup = panel;
+    var both = document.createElement('div');
+    both.className = 'resizer-both';
+    panel.appendChild(both);
+    both.addEventListener('mousedown', initDrag, false);
+    both.parentPopup = panel;
+  }
 }
 
-export { showErrorPanel, showWarningPanel, makeMoveableDraggable };
+export { showErrorPanel, showWarningPanel, makeMovable };

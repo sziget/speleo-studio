@@ -25,12 +25,14 @@ class MyScene {
     this.options = options;
     this.db = db;
     this.materials = materials;
-    this.caveObjects = new Map();
+    this.caveObjects = new Map(); // for centerlines, splays ... for a cave
     this.surfaceObjects = new Map();
     this.sectionAttributes = new Map();
+    this.segments = new Map(); // for shortest path segments
     this.caveObject3DGroup = new THREE.Group();
     this.surfaceObject3DGroup = new THREE.Group();
     this.sectionAttributes3DGroup = new THREE.Group();
+    this.segments3DGroup = new THREE.Group();
     this.stationFont = undefined;
     const loader = new FontLoader();
     loader.load('fonts/helvetiker_regular.typeface.json', (font) => this.setFont(font));
@@ -65,6 +67,8 @@ class MyScene {
     this.threejsScene.add(this.caveObject3DGroup);
     this.threejsScene.add(this.surfaceObject3DGroup);
     this.threejsScene.add(this.sectionAttributes3DGroup);
+    this.threejsScene.add(this.segments3DGroup);
+
     this.boundingBox = undefined;
     this.planeMeshes = new Map();
 
@@ -280,6 +284,39 @@ class MyScene {
       this.boundingBoxHelper = undefined;
     }
     this.renderScene();
+  }
+
+  showSegments(id, segments, color, caveName) {
+    if (!this.segments.has(id)) {
+      const geometry = new LineSegmentsGeometry();
+      geometry.setPositions(segments);
+      geometry.computeBoundingBox();
+      const material = new LineMaterial({
+        color        : color.hex(),
+        linewidth    : this.options.scene.centerLines.segments.width * SECTION_LINE_MULTIPLIER,
+        worldUnits   : false,
+        vertexColors : false
+      });
+      const lineSegments = new LineSegments2(geometry, material);
+      this.segments3DGroup.add(lineSegments);
+      this.segments.set(id, {
+        segments : lineSegments,
+        caveName : caveName
+      });
+      this.renderScene();
+    }
+  }
+
+  disposeSegments(id) {
+    if (this.segments.has(id)) {
+      const e = this.segments.get(id);
+      const lineSegments = e.segments;
+      lineSegments.geometry.dispose();
+      lineSegments.material.dispose();
+      this.segments3DGroup.remove(lineSegments);
+      this.segments.delete(id);
+      this.renderScene();
+    }
   }
 
   showSectionAttribute(id, segments, attribute, format = '${name}', color, caveName) {

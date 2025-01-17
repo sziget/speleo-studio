@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { showErrorPanel } from './ui/popups.js';
+import { makeMovable, showErrorPanel } from './ui/popups.js';
 import { get3DCoordsStr, node } from './utils/utils.js';
+import { SectionHelper } from './section.js';
 
 class SceneInteraction {
 
@@ -202,46 +203,133 @@ class SceneInteraction {
     }
   }
 
-  showLocatePanel(clientX) {
+  showLocateStationPanel() {
     this.locatePanel.innerHTML = '';
-    const input = node`<input type="search" list="stations" id="pointtolocate" />`;
+    makeMovable(
+      this.locatePanel,
+      `Locate station`,
+      false,
+      () => {
+        this.locatePanel.style.display = 'none';
+      },
+      () => {},
+      () => {}
+    );
     const stNames = this.db.getAllStationNames();
     const options = stNames.map((n) => `<option value="${n}">`).join('');
-    const datalist = node`<datalist id="stations">${options}</datalist>`;
-    const forContext = node`<div><label for="forContext">for context<input type="checkbox" id="forContext" /></label></div>`;
-    const button = node`<button id="locatebutton">Locate point</button>`;
-    button.onclick = () => {
+
+    const container = node`<div id="container-locate-station">
+        <label for="pointtolocate">Station: <input type="search" list="stations" id="pointtolocate"/></label>
+        <datalist id="stations">${options}</datalist>
+        <div><label for="forContext">For context<input type="checkbox" id="forContext" /></label></div>
+        <button id="locate-button">Locate point</button>
+      </div>`;
+    const input = container.querySelector('#pointtolocate');
+
+    container.querySelector('#locate-button').onclick = () => {
       const stationSphere = this.scene.getStationSphere(input.value);
       if (stationSphere !== undefined) {
         if (this.selectedStation !== undefined) {
           this.#clearSelected();
         }
-        if (forContext.getElementsByTagName('input')[0].checked) {
+        if (container.querySelector('#forContext').checked) {
           this.#setSelectedForContext(stationSphere);
         } else {
           this.#setSelected(stationSphere);
         }
 
         this.scene.zoomOnStationSphere(stationSphere);
-        this.hideLocatePanel();
+        this.locatePanel.style.display = 'none';
         input.value = '';
       }
 
     };
-    const close = node`<span id="close" onclick="this.parentNode.style.display='none'; return false;">x</span>`;
 
-    this.locatePanel.appendChild(input);
-    this.locatePanel.appendChild(datalist);
-    this.locatePanel.appendChild(button);
-    this.locatePanel.appendChild(forContext);
-    this.locatePanel.appendChild(close);
-    input.focus();
-    this.locatePanel.style.left = `${clientX - 100}px`;
+    this.locatePanel.appendChild(container);
     this.locatePanel.style.display = 'block';
   }
 
-  hideLocatePanel() {
-    this.locatePanel.style.display = 'none';
+  showShortestPathPanel() {
+    const segmentsId = 'shortest-path-segments';
+
+    const addStationSelectors = (caveName) => {
+      const container = node`<div id="container-shortest-path"></div>`;
+      const stNames = this.db.getStationNames(caveName);
+      const options = stNames.map((n) => `<option value="${n}">`).join('');
+      const datalist = node`<datalist id="stations">${options}</datalist>`;
+      const button = node`<button id="find-shortest-path">Find shortest path</button>`;
+      const fromL = node`<label for="point-from">From:<input type="search" list="stations" id="point-from"></label>`;
+      const toL = node`<label for="point-to">To:<input type="search" list="stations" id="point-to"></label>`;
+
+      container.appendChild(datalist);
+      container.appendChild(fromL);
+      container.appendChild(toL);
+      container.appendChild(button);
+      this.locatePanel.appendChild(container);
+
+      button.onclick = () => {
+
+        this.scene.disposeSegments(segmentsId);
+        const cave = this.db.getCave(caveName);
+        const g = SectionHelper.getGraph(cave);
+        let label;
+        const from = fromL.childNodes[1].value;
+        const to = toL.childNodes[1].value;
+        if (cave.stations.has(from) && cave.stations.has(to)) {
+          const section = SectionHelper.getSection(g, from, to);
+          if (section !== undefined) {
+            const segments = SectionHelper.getSectionSegments(section, cave.stations);
+            this.scene.showSegments(segmentsId, segments, this.options.scene.sectionAttributes.color, caveName);
+            label = node`<div id="shortest-path-label">From: ${from} To: ${to} Length: ${section.distance.toFixed(2)}</div>`;
+          } else {
+            label = node`<div id="shortest-path-label">Cannot find path between '${from}' and '${to}'</div>`;
+          }
+        } else {
+          label = node`<div id="shortest-path-label">Cannot find stations '${from}' or '${to}'</div>`;
+        }
+        this.locatePanel.appendChild(label);
+
+      };
+    };
+
+    this.locatePanel.style.display = 'none'; //shown previously
+    this.locatePanel.innerHTML = '';
+    makeMovable(
+      this.locatePanel,
+      `Shortest path`,
+      false,
+      () => {
+        this.scene.disposeSegments(segmentsId);
+        this.locatePanel.style.display = 'none';
+      },
+      () => {},
+      () => {}
+    );
+
+    const cNames = this.db.getAllCaveNames();
+    if (cNames.length > 1) {
+      const optionCaveNames = cNames.map((n) => `<option value="${n}">${n}</option>`).join('');
+      const caveNamesL = node`<label for="cave-names">Cave: <select id="cave-names" name="cave-names">${optionCaveNames}</select></label>`;
+      const caveNames = caveNamesL.childNodes[1];
+
+      this.locatePanel.appendChild(caveNamesL);
+
+      caveNames.onchange = () => {
+        const caveName = caveNames.options[caveNames.selectedIndex].text;
+        const cont = this.locatePanel.querySelector('#container-shortest-path');
+        if (cont !== undefined) {
+          this.locatePanel.removeChild(cont);
+        }
+        this.locatePanel.querySelectorAll('#shortest-path-label').forEach((e) => this.locatePanel.removeChild(e));
+
+        addStationSelectors(caveName);
+      };
+    }
+
+    if (cNames.length > 0) {
+      addStationSelectors(cNames[0]);
+      this.locatePanel.style.display = 'block';
+    }
   }
 
   showContextMenu(left, top) {

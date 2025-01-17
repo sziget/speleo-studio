@@ -1,8 +1,9 @@
 {
   "name": "speleo-studio",
   "version": "1.0.0",
-  "description": "speleo-studio",
-  "main": "index.html",
+  "description": "Cave visualization and survey editor application",
+  "main": "app.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "npx prettier --write ./src/**"

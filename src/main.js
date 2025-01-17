@@ -34,7 +34,7 @@ class Main {
       document.getElementById('getdistance'),
       document.getElementById('contextmenu'),
       document.getElementById('infopanel'),
-      document.getElementById('locatepoint')
+      document.getElementById('interactive')
     );
     new NavigationBar(db, document.getElementById('navbarcontainer'), options, scene, interaction);
 

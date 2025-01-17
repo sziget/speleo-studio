@@ -143,19 +143,28 @@ body {
   z-index: 100;
   display: none;
   top: 50px;
+  left: 650px;
 }
 
 #interactive button {
   margin-top: 20px;
-  margin-left: 50%;
-  width: 170px;
-  transform: translate(-50%); /* Centers the button */
+  text-align: center;
 }
 
 #interactive div {
-  /* Shortest path label */
   margin-bottom: 5px;
   text-align: center;
+}
+
+#interactive select {
+  background: #333;
+  color: azure;
+  border-top-width: 0px;
+  border-right-width: 0px;
+  border-left-width: 0px;
+  border-bottom-width: 2px;
+  width: 160px;
+  margin-left: 10px;
 }
 
 .footer {
@@ -303,9 +312,6 @@ body {
   margin-right: 5px;
   white-space: nowrap;
   display: inline-block;
-}
-
-.tabulator .tabulator-cell .attribute-editor {
 }
 
 .tabulator .tabulator-cell .attribute-editor .warning {
