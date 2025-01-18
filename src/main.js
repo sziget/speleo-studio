@@ -51,17 +51,17 @@ class Main {
   }
 
   #setupEventListeners() {
-    this.#setupFileInputListener('topodroidInput', (file) => this.importers.topodroid.importFile(file));
-    this.#setupFileInputListener('polygonInput', (file) => this.importers.polygon.importFile(file));
-    this.#setupFileInputListener('jsonInput', (file) => this.importers.json.importFile(file));
-    this.#setupFileInputListener('plyInput', (file) => this.importers.ply.importFile(file));
+    this.#setupFileInputListener('topodroidInput', (files) => this.importers.topodroid.importFiles(files));
+    this.#setupFileInputListener('polygonInput', (files) => this.importers.polygon.importFiles(files));
+    this.#setupFileInputListener('jsonInput', (files) => this.importers.json.importFiles(files));
+    this.#setupFileInputListener('plyInput', (files) => this.importers.ply.importFiles(files));
 
   }
 
   #setupFileInputListener(inputName, handler) {
     document
       .getElementById(inputName)
-      .addEventListener('change', (e) => handler(e.target.files[0]));
+      .addEventListener('change', (e) => handler(e.target.files));
   }
 
   #loadCaveFromUrl() {

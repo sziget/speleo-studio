@@ -57,9 +57,9 @@ class CaveImporter {
   addCave(cave) {
     const cavesReallyFar = Importer.getFarCaves(this.db.caves, cave.startPosition);
     if (this.db.caves.has(cave.name)) {
-      showErrorPanel('Import failed, cave has already been imported!', 20);
+      showErrorPanel(`Import of '${cave.name}' failed, cave has already been imported!`, 20);
     } else if (cavesReallyFar.length > 0) {
-      const message = `Import failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(',')}`;
+      const message = `Import of '${cave.name}' failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(',')}`;
       showWarningPanel(message, 20);
     } else {
       this.db.caves.set(cave.name, cave);
@@ -96,6 +96,12 @@ class CaveImporter {
       const boundingBox = this.scene.computeBoundingBox();
       this.scene.grid.adjust(boundingBox);
       this.scene.fitScene(boundingBox);
+    }
+  }
+
+  importFiles(files) {
+    for (const file of files) {
+      this.importFile(file);
     }
   }
 }
@@ -349,9 +355,9 @@ class PlySurfaceImporter {
     const cavesReallyFar = Importer.getFarCaves(this.db.caves, surface.center);
 
     if (this.db.getSurface(surface.name) !== undefined) {
-      showErrorPanel('Import failed, surface has already been imported!', 20);
+      showErrorPanel(`Import of '${surface.name}' failed, surface has already been imported!`, 20);
     } else if (cavesReallyFar.length > 0) {
-      const message = `Import failed, the surface is too far from previously imported caves:
+      const message = `Import of '${surface.name}' failed, the surface is too far from previously imported caves:
        ${cavesReallyFar.join(',')}`;
       showWarningPanel(message, 20);
     } else {
