@@ -19,8 +19,5 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install Node.js dependencies
-        run: npm ci
-
       - name: Run ESLint check
         run: npx eslint src/**
