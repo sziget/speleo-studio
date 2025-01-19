@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node.js dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint check
         run: npx eslint src/**
