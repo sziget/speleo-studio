@@ -1369,7 +1369,8 @@ class SurveyEditor extends Editor {
   }
 
   getEmptyRow() {
-    const id = Math.max(...this.table.getData().map((r) => r.id));
+    const data = this.table.getData();
+    const id = data.length === 0 ? 0 : Math.max(...data.map((r) => r.id));
 
     return {
       id         : id + 1,

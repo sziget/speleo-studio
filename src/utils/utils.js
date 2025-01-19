@@ -111,6 +111,14 @@ function formatDistance(distanceInMeters, decimals = 2) {
 
 }
 
+function fitString(str, maxLength) {
+  if (str.length > maxLength) {
+    return str.substr(0, maxLength - 3) + '...';
+  } else {
+    return str;
+  }
+}
+
 function formatDateISO(date) {
   // Convert the date to ISO string
   const isoString = date.toISOString();
@@ -139,5 +147,6 @@ export {
   getPolygonDate,
   formatDateISO,
   formatDistance,
+  fitString,
   falsy
 };

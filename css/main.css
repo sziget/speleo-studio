@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'fragment-mono';
+  src:
+    /* IE6-IE8 */
+    url('/fonts/fragmentmono-regular.woff2') format('woff2'),
+    /* Super Modern Browsers */ url('/fonts/fragmentmono-regular.woff') format('woff'),
+    /* Pretty Modern Browsers */ url('/fonts/fragmentmono-regular.ttf') format('truetype');
+}
+
 body {
   margin: 0;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -60,6 +69,7 @@ body {
 
 .cautionpanel {
   position: absolute;
+  z-index: 110;
   display: none;
   left: 25%;
   top: 50%;
@@ -106,6 +116,8 @@ body {
   color: azure;
   background-color: white;
   background: black;
+  font-family: fragment-mono;
+  font-size: 12px;
 }
 
 #caveeditor {

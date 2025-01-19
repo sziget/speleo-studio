@@ -584,7 +584,7 @@ class Survey {
   toExport() {
     return {
       name       : this.name,
-      start      : this.start.toExport(),
+      start      : this.start?.toExport(),
       attributes : this.attributes.map((sta) => sta.toExport()),
       shots      : this.shots.map((s) => s.toExport())
     };

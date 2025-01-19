@@ -753,8 +753,10 @@ class MyScene {
   }
 
   disposeSurvey(caveName, surveyName) {
-    const e = this.caveObjects.get(caveName).get(surveyName);
-    this.#disposeSurveyObjects(e);
+    if (this.caveObjects.has(caveName) && this.caveObjects.get(caveName).has(surveyName)) {
+      const e = this.caveObjects.get(caveName).get(surveyName);
+      this.#disposeSurveyObjects(e);
+    }
   }
 
   #disposeSurveyObjects(e) {

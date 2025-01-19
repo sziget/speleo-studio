@@ -190,7 +190,7 @@ class PolygonImporter extends CaveImporter {
           let parts = posLine.value[1].split(/\t|\s/);
           let parsed = parts.toSpliced(3).map((x) => U.parseMyFloat(x));
           let startPosParsed = new Vector(...parsed);
-          let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed));
+          let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed)); //TODO: check if fix point is in shots
           U.iterateUntil(lineIterator, (v) => v !== 'Survey data');
           lineIterator.next(); //From To ...
           const shots = this.#getShotsFromPolygon(lineIterator);

@@ -3,8 +3,9 @@ import { tag } from '../../dependencies/html5-tag.js';
 import { escapeHtml } from '../../dependencies/escape-html.js';
 import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
-import { Color } from '../model.js';
+import { Color, Survey } from '../model.js';
 import { SurveyEditor, CaveEditor, SectionAttributeEditor, ComponentAttributeEditor } from './editor.js';
+import { showWarningPanel } from './popups.js';
 
 class ProjectManager {
 
@@ -82,18 +83,21 @@ class ProjectManager {
     const colorGradients = SurveyHelper.getColorGradients(cave, lOptions);
 
     cave.surveys.forEach((es) => {
-      const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
       this.scene.disposeSurvey(cave.name, es.name);
-      const _3dObjects = this.scene.addToScene(
-        es.name,
-        caveStations,
-        clSegments,
-        splaySegments,
-        cave.visible && es.visible,
-        colorGradients.get(es.name)
-      );
       this.scene.deleteSurvey(cave.name, es.name);
-      this.scene.addSurvey(cave.name, es.name, _3dObjects);
+
+      const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
+      if (clSegments.length !== 0) {
+        const _3dObjects = this.scene.addToScene(
+          es.name,
+          caveStations,
+          clSegments,
+          splaySegments,
+          cave.visible && es.visible,
+          colorGradients.get(es.name)
+        );
+        this.scene.addSurvey(cave.name, es.name, _3dObjects);
+      }
     });
     this.scene.updateVisiblePlanes();
     const boundingBox = this.scene.computeBoundingBox();
@@ -134,6 +138,19 @@ class ProjectExplorer {
     const caveNode = this.itree.getChildNodes().find((n) => n.name === caveName);
     const surveyNode = this.itree.getChildNodes(caveNode).find((n) => n.name === surveyName);
     this.itree.removeNode(surveyNode);
+  }
+
+  addSurvey(cave, survey) {
+    const caveNode = this.itree.getChildNodes().find((n) => n.name === cave.name);
+    this.itree.appendChildNode(
+      {
+        id           : U.randomAlphaNumbericString(8),
+        name         : survey.name,
+        loadOnDemand : true,
+        state        : { checked: survey.visible, nodeType: 'survey', cave: cave, survey: survey }
+      },
+      caveNode
+    );
   }
 
   deleteCave(caveName) {
@@ -202,9 +219,34 @@ class ProjectExplorer {
 
     };
 
+    const addSurvey = U.node`<li class="menu-option">Add survey</li>`;
+    addSurvey.onclick = () => {
+      this.contextMenuElement.style.display = 'none';
+      const name = prompt('Please enter the survey name');
+      if (name.length === 0) {
+        showWarningPanel('Survey name should not be empty!');
+      } else if (cave.surveys.find((s) => s.name === name) !== undefined) {
+        showWarningPanel(`Survey with name '${name}' already exists!`);
+      } else {
+        const newSurvey = new Survey(name, true, undefined, [], [], []);
+        cave.surveys.push(newSurvey);
+        this.addSurvey(cave, newSurvey);
+        this.editor = new SurveyEditor(
+          cave,
+          newSurvey,
+          this.scene,
+          this.attributeDefs,
+          document.getElementById('surveyeditor')
+        );
+        this.editor.setupTable();
+        this.editor.show();
+      }
+    };
+
     menu.appendChild(editCaveData);
     menu.appendChild(editSectionAttributes);
     menu.appendChild(editComponentAttributes);
+    menu.appendChild(addSurvey);
     this.contextMenuElement.innerHTML = '';
     this.contextMenuElement.appendChild(menu);
   }
@@ -452,7 +494,7 @@ class ProjectExplorer {
       {
         class : classNames('infinite-tree-title')
       },
-      escapeHtml(name)
+      U.fitString(escapeHtml(name), 21)
     );
 
     const checkbox = tag('input', {

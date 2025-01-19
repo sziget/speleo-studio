@@ -1,5 +1,5 @@
 import * as U from './utils/utils.js';
-import { SurveyStation as ST, Vector } from './model.js';
+import { SurveyStation as ST, Vector, SurveyStartStation, SurveyStation } from './model.js';
 import { Graph } from './utils/graph.js';
 
 class SurveyHelper {
@@ -15,6 +15,7 @@ class SurveyHelper {
   static recalculateSurvey(index, es, surveyStations, aliases) {
     let startName, startPosition;
     if (index === 0) {
+      //TODO: check if start station is still in shots
       startName = es.start !== undefined ? es.start.name : es.shots[0].from;
       startPosition = es.start !== undefined ? es.start.station.position : new Vector(0, 0, 0);
     }
@@ -33,6 +34,10 @@ class SurveyHelper {
       stations.set(startStationName, new ST('center', startPosition, survey));
     }
 
+    survey.start = new SurveyStartStation(
+      startStationName,
+      new SurveyStation('center', startPosition ?? new Vector(0, 0, 0))
+    );
     survey.shots.forEach((sh) => {
       sh.processed = false;
       sh.fromAlias = undefined;
@@ -41,7 +46,7 @@ class SurveyHelper {
 
     var repeat = true;
 
-    // the basics of this algorithm come from Topodroid cave surveying software by Marco Corvi
+    // the basics of this algorithm came from Topodroid cave surveying software by Marco Corvi
     while (repeat) {
       repeat = false;
       survey.validShots.forEach((sh) => {
