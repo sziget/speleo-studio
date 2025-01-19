@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node.js dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run Prettier check
         run: npx prettier ./src/** --check
