@@ -31,7 +31,7 @@ class Importer {
     return Array.from(caves.values()).reduce((acc, c) => {
       const distanceBetweenCaves = c.startPosition.distanceTo(position);
       if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
-        acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
+        acc.push(`${c.name} - ${U.formatDistance(distanceBetweenCaves, 0)}`);
       }
       return acc;
     }, []);

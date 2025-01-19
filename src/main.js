@@ -22,7 +22,7 @@ class Main {
 
     const explorer = new ProjectExplorer(options, db, scene, attributeDefs, document.querySelector('#tree-panel'));
     new ProjectManager(db, options, scene, explorer);
-    const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
+    const controls = addGui(options, scene, materials, document.getElementById('control-panel'));
     controls.close();
     const interaction = new SceneInteraction(
       db,

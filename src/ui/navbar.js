@@ -54,6 +54,23 @@ class NavigationBar {
             }
           }
         ]
+      },
+      {
+        name     : 'View',
+        elements : [
+          {
+            name  : 'Cave explorer',
+            click : () => this.#toggleVisibility('#tree-panel')
+          },
+          {
+            name  : 'Control panel',
+            click : () => this.#toggleVisibility('#control-panel')
+          },
+          {
+            name  : 'Footer',
+            click : () => this.#toggleVisibility('#footer')
+          }
+        ]
       }
     ];
   }
@@ -223,6 +240,15 @@ class NavigationBar {
           )
         );
       });
+  }
+
+  #toggleVisibility(name) {
+    let style = document.querySelector(name).style;
+    if (style.display !== 'none') {
+      style.display = 'none';
+    } else {
+      style.display = 'block';
+    }
   }
 }
 

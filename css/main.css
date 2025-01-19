@@ -5,7 +5,7 @@ body {
 }
 
 @media print {
-  #guicontrols {
+  #control-panel {
     display: none !important;
   }
   .footer {
@@ -19,7 +19,7 @@ body {
   }
 }
 
-#guicontrols {
+#control-panel {
   color: red;
   position: absolute;
   top: 49px;

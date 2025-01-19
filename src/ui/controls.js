@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 export function addGui(options, scene, materials, element) {
   const s = options.scene;
-  const gui = new GUI({ container: element });
+  const gui = new GUI({ title: 'Control panel', container: element });
   const centerLineParam = {
     'show center lines'    : s.centerLines.segments.show,
     'line color'           : s.centerLines.segments.color.hex(),

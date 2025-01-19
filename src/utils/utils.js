@@ -99,6 +99,18 @@ function getPolygonDate(value) {
   return addDays(epochStart, daysInt);
 }
 
+function formatDistance(distanceInMeters, decimals = 2) {
+  if (distanceInMeters >= 1000) {
+    const distanceInKm = distanceInMeters / 1000.0;
+    return `${distanceInKm.toFixed(decimals)} km`;
+
+  } else {
+    return `${distanceInMeters.toFixed(decimals)} m`;
+
+  }
+
+}
+
 function formatDateISO(date) {
   // Convert the date to ISO string
   const isoString = date.toISOString();
@@ -126,5 +138,6 @@ export {
   addDays,
   getPolygonDate,
   formatDateISO,
+  formatDistance,
   falsy
 };
