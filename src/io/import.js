@@ -92,6 +92,7 @@ class CaveImporter {
           this.scene.showSectionAttribute(ca.id, segments, ca.attribute, ca.format, ca.color, cave.name);
         }
       });
+
       this.explorer.addCave(cave);
       const boundingBox = this.scene.computeBoundingBox();
       this.scene.grid.adjust(boundingBox);

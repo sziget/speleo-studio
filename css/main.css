@@ -120,6 +120,18 @@ body {
   font-size: 12px;
 }
 
+#cycle-panel {
+  width: 600px;
+  position: absolute;
+  top: 80px;
+  left: 300px;
+  text-align: center;
+  z-index: 100;
+  color: azure;
+  background: rgb(40, 40, 40);
+  display: none;
+}
+
 #caveeditor {
   width: 600px;
   position: absolute;

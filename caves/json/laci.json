@@ -662,6 +662,15 @@
           "clino": 43.4
         },
         {
+          "id": 581,
+          "type": "center",
+          "from": "61",
+          "to": "63",
+          "length": 7.63,
+          "azimuth": 270,
+          "clino": -20.9
+        },
+        {
           "id": 61,
           "type": "center",
           "from": "56",
@@ -5278,15 +5287,24 @@
           "type": "center",
           "from": "Octp22",
           "to": "Octp23",
-          "length": 0.6,
-          "azimuth": 289.4,
-          "clino": 39.2
+          "length": 0.29,
+          "azimuth": 0,
+          "clino": 0.1
         },
         {
           "id": 23,
           "type": "center",
           "from": "Octp23",
           "to": "Octp24",
+          "length": 2.85,
+          "azimuth": 277.1,
+          "clino": -22.5
+        },
+        {
+          "id": 581,
+          "type": "center",
+          "from": "Octp24",
+          "to": "Octp2",
           "length": 2.85,
           "azimuth": 277.1,
           "clino": -22.5

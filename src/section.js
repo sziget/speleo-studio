@@ -1,5 +1,6 @@
-import { CaveComponent, CaveSection } from './model.js';
+import { CaveComponent, CaveCycle, CaveSection } from './model.js';
 import { Graph } from './utils/graph.js';
+import { randomAlphaNumbericString } from './utils/utils.js';
 
 class SectionHelper {
 
@@ -49,6 +50,30 @@ class SectionHelper {
       }
 
     });
+    return segments;
+  }
+
+  static getCycles(graph) {
+    return graph
+      .findCircuits()
+      .map((result) => new CaveCycle(randomAlphaNumbericString(6), result.path, result.distance));
+  }
+
+  static getCycleSegments(cycle, stations) {
+    const segments = [];
+    const cycleClosed = cycle.path.concat(cycle.path[0]);
+    for (let index = 0; index < cycleClosed.length - 1; index++) {
+      const from = cycleClosed[index];
+      const to = cycleClosed[index + 1];
+      const fromSt = stations.get(from);
+      const toSt = stations.get(to);
+      const fromPos = fromSt.position;
+      const toPos = toSt.position;
+      if (fromPos !== undefined && toPos !== undefined) {
+        segments.push(fromPos.x, fromPos.y, fromPos.z, toPos.x, toPos.y, toPos.z);
+      }
+
+    }
     return segments;
   }
 

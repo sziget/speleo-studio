@@ -193,6 +193,18 @@ class SurveyStartStation {
   }
 }
 
+class CaveCycle {
+
+  pathSet;
+
+  constructor(id, path, distance = 0) {
+    this.id = id;
+    this.path = path;
+    this.distance = distance;
+    this.pathSet = new Set(path);
+  }
+}
+
 class CaveComponent {
 
   constructor(start, termination = [], path = [], distance = 0) {
@@ -810,6 +822,7 @@ export {
   StationAttribute,
   CaveSection,
   CaveComponent,
+  CaveCycle,
   SectionAttribute,
   ComponentAttribute,
   SurveyStation,

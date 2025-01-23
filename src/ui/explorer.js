@@ -5,6 +5,7 @@ import * as U from '../utils/utils.js';
 import { SurveyHelper } from '../survey.js';
 import { Color, Survey } from '../model.js';
 import { SurveyEditor, CaveEditor, SectionAttributeEditor, ComponentAttributeEditor } from './editor.js';
+import { CyclePanel } from '../cycle.js';
 import { showWarningPanel } from './popups.js';
 
 class ProjectManager {
@@ -243,10 +244,19 @@ class ProjectExplorer {
       }
     };
 
+    const cycles = U.node`<li class="menu-option">Cycles</li>`;
+    cycles.onclick = () => {
+      this.editor = new CyclePanel(document.querySelector('#cycle-panel'), this.scene, cave);
+      this.editor.setupPanel();
+      this.editor.show();
+
+    };
+
     menu.appendChild(editCaveData);
     menu.appendChild(editSectionAttributes);
     menu.appendChild(editComponentAttributes);
     menu.appendChild(addSurvey);
+    menu.appendChild(cycles);
     this.contextMenuElement.innerHTML = '';
     this.contextMenuElement.appendChild(menu);
   }

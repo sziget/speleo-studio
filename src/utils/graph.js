@@ -7,22 +7,24 @@ export class Neighbor {
 
 export class Graph {
   constructor() {
-    this.adjacencyList = {};
+    this.adjacencyList = new Map();
   }
+
   addVertex(vertex) {
-    if (!this.adjacencyList[vertex]) {
-      this.adjacencyList[vertex] = [];
+    if (!this.adjacencyList.has(vertex)) {
+      this.adjacencyList.set(vertex, []);
     }
   }
+
   addEdge(source, destination, weight) {
-    if (!this.adjacencyList[source]) {
+    if (!this.adjacencyList.has(source)) {
       this.addVertex(source);
     }
-    if (!this.adjacencyList[destination]) {
+    if (!this.adjacencyList.has(destination)) {
       this.addVertex(destination);
     }
-    this.adjacencyList[source].push(new Neighbor(destination, weight));
-    this.adjacencyList[destination].push(new Neighbor(source, weight));
+    this.adjacencyList.get(source).push(new Neighbor(destination, weight));
+    this.adjacencyList.get(destination).push(new Neighbor(source, weight));
   }
 
   shortestDistanceNode = function (distances, visited) {
@@ -49,14 +51,14 @@ export class Graph {
     // track distances from the start node using a hash object
     let distances = new Map();
     distances.set(endNode, 'Infinity');
-    for (let child of this.adjacencyList[startNode]) {
+    for (let child of this.adjacencyList.get(startNode)) {
       distances.set(child.node, child.weight);
     }
 
     let parents = new Map();
     parents.set(endNode, null);
 
-    for (let child of this.adjacencyList[startNode]) {
+    for (let child of this.adjacencyList.get(startNode)) {
       parents.set(child.node, startNode);
     }
 
@@ -67,7 +69,7 @@ export class Graph {
     while (node) {
       // find its distance from the start node & its child nodes
       let distance = distances.get(node);
-      let children = this.adjacencyList[node];
+      let children = this.adjacencyList.get(node);
 
       // for each of those child nodes:
       for (let child of children) {
@@ -123,7 +125,7 @@ export class Graph {
     while (queue.length) {
       currentVertex = queue.shift();
       distances.set(currentVertex.node, currentVertex.distance);
-      this.adjacencyList[currentVertex.node].forEach((neighbor) => {
+      this.adjacencyList.get(currentVertex.node).forEach((neighbor) => {
         if (!visited.has(neighbor.node)) {
           visited.add(neighbor.node);
           queue.push({ node: neighbor.node, distance: currentVertex.distance + neighbor.weight });
@@ -135,5 +137,144 @@ export class Graph {
     }
     return { distances: distances, distance: distance, path: path };
   };
+
+  spanningTree() {
+    const spannigTree = new Map();
+
+    [...this.adjacencyList.keys()].forEach((node) => {
+      spannigTree.set(node, new Set());
+    });
+
+    let visitedVertices = new Set();
+
+    this.adjacencyList.forEach((neighbours, node) => {
+      neighbours.forEach((child) => {
+        if (!visitedVertices.has(child.node)) {
+          visitedVertices.add(child.node);
+          spannigTree.get(node).add(child.node);
+          spannigTree.get(child.node).add(node);
+        }
+      });
+    });
+    return spannigTree;
+  }
+
+  /**
+   * This method captures the cyclic path between the start and end vertices by backtracking the spanning tree from the end vertex to the start. The parents map is used to get the reference of the patent vertices.
+   * @param {*} start
+   * @param {*} end
+   * @param {*} current
+   * @param {*} parents
+   * @returns
+   */
+  getCyclePath(start, end, current, parents) {
+    let cycle = [end];
+    let prev = end;
+    var distance = 0;
+    while (current != start) {
+      distance += this.adjacencyList.get(prev).find((n) => n.node === current).weight;
+      cycle.push(current);
+      prev = current;
+      current = parents.get(current);
+    }
+    distance += this.adjacencyList.get(prev).find((n) => n.node === start).weight;
+    distance += this.adjacencyList.get(end).find((n) => n.node === start).weight;
+    cycle.push(start);
+    return { path: cycle, distance: distance };
+  }
+
+  /**
+   * This is a recursive method that takes the start and end of the removed edge and performs DFS traversal recursively on the spanning tree from start until it finds the end.
+   * @param {*} start
+   * @param {*} end
+   * @param {*} spannigTree - The spanning tree of the graph
+   * @param {*} visited - The visited Set holds the set of visited vertices while traversing the tree in order to find a cycle. This is initialized as an empty Map in the default argument.
+   * @param {*} parents - The parents Map stores the immediate parent of a node while traversing the tree. This is initialized as an empty Map.
+   * @param {*} current_node - The current_node variable holds the name of the current vertex in the recursion. This is initialized as start.
+   * @param {*} parent_node - The parent_node variable holds the name of the current vertex in the recursion. This is initialized as " ".
+   * @returns
+   */
+  findCycle(
+    start,
+    end,
+    spannigTree,
+    visited = new Set(),
+    parents = new Map(),
+    current_node = start,
+    parent_node = ' '
+  ) {
+    let cycle = null;
+    visited.add(current_node);
+    parents.set(current_node, parent_node);
+    const destinations = spannigTree.get(current_node);
+    for (const destination of destinations) {
+      if (destination === end) {
+        return this.getCyclePath(start, end, current_node, parents);
+      }
+      if (destination === parents.get(current_node)) {
+        continue;
+      }
+      if (!visited.has(destination)) {
+        cycle = this.findCycle(start, end, spannigTree, visited, parents, destination, current_node);
+        if (cycle !== null) return cycle;
+      }
+    }
+    return cycle;
+  }
+
+  /**
+   * he rejectedEdgesset is populated by iterating through the graph and adding the edgesKeysif the edges that are not present in the spanning tree.
+   * @param {*} spannigTree - The spanning tree of the graph
+   * @returns
+   */
+  getRejectedEdges(spannigTree) {
+    let rejectedEdges = new Map();
+
+    this.adjacencyList.forEach((neighbours, node) => {
+      if (spannigTree.has(node)) {
+        neighbours.forEach((child) => {
+          if (!spannigTree.get(node).has(child.node)) {
+            if (!rejectedEdges.has(child.node + '-' + node)) {
+              rejectedEdges.set(node + '-' + child.node, { start: child.node, end: node });
+            }
+          }
+        });
+      }
+    });
+
+    return rejectedEdges;
+  }
+
+  /**
+   * We can obtain the cycles present in the graph by performing a DFS traversal on the Spanning Tree.
+   * @param {*} spannigTree - The spanning tree of the graph
+   * @returns
+   */
+  findAllCycles(spannigTree) {
+    let cycles = [];
+    let rejectedEdges = this.getRejectedEdges(spannigTree);
+    rejectedEdges.forEach((edge) => {
+      let start = edge.start;
+      let end = edge.end;
+      let cycle = this.findCycle(start, end, spannigTree);
+      if (cycle !== null) {
+        cycles.push(cycle);
+      }
+    });
+    return cycles;
+  }
+
+  /** The algorithm finds simple cycles in an undirected graph. This algorithm is intended to find all the cycles in the graph that have the least overlap.
+   * The algorithm can be broadly divided into three steps.
+   * - Forming a spanning tree for the graph and getting the list of removed edges.
+   * - Finding the cycle connecting the ends of the removed edges.
+   * For detailed explanation of the algorithm check out the following page: https://javascript.plainenglish.io/finding-simple-cycles-in-an-undirected-graph-a-javascript-approach-1fa84d2f3218
+   * For other algorithms look at graphlib (https://github.com/dagrejs/graphlib/) findCycles() function and JGraph cycle detection algorithm package: https://jgrapht.org/javadoc/org.jgrapht.core/org/jgrapht/alg/cycle/package-summary.html
+   * @returns
+   */
+  findCircuits() {
+    let spannigTree = this.spanningTree();
+    return this.findAllCycles(spannigTree);
+  }
 
 }
