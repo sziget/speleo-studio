@@ -64,9 +64,12 @@ class Main {
   }
 
   #setupFileInputListener(inputName, handler) {
-    document
-      .getElementById(inputName)
-      .addEventListener('change', (e) => handler(e.target.files));
+    const input = document.getElementById(inputName);
+    input
+      .addEventListener('change', (e) => {
+        handler(e.target.files);
+        input.value = '';
+      });
   }
 
   #loadCaveFromUrl() {

@@ -136,6 +136,10 @@ body {
   display: none;
 }
 
+#welcome-panel img {
+  width: 60%;
+}
+
 #welcome-panel button {
   margin-top: 30px;
   padding: 10px;
