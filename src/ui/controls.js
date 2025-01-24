@@ -11,6 +11,7 @@ export function addGui(options, scene, materials, element) {
     'gradient start color' : s.caveLines.color.start.hex(),
     'gradient end color'   : s.caveLines.color.end.hex(),
     width                  : s.centerLines.segments.width,
+    opacity                : s.centerLines.segments.opacity,
     'show station'         : s.centerLines.spheres.show,
     'station color'        : s.centerLines.spheres.color.hex(),
     'station size'         : s.centerLines.spheres.radius
@@ -66,6 +67,17 @@ export function addGui(options, scene, materials, element) {
       materials.segments.centerLine.linewidth = s.centerLines.segments.width;
       materials.whiteLine.linewidth = s.centerLines.segments.width;
       scene.updateSegmentsWidth(val);
+      scene.renderScene();
+    });
+
+  centerLineFolder
+    .add(centerLineParam, 'opacity', 0.0, 1.0)
+    .step(0.1)
+    .onChange(function (val) {
+      s.centerLines.segments.opacity = val;
+      materials.segments.centerLine.opacity = val;
+      materials.whiteLine.opacity = val;
+      scene.setObjectsOpacity('centerLines', val);
       scene.renderScene();
     });
 

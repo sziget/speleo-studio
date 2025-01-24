@@ -90,8 +90,8 @@ class ProjectManager {
       const [clSegments, splaySegments] = SurveyHelper.getSegments(es, caveStations);
       if (clSegments.length !== 0) {
         const _3dObjects = this.scene.addToScene(
-          es.name,
-          caveStations,
+          es,
+          cave,
           clSegments,
           splaySegments,
           cave.visible && es.visible,

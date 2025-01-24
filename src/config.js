@@ -7,9 +7,10 @@ export const OPTIONS = {
 
     centerLines : {
       segments : {
-        show  : true,
-        color : new Color(0xff0000),
-        width : 1.5
+        show    : true,
+        color   : new Color(0xff0000),
+        width   : 1.5,
+        opacity : 1.0
       },
       spheres : {
         show   : true,

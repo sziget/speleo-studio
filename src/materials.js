@@ -13,7 +13,9 @@ class Materials {
           linewidth       : this.config.centerLines.segments.width,
           worldUnits      : false,
           vertexColors    : false,
-          alphaToCoverage : false
+          alphaToCoverage : false,
+          transparent     : true,
+          opacity         : this.config.centerLines.segments.opacity
         }),
         splay : new LineMaterial({
           color           : this.config.splays.segments.color.hex(),
@@ -42,7 +44,8 @@ class Materials {
         linewidth       : 0, // in world units with size attenuation, pixels otherwise
         worldUnits      : false,
         vertexColors    : true,
-        alphaToCoverage : false
+        alphaToCoverage : false,
+        transparent     : true
       })
     };
 

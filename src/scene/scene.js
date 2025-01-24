@@ -77,19 +77,23 @@ class MyScene {
     const sphereGeo = new THREE.SphereGeometry(this.options.scene.centerLines.spheres.radius, 10, 10);
     this.surfaceSphere = this.addSphere(
       'surface',
-      'surface',
       new THREE.Vector3(0, 0, 0),
       this.surfaceObject3DGroup,
       sphereGeo,
-      this.materials.sphere.surface
+      this.materials.sphere.surface,
+      {
+        type : 'surface'
+      }
     );
     this.surfaceSphereContext = this.addSphere(
       'surface',
-      'surface',
       new THREE.Vector3(0, 0, 0),
       this.surfaceObject3DGroup,
       sphereGeo,
-      this.materials.sphere.surface
+      this.materials.sphere.surface,
+      {
+        type : 'surface'
+      }
     );
 
     window.addEventListener('resize', () => this.onWindowResize());
@@ -143,6 +147,15 @@ class MyScene {
     const entries = this.#getCaveObjectsFlattened();
     entries.forEach((e) => {
       e[fieldName].visible = !e.centerLines.hidden && val;
+    });
+    this.renderScene();
+  }
+
+  setObjectsOpacity(fieldName, val) {
+    const entries = this.#getCaveObjectsFlattened();
+    entries.forEach((e) => {
+      e[fieldName].material.transparent = true;
+      e[fieldName].material.opacity = val;
     });
     this.renderScene();
   }
@@ -424,8 +437,19 @@ class MyScene {
           let newClMaterial, newSplayMaterial;
           if (config.value === 'percave' && this.db.getCave(caveName).color !== undefined) {
             const color = this.db.getCave(caveName).color.hex();
-            newClMaterial = new LineMaterial({ color: color, linewidth: clConfig.segments.width, vertexColors: false });
-            newSplayMaterial = new LineMaterial({ color: color, linewidth: splayConfig.segments.width });
+            newClMaterial = new LineMaterial({
+              color        : color,
+              linewidth    : clConfig.segments.width,
+              vertexColors : false,
+              transparent  : true,
+              opacity      : clConfig.segments.opacity
+            });
+            newSplayMaterial = new LineMaterial({
+              color       : color,
+              linewidth   : splayConfig.segments.width,
+              transparent : true,
+              opacity     : clConfig.segments.opacity
+            });
           }
 
           surveyEntrires.forEach((e, surveyName) => {
@@ -442,9 +466,19 @@ class MyScene {
             } else if (config.value === 'persurvey') {
               const survey = this.db.getSurvey(caveName, surveyName);
               if (survey.color === undefined) return; // = continue
-              const hexCcolor = survey.color.hex();
-              e['centerLines'].material = new LineMaterial({ color: hexCcolor, linewidth: clConfig.segments.width });
-              e['splays'].material = new LineMaterial({ color: hexCcolor, linewidth: splayConfig.segments.width });
+              const hexColor = survey.color.hex();
+              e['centerLines'].material = new LineMaterial({
+                color       : hexColor,
+                linewidth   : clConfig.segments.width,
+                transparent : true,
+                opacity     : clConfig.segments.opacity
+              });
+              e['splays'].material = new LineMaterial({
+                color       : hexColor,
+                linewidth   : splayConfig.segments.width,
+                transparent : true,
+                opacity     : clConfig.segments.opacity
+              });
             }
 
           });
@@ -571,6 +605,13 @@ class MyScene {
     this.renderScene();
   }
 
+  updateCenterLinesOpacity(width) {
+    this.sectionAttributes.forEach((e) => {
+      e.segments.material.linewidth = width * SECTION_LINE_MULTIPLIER;
+    });
+    this.renderScene();
+  }
+
   updateLabelSize(size) {
     this.sectionAttributes.forEach((e) => {
       this.sectionAttributes3DGroup.remove(e.text);
@@ -627,18 +668,18 @@ class MyScene {
     return textMesh;
   }
 
-  addSphere(stationName, type, position, sphereGroup, geometry, material) {
+  addSphere(name, position, sphereGroup, geometry, material, meta) {
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.x = position.x;
     sphere.position.y = position.y;
     sphere.position.z = position.z;
-    sphere.name = stationName;
-    sphere.type = type; // custom property
+    sphere.name = name;
+    sphere.meta = meta; // custom property
     sphereGroup.add(sphere);
     return sphere;
   }
 
-  addToScene(surveyName, stations, polygonSegments, splaySegments, visibility, colorGradients) {
+  addToScene(survey, cave, polygonSegments, splaySegments, visibility, colorGradients) {
 
     const geometryStations = new LineSegmentsGeometry();
     geometryStations.setPositions(polygonSegments);
@@ -685,25 +726,33 @@ class MyScene {
     const clSphereGeo = new THREE.SphereGeometry(this.options.scene.centerLines.spheres.radius, 10, 10);
     const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.splays.spheres.radius, 10, 10);
 
-    for (const [stationName, station] of stations) {
-      if (station.survey.name !== surveyName) continue;
+    for (const [stationName, station] of cave.stations) {
+      if (station.survey.name !== survey.name) continue;
       if (station.type === 'center') {
         this.addSphere(
           stationName,
-          station.type,
           station.position,
           clStationSpheresGroup,
           clSphereGeo,
-          this.materials.sphere.centerLine
+          this.materials.sphere.centerLine,
+          {
+            cave   : cave,
+            survey : station.survey,
+            type   : station.type
+          }
         );
       } else if (station.type === 'splay') {
         this.addSphere(
           stationName,
-          station.type,
           station.position,
           splayStationSpheresGroup,
           splaySphereGeo,
-          this.materials.sphere.splay
+          this.materials.sphere.splay,
+          {
+            cave   : cave,
+            survey : station.survey,
+            type   : station.type
+          }
         );
       }
     }

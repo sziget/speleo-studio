@@ -120,7 +120,7 @@ class Shot {
     }
     if (!(typeof this.from === 'string' && this.from.length > 0)) {
       errors.push(`From (${this.from}, type=${typeof this.from}) is not a string or empty`);
-    } else if (!(typeof this.to === 'string' && this.to.length > 0)) {
+    } else if (typeof this.to === 'string' && this.to.length > 0) {
       if (this.from === this.to) {
         errors.push(`From (${this.from}) and to (${this.to}) cannot be the same`);
       }
@@ -723,6 +723,7 @@ class Cave {
   getStats() {
     var length = 0;
     var orphanLength = 0;
+    var invalidLength = 0;
     var isolated = 0;
     var surveys = 0;
     var attributes = 0;
@@ -738,9 +739,12 @@ class Cave {
 
         if (survey.orphanShotIds.has(shot.id)) {
           orphanLength += shot.length;
-        } else {
-          length += shot.length;
         }
+        if (survey.invalidShotIds.has(shot.id)) {
+          invalidLength += shot.length;
+        }
+        length += shot.length;
+
       });
     });
     const stations = [...this.stations.values()];
@@ -776,6 +780,7 @@ class Cave {
       isolated            : isolated,
       length              : length,
       orphanLength        : orphanLength,
+      invalidLength       : invalidLength,
       depth               : this.startPosition.z - minZ,
       height              : maxZ - this.startPosition.z,
       vertical            : maxZ - minZ,

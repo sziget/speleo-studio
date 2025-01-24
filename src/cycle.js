@@ -99,9 +99,9 @@ class CyclePanel {
   }
 
   #setupTable() {
-    this.panel.appendChild(U.node`<div id="surveydata"></div>`);
+    this.panel.appendChild(U.node`<div id="cycle-table"></div>`);
     // eslint-disable-next-line no-undef
-    this.table = new Tabulator('#surveydata', {
+    this.table = new Tabulator('#cycle-table', {
       height       : 300,
       data         : this.#getTableData(),
       layout       : 'fitDataStretch',
@@ -124,26 +124,30 @@ class CyclePanel {
 
   showAllCycles() {
     const toShow = this.table.getData().filter((r) => r.visible === false);
-    toShow.forEach((r) => {
-      this.showCycle(r);
-    });
-    this.table.updateData(
-      toShow.map((t) => {
-        return { id: t.id, visible: true };
-      })
-    );
+    if (toShow.length > 0) {
+      toShow.forEach((r) => {
+        this.showCycle(r);
+      });
+      this.table.updateData(
+        toShow.map((t) => {
+          return { id: t.id, visible: true };
+        })
+      );
+    }
   }
 
   hideAllCycles() {
     const toHide = this.table.getData().filter((r) => r.visible === true);
-    toHide.forEach((r) => {
-      this.hideCycle(r.id);
-    });
-    this.table.updateData(
-      toHide.map((t) => {
-        return { id: t.id, visible: false };
-      })
-    );
+    if (toHide.length > 0) {
+      toHide.forEach((r) => {
+        this.hideCycle(r.id);
+      });
+      this.table.updateData(
+        toHide.map((t) => {
+          return { id: t.id, visible: false };
+        })
+      );
+    }
   }
 
   showCycle(data) {

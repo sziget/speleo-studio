@@ -70,8 +70,8 @@ class CaveImporter {
       cave.surveys.forEach((s) => {
         const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s, cave.stations);
         const _3dobjects = this.scene.addToScene(
-          s.name,
-          cave.stations,
+          s,
+          cave,
           centerLineSegments,
           splaySegments,
           true,

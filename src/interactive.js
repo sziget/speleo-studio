@@ -72,7 +72,7 @@ class SceneInteraction {
   }
 
   getMaterialForType(object) {
-    switch (object.type) {
+    switch (object.meta.type) {
       case 'splay':
         return this.materials.sphere.splay;
       case 'center':
@@ -80,26 +80,37 @@ class SceneInteraction {
       case 'surface':
         return this.materials.sphere.surface;
       default:
-        throw new Error(`Uknown object type for sphere ${object.type}`);
+        throw new Error(`Uknown object type for sphere ${object.meta.type}`);
     }
   }
 
+  #getStationDetails(st) {
+    let stLabel;
+    if (st.meta.survey !== undefined && st.meta.cave !== undefined) {
+      stLabel = `${st.meta.cave.name} -> ${st.meta.survey.name} -> ${st.name}`;
+    } else {
+      stLabel = st.name;
+    }
+
+    return `${stLabel} selected, type: ${st.meta.type}, position: ${get3DCoordsStr(st.position)}`;
+  }
   #setSelected(st) {
     this.selectedStation = st;
     this.selectedPosition = st.position.clone();
     this.selectedStation.material = this.materials.sphere.selected;
     this.selectedStation.scale.setScalar(1.7);
-    if (this.selectedStation.type === 'surface') {
+    if (this.selectedStation.meta.type === 'surface') {
       this.selectedStation.visible = true;
     }
-    this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+
+    this.footer.addMessage(this.#getStationDetails(st));
   }
 
   #clearSelected() {
     this.selectedPosition = undefined;
     this.selectedStation.material = this.getMaterialForType(this.selectedStation);
     this.selectedStation.scale.setScalar(1.0);
-    if (this.selectedStation.type === 'surface') {
+    if (this.selectedStation.meta.type === 'surface') {
       this.selectedStation.visible = false;
     }
     this.selectedStation = undefined;
@@ -113,13 +124,13 @@ class SceneInteraction {
       this.selectedStationForContext.visible = true;
     }
 
-    this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+    this.footer.addMessage(this.#getStationDetails(st));
   }
 
   #clearSelectedForContext() {
     this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
     this.selectedStationForContext.scale.setScalar(1.0);
-    if (this.selectedStationForContext.type === 'surface') {
+    if (this.selectedStationForContext.meta.type === 'surface') {
       this.selectedStationForContext.visible = false;
     }
     this.selectedStationForContext = undefined;
@@ -132,11 +143,11 @@ class SceneInteraction {
     if (intersectedStation !== undefined || intersectsSurfacePoint !== undefined) {
 
       const intersectedObject = intersectsSurfacePoint !== undefined ? intersectsSurfacePoint : intersectedStation; // first intersected object
-      if (intersectedObject.type !== 'surface' && intersectedObject === this.selectedStation) {
+      if (intersectedObject.meta.type !== 'surface' && intersectedObject === this.selectedStation) {
         // clicked on the same sphere again
         this.#clearSelected();
       } else if (
-        intersectedObject.type === 'surface' &&
+        intersectedObject.meta.type === 'surface' &&
         intersectedObject === this.selectedStation &&
         intersectedObject.position.distanceTo(this.selectedPosition) < 0.2
       ) {
@@ -181,8 +192,8 @@ class SceneInteraction {
         distanceToSelected = intersectedObject.position.distanceTo(this.selectedPosition);
       }
       if (
-        (intersectedObject.type !== 'surface' && intersectedObject === this.selectedStation) ||
-        (intersectedObject.type === 'surface' && distanceToSelected < 0.2)
+        (intersectedObject.meta.type !== 'surface' && intersectedObject === this.selectedStation) ||
+        (intersectedObject.meta.type === 'surface' && distanceToSelected < 0.2)
       ) {
         if (this.selectedStationForContext !== undefined) {
           // deselect previously selected station for context
