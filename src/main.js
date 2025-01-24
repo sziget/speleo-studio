@@ -13,6 +13,11 @@ import { AttributesDefinitions, attributeDefintions } from './attributes.js';
 class Main {
 
   constructor() {
+
+    if (localStorage.getItem('welcome') === null) {
+      document.querySelector('#welcome-panel').style.display = 'block';
+    }
+
     const db = new Database();
     const options = OPTIONS;
     const materials = new Materials(options).materials;

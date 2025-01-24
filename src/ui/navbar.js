@@ -69,6 +69,10 @@ class NavigationBar {
           {
             name  : 'Footer',
             click : () => this.#toggleVisibility('#footer')
+          },
+          {
+            name  : 'Welcome panel',
+            click : () => this.#toggleVisibility('#welcome-panel')
           }
         ]
       }

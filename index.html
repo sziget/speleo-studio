@@ -45,6 +45,12 @@
     <div id="navbarcontainer" , class="topnavbar"></div>
     <div id="interactive" class="popup editor"></div>
 
+    <div id="welcome-panel">
+      <img src="images/logo.png" width="300px" /><br /><br />Welcome to Speleo Studio.<br />
+      <button onclick="this.parentNode.style.display='none'; localStorage.setItem('welcome', 'false'); ">
+        Let's get started
+      </button>
+    </div>
     <div id="cycle-panel" class="popup"> </div>
     <div id="caveeditor" class="popup"> </div>
     <div id="surveyeditor" class="popup"></div>
