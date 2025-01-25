@@ -36,8 +36,22 @@ class Database {
   }
 
   getAllStationNames() {
-    const stNames = [...this.caves.values().flatMap((c) => [...c.stations.keys()])];
-    return stNames.sort();
+    const stNames = [
+      ...this.caves.values().flatMap((c) =>
+        [...c.stations.keys()].map((st) => {
+          return { name: st, cave: c.name };
+        })
+      )
+    ];
+    return stNames.sort((a, b) => {
+      if (a.name < b.name) {
+        return -1;
+      }
+      if (a.name > b.name) {
+        return 1;
+      }
+      return 0;
+    });
   }
 
   getAllCaveNames() {

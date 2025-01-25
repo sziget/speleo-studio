@@ -23,19 +23,19 @@ class NavigationBar {
         name     : 'File',
         elements : [
           {
-            name  : 'Open TopoDroid file',
+            name  : 'Open TopoDroid file(s)',
             click : () => {
               document.getElementById('topodroidInput').click();
             }
           },
           {
-            name  : 'Open Polygon file',
+            name  : 'Open Polygon file(s)',
             click : function () {
               document.getElementById('polygonInput').click();
             }
           },
           {
-            name  : 'Open JSON file',
+            name  : 'Open JSON file(s)',
             click : function () {
               document.getElementById('jsonInput').click();
             }

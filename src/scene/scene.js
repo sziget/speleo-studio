@@ -210,10 +210,10 @@ class MyScene {
     return [...this.surfaceObjects.values()].map((s) => s.cloud);
   }
 
-  getStationSphere(name) {
+  getStationSphere(stationName, caveName) {
     const clSpheres = this.getAllCenterLineStationSpheres();
     const splaySpheres = this.getAllSplaysStationSpheres();
-    return clSpheres.concat(splaySpheres).find((s) => s.name === name);
+    return clSpheres.concat(splaySpheres).find((s) => s.name === stationName && s.meta.cave.name === caveName);
   }
 
   getIntersectedStationSphere(pointer) {
@@ -727,7 +727,7 @@ class MyScene {
     const splaySphereGeo = new THREE.SphereGeometry(this.options.scene.splays.spheres.radius, 10, 10);
 
     for (const [stationName, station] of cave.stations) {
-      if (station.survey.name !== survey.name) continue;
+      if (station.survey.name !== survey.name) continue; // without this line we would add all stations for each survey
       if (station.type === 'center') {
         this.addSphere(
           stationName,

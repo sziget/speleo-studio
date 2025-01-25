@@ -227,7 +227,11 @@ class SceneInteraction {
       () => {}
     );
     const stNames = this.db.getAllStationNames();
-    const options = stNames.map((n) => `<option value="${n}">`).join('');
+    const multipleCaves = this.db.getAllCaveNames().length > 1;
+    const optionValue = (x) => (multipleCaves ? `${x.name} (${x.cave})` : x.name);
+    const options = stNames
+      .map((x) => `<option cave="${x.cave}" station="${x.name}" value="${optionValue(x)}">`)
+      .join('');
 
     const container = node`<div id="container-locate-station">
         <label for="pointtolocate">Station: <input type="search" list="stations" id="pointtolocate"/></label>
@@ -238,7 +242,11 @@ class SceneInteraction {
     const input = container.querySelector('#pointtolocate');
 
     container.querySelector('#locate-button').onclick = () => {
-      const stationSphere = this.scene.getStationSphere(input.value);
+      const selectedOption = container.querySelector(`#stations option[value='${input.value}']`);
+      const caveName = selectedOption.getAttribute('cave');
+      const stationName = selectedOption.getAttribute('station');
+
+      const stationSphere = this.scene.getStationSphere(stationName, caveName);
       if (stationSphere !== undefined) {
         if (this.selectedStation !== undefined) {
           this.#clearSelected();
