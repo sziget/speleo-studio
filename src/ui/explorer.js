@@ -120,13 +120,13 @@ class ProjectManager {
 
 class ProjectExplorer {
 
-  constructor(options, db, scene, attributeDefs, treeNode) {
+  constructor(options, db, scene, attributeDefs, node) {
     this.options = options;
     this.db = db;
     this.scene = scene;
     this.attributeDefs = attributeDefs;
     this.trees = new Map();
-    this.treeNode = treeNode;
+    this.panel = node;
     this.itree = undefined;
     this.contextMenuElement = U.node`<div class="context-menu-tree" id="tree-contextmenu"></div>`;
     document.body.insertBefore(this.contextMenuElement, document.body.firstChild);
@@ -157,6 +157,9 @@ class ProjectExplorer {
   deleteCave(caveName) {
     const caveNode = this.itree.getChildNodes().find((n) => n.name === caveName);
     this.itree.removeNode(caveNode);
+    if (this.itree.getChildNodes().length === 0) {
+      document.querySelector('#infinite-tree-filter').style.display = 'none';
+    }
   }
 
   closeEditors(caveName) {
@@ -278,17 +281,37 @@ class ProjectExplorer {
   };
 
   initializeTree(data) {
+    console.log('init');
+    const filterNode = U.node`
+    <div class="infinite-tree-filter" id="infinite-tree-filter">
+      <label for="tree-filter">Filter: <input id="tree-filter" type="text" placeholder="Type to filter"/></label>
+      <span id="add-cave" class="add-cave"></span>
+    </div>`;
+    const treeNode = U.node`<div id="tree-node"></div>`;
+    this.panel.appendChild(filterNode);
+    this.panel.appendChild(treeNode);
     // eslint-disable-next-line no-undef
     this.itree = new InfiniteTree({
-      el          : this.treeNode,
+      el          : treeNode,
       data        : data,
       autoOpen    : true,
       rowRenderer : this.treeRenderer,
       scene       : this.scene,
       options     : this.options
     });
+
+    filterNode.querySelector('#tree-filter').onkeyup = (e) => {
+      const filterOptions = {
+        includeAncestors   : true,
+        includeDescendants : false,
+        caseSensitive      : false
+      };
+      const keyword = e.target.value;
+      this.itree.filter(keyword, filterOptions);
+    };
+
     this.itree.on('click', this.click(this.itree));
-    this.treeNode.addEventListener('contextmenu', this.contextMewnu(this.itree));
+    treeNode.addEventListener('contextmenu', this.contextMewnu(this.itree));
   }
 
   transformCave(cave) {
@@ -318,7 +341,11 @@ class ProjectExplorer {
     if (this.itree === undefined) {
       this.initializeTree(data);
     } else {
+      if (this.itree.getChildNodes().length === 0) {
+        document.querySelector('#infinite-tree-filter').style.display = 'block';
+      }
       this.itree.appendChildNode(data);
+
     }
   }
 
@@ -541,7 +568,6 @@ class ProjectExplorer {
       class : classNames({ 'no-color': color === undefined }),
       style : color !== undefined ? `background: ${color};` : ''
     });
-    //      '<span class="infinite-tree-color-line"></span>'
 
     const editIcon = tag(
       'span',
