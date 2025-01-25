@@ -22,7 +22,8 @@ class Main {
     const options = OPTIONS;
     const materials = new Materials(options).materials;
     const attributeDefs = new AttributesDefinitions(attributeDefintions);
-    const scene = new MyScene(options, db, materials);
+    const scene = new MyScene(options, db, materials, document.querySelector('#viewport'));
+
     const footer = new Footer(document.getElementById('footer'));
 
     const explorer = new ProjectExplorer(options, db, scene, attributeDefs, document.querySelector('#tree-panel'));

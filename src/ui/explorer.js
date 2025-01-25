@@ -281,7 +281,6 @@ class ProjectExplorer {
   };
 
   initializeTree(data) {
-    console.log('init');
     const filterNode = U.node`
     <div class="infinite-tree-filter" id="infinite-tree-filter">
       <label for="tree-filter">Filter: <input id="tree-filter" type="text" placeholder="Type to filter"/></label>

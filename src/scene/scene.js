@@ -21,7 +21,7 @@ class MyScene {
    * @param {Database} db - The database of the application, containing caves and other infomations
    * @param {*} - Collection of line and geometry materials
    */
-  constructor(options, db, materials) {
+  constructor(options, db, materials, container) {
     this.options = options;
     this.db = db;
     this.materials = materials;
@@ -36,13 +36,16 @@ class MyScene {
     this.stationFont = undefined;
     const loader = new FontLoader();
     loader.load('fonts/helvetiker_regular.typeface.json', (font) => this.setFont(font));
+
+    this.container = container;
     this.sceneRenderer = new THREE.WebGLRenderer({ antialias: true });
     this.sceneRenderer.setPixelRatio(window.devicePixelRatio);
-    this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
+    this.sceneRenderer.setSize(container.offsetWidth, container.offsetHeight);
     this.domElement = this.sceneRenderer.domElement; // auto generate canvas
-    document.body.appendChild(this.domElement);
-
-    const aspect = window.innerWidth / window.innerHeight;
+    container.appendChild(this.domElement);
+    this.width = container.offsetWidth;
+    this.height = container.offsetHeight;
+    const aspect = this.width / this.height;
 
     this.cameraOrtho = new THREE.OrthographicCamera(
       -C.FRUSTRUM * aspect,
@@ -216,7 +219,22 @@ class MyScene {
     return clSpheres.concat(splaySpheres).find((s) => s.name === stationName && s.meta.cave.name === caveName);
   }
 
-  getIntersectedStationSphere(pointer) {
+  // this function is required because threejs canvas is 48 px from top
+  getMousePosition(mouseCoordinates) {
+    const { x, y } = mouseCoordinates;
+    const rect = this.container.getBoundingClientRect();
+    return new THREE.Vector2((x - rect.left) / rect.width, (y - rect.top) / rect.height);
+  }
+
+  getPointer(mousePosition) {
+    const pointer = new THREE.Vector2();
+    pointer.x = mousePosition.x * 2 - 1;
+    pointer.y = -mousePosition.y * 2 + 1;
+    return pointer;
+  }
+
+  getIntersectedStationSphere(mouseCoordinates) {
+    const pointer = this.getPointer(this.getMousePosition(mouseCoordinates));
     const clSpheres = this.getAllCenterLineStationSpheres();
     const splaySpheres = this.getAllSplaysStationSpheres();
     this.raycaster.setFromCamera(pointer, this.currentCamera);
@@ -229,7 +247,8 @@ class MyScene {
 
   }
 
-  getIntersectedSurfacePoint(pointer, purpose) {
+  getIntersectedSurfacePoint(mouseCoordinates, purpose) {
+    const pointer = this.getPointer(this.getMousePosition(mouseCoordinates));
     const clouds = this.getAllSurfacePoints();
     this.raycaster.setFromCamera(pointer, this.currentCamera);
     this.raycaster.params.Points.threshold = 0.1;
@@ -250,12 +269,14 @@ class MyScene {
   }
 
   onWindowResize() {
-    const aspect = window.innerWidth / window.innerHeight;
+    this.width = this.container.offsetWidth;
+    this.height = this.container.offsetHeight;
+    const aspect = this.width / this.height;
     this.cameraOrtho.left = this.cameraOrtho.bottom * aspect;
     this.cameraOrtho.right = this.cameraOrtho.top * aspect;
     this.cameraOrtho.updateProjectionMatrix();
 
-    this.sceneRenderer.setSize(window.innerWidth, window.innerHeight);
+    this.sceneRenderer.setSize(this.width, this.height);
     this.renderScene();
 
   }
@@ -556,7 +577,7 @@ class MyScene {
 
   fitObjectsToCamera(boundingBox) {
     const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
-    const aspect = window.innerWidth / window.innerHeight;
+    const aspect = this.width / this.height;
     const rotation = new THREE.Matrix4().extractRotation(this.currentCamera.matrix);
     boundingBox.applyMatrix4(rotation);
     const width = boundingBox.max.x - boundingBox.min.x;

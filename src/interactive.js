@@ -22,7 +22,7 @@ class SceneInteraction {
     this.footer = footer;
     this.scene = scene;
     this.materials = materials;
-    this.pointer = new THREE.Vector2();
+    this.mouseCoordinates = new THREE.Vector2();
     this.contextMenu = contextMenu;
     this.infoPanel = infoPanel;
     this.locatePanel = locatePanel;
@@ -38,8 +38,8 @@ class SceneInteraction {
   }
 
   onPointerMove(event) {
-    this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.mouseCoordinates.x = event.clientX;
+    this.mouseCoordinates.y = event.clientY;
   }
 
   calcualteDistanceListener(event) {
@@ -137,8 +137,8 @@ class SceneInteraction {
   }
 
   onClick() {
-    const intersectedStation = this.scene.getIntersectedStationSphere(this.pointer);
-    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.pointer, 'selected');
+    const intersectedStation = this.scene.getIntersectedStationSphere(this.mouseCoordinates);
+    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.mouseCoordinates, 'selected');
 
     if (intersectedStation !== undefined || intersectsSurfacePoint !== undefined) {
 
@@ -180,8 +180,8 @@ class SceneInteraction {
     if (!rightclick) return;
 
     const rect = this.scene.getBoundingClientRect();
-    const intersectedStation = this.scene.getIntersectedStationSphere(this.pointer);
-    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.pointer, 'selectedForContext');
+    const intersectedStation = this.scene.getIntersectedStationSphere(this.mouseCoordinates);
+    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.mouseCoordinates, 'selectedForContext');
 
     if (intersectedStation !== undefined || intersectsSurfacePoint !== undefined) {
       const intersectedObject = intersectsSurfacePoint !== undefined ? intersectsSurfacePoint : intersectedStation;
