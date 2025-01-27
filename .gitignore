@@ -1,3 +1,5 @@
 .vscode/*
 app.mjs
 node_modules/
+
+cypress/screenshots/*
