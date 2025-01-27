@@ -25,4 +25,4 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          config: baseUrl=https://joemeszaros.github.io
+          config: baseUrl=https://joemeszaros.github.io/

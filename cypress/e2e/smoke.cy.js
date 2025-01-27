@@ -7,7 +7,7 @@ describe('smoke tests', () => {
   });
 
   it('page loads', function () {
-    cy.visit('/speleo-studio/?cave=' + this.testdata.jsonCaveFile);
+    cy.visit('speleo-studio/?cave=' + this.testdata.jsonCaveFile);
     cy.get('#welcome-panel').should('contain.text', 'Welcome to Speleo Studio.');
     cy.get('button').contains("Let's get started").click();
   });
