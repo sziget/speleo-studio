@@ -1,9 +1,13 @@
+import { node } from '../utils/utils.js';
+
 class Footer {
 
-  maxMessages = 3;
+  maxMessages = 1;
 
   constructor(element) {
-    this.element = element;
+    this.messagesContainer = node`<div class="content"><div/>`;
+    element.appendChild(document.createTextNode('Speleo Studio 1.0.0'));
+    element.appendChild(this.messagesContainer);
     this.messages = [];
   }
 
@@ -12,7 +16,7 @@ class Footer {
     if (this.messages.length > this.maxMessages) {
       this.messages.shift();
     }
-    this.element.querySelector('#content').innerHTML = this.messages.join('<br>');
+    this.messagesContainer.innerHTML = this.messages.join('<br>');
   }
 }
 

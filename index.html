@@ -25,7 +25,7 @@
     <div id="tree-panel"></div>
     <div class="file-upload">
       <input type="file" id="topodroidInput" accept=".csv" style="display: none" />
-      <input type="file" id="polygonInput" accept=".cave" style="display: none" />
+      <input type="file" id="polygonInput" accept=".cave" multiple style="display: none" />
       <input type="file" id="jsonInput" accept=".json" style="display: none" />
       <input type="file" id="plyInput" accept=".ply" style="display: none" />
     </div>
@@ -45,11 +45,21 @@
     <div id="navbarcontainer" , class="topnavbar"></div>
     <div id="interactive" class="popup editor"></div>
 
+    <div id="welcome-panel">
+      <img src="images/logo.png" /><br /><br />Welcome to Speleo Studio.<br />
+      <button onclick="this.parentNode.style.display='none'; localStorage.setItem('welcome', 'false'); ">
+        Let's get started
+      </button>
+    </div>
+    <div id="cycle-panel" class="popup"> </div>
     <div id="caveeditor" class="popup"> </div>
     <div id="surveyeditor" class="popup"></div>
-    <div id="guicontrols"></div>
-    <div id="footer" class="footer"><div id="content"></div></div>
-
+    <div id="control-panel"></div>
+    <div id="footer" class="footer"></div>
+    <div id="viewport" class="viewport">
+      <div class="compass"><img width="80px" src="images/compass.svg" /></div>
+      <div class="logo"><img width="80px" src="images/logo.png" /></div>
+    </div>
     <script type="module" src="src/main.js"></script>
     <script type="module">
       import { Main } from './src/main.js';

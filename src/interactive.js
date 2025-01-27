@@ -22,7 +22,7 @@ class SceneInteraction {
     this.footer = footer;
     this.scene = scene;
     this.materials = materials;
-    this.pointer = new THREE.Vector2();
+    this.mouseCoordinates = new THREE.Vector2();
     this.contextMenu = contextMenu;
     this.infoPanel = infoPanel;
     this.locatePanel = locatePanel;
@@ -38,8 +38,8 @@ class SceneInteraction {
   }
 
   onPointerMove(event) {
-    this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.mouseCoordinates.x = event.clientX;
+    this.mouseCoordinates.y = event.clientY;
   }
 
   calcualteDistanceListener(event) {
@@ -72,7 +72,7 @@ class SceneInteraction {
   }
 
   getMaterialForType(object) {
-    switch (object.type) {
+    switch (object.meta.type) {
       case 'splay':
         return this.materials.sphere.splay;
       case 'center':
@@ -80,26 +80,37 @@ class SceneInteraction {
       case 'surface':
         return this.materials.sphere.surface;
       default:
-        throw new Error(`Uknown object type for sphere ${object.type}`);
+        throw new Error(`Uknown object type for sphere ${object.meta.type}`);
     }
   }
 
+  #getStationDetails(st) {
+    let stLabel;
+    if (st.meta.survey !== undefined && st.meta.cave !== undefined) {
+      stLabel = `${st.meta.cave.name} -> ${st.meta.survey.name} -> ${st.name}`;
+    } else {
+      stLabel = st.name;
+    }
+
+    return `${stLabel} selected, type: ${st.meta.type}, position: ${get3DCoordsStr(st.position)}`;
+  }
   #setSelected(st) {
     this.selectedStation = st;
     this.selectedPosition = st.position.clone();
     this.selectedStation.material = this.materials.sphere.selected;
     this.selectedStation.scale.setScalar(1.7);
-    if (this.selectedStation.type === 'surface') {
+    if (this.selectedStation.meta.type === 'surface') {
       this.selectedStation.visible = true;
     }
-    this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+
+    this.footer.addMessage(this.#getStationDetails(st));
   }
 
   #clearSelected() {
     this.selectedPosition = undefined;
     this.selectedStation.material = this.getMaterialForType(this.selectedStation);
     this.selectedStation.scale.setScalar(1.0);
-    if (this.selectedStation.type === 'surface') {
+    if (this.selectedStation.meta.type === 'surface') {
       this.selectedStation.visible = false;
     }
     this.selectedStation = undefined;
@@ -113,30 +124,30 @@ class SceneInteraction {
       this.selectedStationForContext.visible = true;
     }
 
-    this.footer.addMessage(`${st.name} selected, position: ${get3DCoordsStr(st.position)}`);
+    this.footer.addMessage(this.#getStationDetails(st));
   }
 
   #clearSelectedForContext() {
     this.selectedStationForContext.material = this.getMaterialForType(this.selectedStationForContext);
     this.selectedStationForContext.scale.setScalar(1.0);
-    if (this.selectedStationForContext.type === 'surface') {
+    if (this.selectedStationForContext.meta.type === 'surface') {
       this.selectedStationForContext.visible = false;
     }
     this.selectedStationForContext = undefined;
   }
 
   onClick() {
-    const intersectedStation = this.scene.getIntersectedStationSphere(this.pointer);
-    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.pointer, 'selected');
+    const intersectedStation = this.scene.getIntersectedStationSphere(this.mouseCoordinates);
+    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.mouseCoordinates, 'selected');
 
     if (intersectedStation !== undefined || intersectsSurfacePoint !== undefined) {
 
       const intersectedObject = intersectsSurfacePoint !== undefined ? intersectsSurfacePoint : intersectedStation; // first intersected object
-      if (intersectedObject.type !== 'surface' && intersectedObject === this.selectedStation) {
+      if (intersectedObject.meta.type !== 'surface' && intersectedObject === this.selectedStation) {
         // clicked on the same sphere again
         this.#clearSelected();
       } else if (
-        intersectedObject.type === 'surface' &&
+        intersectedObject.meta.type === 'surface' &&
         intersectedObject === this.selectedStation &&
         intersectedObject.position.distanceTo(this.selectedPosition) < 0.2
       ) {
@@ -169,8 +180,8 @@ class SceneInteraction {
     if (!rightclick) return;
 
     const rect = this.scene.getBoundingClientRect();
-    const intersectedStation = this.scene.getIntersectedStationSphere(this.pointer);
-    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.pointer, 'selectedForContext');
+    const intersectedStation = this.scene.getIntersectedStationSphere(this.mouseCoordinates);
+    const intersectsSurfacePoint = this.scene.getIntersectedSurfacePoint(this.mouseCoordinates, 'selectedForContext');
 
     if (intersectedStation !== undefined || intersectsSurfacePoint !== undefined) {
       const intersectedObject = intersectsSurfacePoint !== undefined ? intersectsSurfacePoint : intersectedStation;
@@ -181,8 +192,8 @@ class SceneInteraction {
         distanceToSelected = intersectedObject.position.distanceTo(this.selectedPosition);
       }
       if (
-        (intersectedObject.type !== 'surface' && intersectedObject === this.selectedStation) ||
-        (intersectedObject.type === 'surface' && distanceToSelected < 0.2)
+        (intersectedObject.meta.type !== 'surface' && intersectedObject === this.selectedStation) ||
+        (intersectedObject.meta.type === 'surface' && distanceToSelected < 0.2)
       ) {
         if (this.selectedStationForContext !== undefined) {
           // deselect previously selected station for context
@@ -216,7 +227,11 @@ class SceneInteraction {
       () => {}
     );
     const stNames = this.db.getAllStationNames();
-    const options = stNames.map((n) => `<option value="${n}">`).join('');
+    const multipleCaves = this.db.getAllCaveNames().length > 1;
+    const optionValue = (x) => (multipleCaves ? `${x.name} (${x.cave})` : x.name);
+    const options = stNames
+      .map((x) => `<option cave="${x.cave}" station="${x.name}" value="${optionValue(x)}">`)
+      .join('');
 
     const container = node`<div id="container-locate-station">
         <label for="pointtolocate">Station: <input type="search" list="stations" id="pointtolocate"/></label>
@@ -227,7 +242,11 @@ class SceneInteraction {
     const input = container.querySelector('#pointtolocate');
 
     container.querySelector('#locate-button').onclick = () => {
-      const stationSphere = this.scene.getStationSphere(input.value);
+      const selectedOption = container.querySelector(`#stations option[value='${input.value}']`);
+      const caveName = selectedOption.getAttribute('cave');
+      const stationName = selectedOption.getAttribute('station');
+
+      const stationSphere = this.scene.getStationSphere(stationName, caveName);
       if (stationSphere !== undefined) {
         if (this.selectedStation !== undefined) {
           this.#clearSelected();

@@ -13,16 +13,22 @@ import { AttributesDefinitions, attributeDefintions } from './attributes.js';
 class Main {
 
   constructor() {
+
+    if (localStorage.getItem('welcome') === null) {
+      document.querySelector('#welcome-panel').style.display = 'block';
+    }
+
     const db = new Database();
     const options = OPTIONS;
     const materials = new Materials(options).materials;
     const attributeDefs = new AttributesDefinitions(attributeDefintions);
-    const scene = new MyScene(options, db, materials);
+    const scene = new MyScene(options, db, materials, document.querySelector('#viewport'));
+
     const footer = new Footer(document.getElementById('footer'));
 
     const explorer = new ProjectExplorer(options, db, scene, attributeDefs, document.querySelector('#tree-panel'));
     new ProjectManager(db, options, scene, explorer);
-    const controls = addGui(options, scene, materials, document.getElementById('guicontrols'));
+    const controls = addGui(options, scene, materials, document.getElementById('control-panel'));
     controls.close();
     const interaction = new SceneInteraction(
       db,
@@ -51,17 +57,20 @@ class Main {
   }
 
   #setupEventListeners() {
-    this.#setupFileInputListener('topodroidInput', (file) => this.importers.topodroid.importFile(file));
-    this.#setupFileInputListener('polygonInput', (file) => this.importers.polygon.importFile(file));
-    this.#setupFileInputListener('jsonInput', (file) => this.importers.json.importFile(file));
-    this.#setupFileInputListener('plyInput', (file) => this.importers.ply.importFile(file));
+    this.#setupFileInputListener('topodroidInput', (files) => this.importers.topodroid.importFiles(files));
+    this.#setupFileInputListener('polygonInput', (files) => this.importers.polygon.importFiles(files));
+    this.#setupFileInputListener('jsonInput', (files) => this.importers.json.importFiles(files));
+    this.#setupFileInputListener('plyInput', (files) => this.importers.ply.importFiles(files));
 
   }
 
   #setupFileInputListener(inputName, handler) {
-    document
-      .getElementById(inputName)
-      .addEventListener('change', (e) => handler(e.target.files[0]));
+    const input = document.getElementById(inputName);
+    input
+      .addEventListener('change', (e) => {
+        handler(e.target.files);
+        input.value = '';
+      });
   }
 
   #loadCaveFromUrl() {

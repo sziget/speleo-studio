@@ -31,7 +31,7 @@ class Importer {
     return Array.from(caves.values()).reduce((acc, c) => {
       const distanceBetweenCaves = c.startPosition.distanceTo(position);
       if (distanceBetweenCaves > CAVES_MAX_DISTANCE) {
-        acc.push(`${c.name} - ${distanceBetweenCaves.toFixed(2)} m`);
+        acc.push(`${c.name} - ${U.formatDistance(distanceBetweenCaves, 0)}`);
       }
       return acc;
     }, []);
@@ -57,9 +57,9 @@ class CaveImporter {
   addCave(cave) {
     const cavesReallyFar = Importer.getFarCaves(this.db.caves, cave.startPosition);
     if (this.db.caves.has(cave.name)) {
-      showErrorPanel('Import failed, cave has already been imported!', 20);
+      showErrorPanel(`Import of '${cave.name}' failed, cave has already been imported!`, 20);
     } else if (cavesReallyFar.length > 0) {
-      const message = `Import failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(',')}`;
+      const message = `Import of '${cave.name}' failed, the cave is too far from previously imported caves: ${cavesReallyFar.join(',')}`;
       showWarningPanel(message, 20);
     } else {
       this.db.caves.set(cave.name, cave);
@@ -70,8 +70,8 @@ class CaveImporter {
       cave.surveys.forEach((s) => {
         const [centerLineSegments, splaySegments] = SurveyHelper.getSegments(s, cave.stations);
         const _3dobjects = this.scene.addToScene(
-          s.name,
-          cave.stations,
+          s,
+          cave,
           centerLineSegments,
           splaySegments,
           true,
@@ -92,10 +92,17 @@ class CaveImporter {
           this.scene.showSectionAttribute(ca.id, segments, ca.attribute, ca.format, ca.color, cave.name);
         }
       });
+
       this.explorer.addCave(cave);
       const boundingBox = this.scene.computeBoundingBox();
       this.scene.grid.adjust(boundingBox);
       this.scene.fitScene(boundingBox);
+    }
+  }
+
+  importFiles(files) {
+    for (const file of files) {
+      this.importFile(file);
     }
   }
 }
@@ -184,7 +191,7 @@ class PolygonImporter extends CaveImporter {
           let parts = posLine.value[1].split(/\t|\s/);
           let parsed = parts.toSpliced(3).map((x) => U.parseMyFloat(x));
           let startPosParsed = new Vector(...parsed);
-          let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed));
+          let startPoint = new SurveyStartStation(fixPoint, new SurveyStation('center', startPosParsed)); //TODO: check if fix point is in shots
           U.iterateUntil(lineIterator, (v) => v !== 'Survey data');
           lineIterator.next(); //From To ...
           const shots = this.#getShotsFromPolygon(lineIterator);
@@ -349,9 +356,9 @@ class PlySurfaceImporter {
     const cavesReallyFar = Importer.getFarCaves(this.db.caves, surface.center);
 
     if (this.db.getSurface(surface.name) !== undefined) {
-      showErrorPanel('Import failed, surface has already been imported!', 20);
+      showErrorPanel(`Import of '${surface.name}' failed, surface has already been imported!`, 20);
     } else if (cavesReallyFar.length > 0) {
-      const message = `Import failed, the surface is too far from previously imported caves:
+      const message = `Import of '${surface.name}' failed, the surface is too far from previously imported caves:
        ${cavesReallyFar.join(',')}`;
       showWarningPanel(message, 20);
     } else {

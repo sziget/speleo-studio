@@ -170,6 +170,24 @@
   background: no-repeat center/80% url(../icons/right.svg);
 }
 
+.infinite-tree-filter {
+  margin-bottom: 5px;
+}
+
+.infinite-tree-filter label {
+  margin-left: 5px;
+}
+
+.infinite-tree-filter input {
+  outline: none;
+  color: azure;
+  background: transparent;
+  border-top-width: 0px;
+  border-right-width: 0px;
+  border-left-width: 0px;
+  display: inline-block;
+}
+
 .infinite-tree-no-data {
   text-align: center;
   display: none;
